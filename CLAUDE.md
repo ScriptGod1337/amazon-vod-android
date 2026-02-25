@@ -51,8 +51,10 @@ Phase 1 also writes:
 
 ## Resume Behavior
 On start, ALWAYS:
-1. Read `progress.md` — skip completed phases
-2. Read all files in `analysis/` before writing any code
+1. Read `progress.md`
+2. For each phase: if `progress.md` contains `Phase N: COMPLETE`, skip that phase entirely — do not re-run, re-create, or re-verify it
+3. Find the first phase NOT marked `COMPLETE` and start there
+4. Read all files in `analysis/` before writing any code
 
 ---
 
