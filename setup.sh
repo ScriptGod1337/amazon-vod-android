@@ -2,7 +2,7 @@
 set -e
 
 echo "=== Installing Java ==="
-apt-get update && apt-get install -y openjdk-17-jdk wget unzip curl git python3-pip adb
+apt-get update && apt-get install -y openjdk-17-jdk wget unzip curl git python3-pip python3-venv adb
 
 echo "=== Installing Android SDK ==="
 export ANDROID_HOME=/opt/android-sdk
@@ -32,13 +32,7 @@ export ANDROID_HOME=/opt/android-sdk
 export PATH=\$PATH:\$ANDROID_HOME/cmdline-tools/latest/bin:\$ANDROID_HOME/platform-tools
 EOF
 
-echo "=== Installing Claude Code ==="
-npm install -g @anthropic-ai/claude-code
-
-echo "=== Installing Python tools ==="
-pip3 install frida-tools --break-system-packages
-
 echo "=== Cloning Kodi Plugin ==="
-git clone https://github.com/Sandmann79/xbmc /home/vscode/pace/kodi-plugin
+git clone https://github.com/Sandmann79/xbmc /home/vscode/kodi-plugin
 
 echo "=== Done. Reload shell or run: source ~/.bashrc ==="
