@@ -153,6 +153,35 @@ Mark `Phase 6: COMPLETE` in `progress.md`.
 
 ---
 
+## Phase 7 — Extended Search Content
+
+Expand search and browse to cover all available content categories beyond Prime Video movies/shows.
+
+### Content types to add
+- **Amazon Channels** — premium add-on channels (e.g. Paramount+, Discovery+); use `GetPrimeVideoChannels` or equivalent catalog node
+- **Freevee / AVOD** — free ad-supported titles; filter catalog by `freeWithAds` or `Prime` badge absence
+- **Live TV** — live channel listings if available in the territory; endpoint in `api-map.md`
+- **Rentals / Purchases** — user's purchased/rented library (already partially in watchlist; ensure `VideoAggregateDetail` includes transactional titles)
+- **Search suggestions** — call the autocomplete/suggestions endpoint (check `api-map.md`; add to `AmazonApiService.kt` as `getSearchSuggestions(query)`)
+
+### UI changes (`MainActivity.kt` / `BrowseActivity.kt`)
+- Add filter chips or a category drawer: All / Prime / Freevee / Channels / My Library
+- Pass selected category as a parameter to `AmazonApiService.searchCatalog()`
+- Search bar should call `getSearchSuggestions()` on each keystroke (debounced 300 ms) and show a dropdown
+
+### API guidance
+- Reuse existing `GetSearchResults` endpoint; add `contentType` or `primeOnly` params as documented in `api-map.md`
+- If a content type has no dedicated endpoint, filter results client-side by the `isPrime`, `isFreeWithAds`, or `channelId` fields in the catalog response
+
+Rebuild and reinstall after changes:
+```bash
+./gradlew assembleRelease
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+Mark `Phase 7: COMPLETE` in `progress.md`.
+
+---
+
 ## General Rules
 - Complete each phase before starting the next
 - On 401/403: re-examine Kodi plugin auth logic first

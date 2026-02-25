@@ -39,11 +39,11 @@ claude --model claude-opus-4-6 \
   2>&1 | tee "$LOGS/phase1.log"
 
 echo "=== Phase 1 complete. Starting build phases (Sonnet) ==="
-echo "    Live output below. Also tailing: tail -f $LOGS/phases2-6.log"
+echo "    Live output below. Also tailing: tail -f $LOGS/phases.writing.log"
 
 # Phases 2–6: Porting, building, deploying
 claude --model claude-sonnet-4-6 \
        --dangerously-skip-permissions \
        --verbose \
-       -p "Read CLAUDE.md and /home/vscode/amazon-vod-android/analysis/api-map.md. Execute Phases 2 through 7. Phase 1 is already done." \
+       -p "Read CLAUDE.md and /home/vscode/amazon-vod-android/analysis/api-map.md. Execute Phases 2 through end. Phase 1 is already done." \
   2>&1 | tee "$LOGS/phases.writing.log"
