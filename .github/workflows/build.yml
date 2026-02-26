@@ -46,6 +46,25 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
+      - name: Validate signing secrets
+        run: |
+          if [ -z "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
+            echo "::error::Missing RELEASE_KEYSTORE_BASE64 secret"
+            exit 1
+          fi
+          if [ -z "${{ secrets.RELEASE_STORE_PASSWORD }}" ]; then
+            echo "::error::Missing RELEASE_STORE_PASSWORD secret"
+            exit 1
+          fi
+          if [ -z "${{ secrets.RELEASE_KEY_ALIAS }}" ]; then
+            echo "::error::Missing RELEASE_KEY_ALIAS secret"
+            exit 1
+          fi
+          if [ -z "${{ secrets.RELEASE_KEY_PASSWORD }}" ]; then
+            echo "::error::Missing RELEASE_KEY_PASSWORD secret"
+            exit 1
+          fi
+
       - name: Decode release keystore
         run: |
           echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
