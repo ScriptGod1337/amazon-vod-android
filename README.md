@@ -42,6 +42,20 @@ com.scriptgod.fireos.avod
      +-- DpadEditText.kt           EditText with Fire TV remote keyboard handling
 ```
 
+## Screenshots
+
+| Login | Home Catalog | Search Suggestions |
+|:---:|:---:|:---:|
+| ![Login](screenshots/01_login.png) | ![Home](screenshots/02_home.png) | ![Search](screenshots/03_search.png) |
+
+| Watchlist | My Library | Series Filter |
+|:---:|:---:|:---:|
+| ![Watchlist](screenshots/04_watchlist.png) | ![Library](screenshots/05_library.png) | ![Filter](screenshots/06_filter.png) |
+
+| Season Selection | Episode List |
+|:---:|:---:|
+| ![Seasons](screenshots/07_series_drilldown.png) | ![Episodes](screenshots/08_episodes.png) |
+
 ## Requirements
 
 - Android SDK (API 34, build-tools 34.0.0)
@@ -80,7 +94,7 @@ adb shell am start -n com.scriptgod.fireos.avod/.ui.LoginActivity
 ## Authentication
 
 ### In-app login (recommended)
-Launch the app and sign in with your Amazon email, password, and MFA code. The app performs PKCE OAuth authentication and registers the device with Amazon. Tokens are saved to `/data/local/tmp/.device-token`.
+Launch the app and sign in with your Amazon email, password, and verification code. The app performs PKCE OAuth authentication and registers the device with Amazon. Tokens are saved to the app's internal storage.
 
 ### Development token (debugging)
 For development, you can pre-push a `.device-token` file:
@@ -92,7 +106,7 @@ The app auto-detects an existing token and skips the login screen. Generate the 
 
 ## CI/CD
 
-GitHub Actions builds APKs automatically on push to `main`. Versioning uses the date format `YYYY.MM.DD_N` (e.g., `2026.02.26_1`).
+GitHub Actions builds APKs on version tags (`v*`), pull requests to `main`, and manual dispatch. Versioning uses the date format `YYYY.MM.DD_N` (e.g., `2026.02.26_1`).
 
 ### Required GitHub Secrets
 
@@ -109,7 +123,7 @@ base64 -w0 release.keystore | pbcopy  # macOS
 base64 -w0 release.keystore           # Linux (pipe to clipboard)
 ```
 
-Each push to `main` creates a GitHub Release with the signed APK attached.
+Pushing a version tag (e.g., `git tag v2026.02.26_1 && git push --tags`) creates a GitHub Release with the signed APK attached.
 
 ## Emulator notes
 
