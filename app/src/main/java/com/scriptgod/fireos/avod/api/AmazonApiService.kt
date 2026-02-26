@@ -637,7 +637,14 @@ class AmazonApiService(private val authService: AmazonAuthService) {
         }
 
         val manifestUrl = extractManifestUrl(body)
-            ?: throw RuntimeException("Could not extract manifest URL from response")
+        if (manifestUrl == null) {
+            // Check for rights errors (rent/buy-only titles)
+            val noRights = body.contains("PRS.NoRights")
+            if (noRights) {
+                throw RuntimeException("This title requires purchase or rental — it is not included with Prime.")
+            }
+            throw RuntimeException("Could not extract manifest URL from response")
+        }
 
         val licenseUrl = buildLicenseUrl(asin, did)
         val subtitles = extractSubtitleTracks(body)
