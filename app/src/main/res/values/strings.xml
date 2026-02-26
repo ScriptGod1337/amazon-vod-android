@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Prime Video</string>
+    <string name="search_hint">Search movies and TV...</string>
+    <string name="loading">Loading…</string>
+    <string name="error_playback">Playback error</string>
+    <string name="error_network">Network error</string>
+    <string name="btn_retry">Retry</string>
+</resources>

@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/black"
+    android:padding="32dp">
+
+    <!-- Search bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <com.firetv.player.ui.DpadEditText
+            android:id="@+id/et_search"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:hint="@string/search_hint"
+            android:textColor="@android:color/white"
+            android:textColorHint="#888"
+            android:background="#333"
+            android:padding="8dp"
+            android:inputType="text"
+            android:imeOptions="actionSearch"
+            android:singleLine="true"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:nextFocusDown="@id/btn_home"/>
+
+        <Button
+            android:id="@+id/btn_search"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:text="Search"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#00A8E0"
+            android:nextFocusDown="@id/btn_home"/>
+    </LinearLayout>
+
+    <!-- Navigation buttons: Home / Freevee / Watchlist / My Library -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/btn_home"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Home"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#333"
+            android:layout_marginEnd="8dp"
+            android:nextFocusDown="@id/btn_cat_all"/>
+
+        <Button
+            android:id="@+id/btn_freevee"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Freevee"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#333"
+            android:layout_marginEnd="8dp"
+            android:nextFocusDown="@id/btn_cat_all"/>
+
+        <Button
+            android:id="@+id/btn_watchlist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Watchlist"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#333"
+            android:layout_marginEnd="8dp"
+            android:nextFocusDown="@id/btn_cat_all"/>
+
+        <Button
+            android:id="@+id/btn_library"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="My Library"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#333"
+            android:nextFocusDown="@id/btn_cat_all"/>
+    </LinearLayout>
+
+    <!-- Library sub-filters: All / Movies / TV Shows + Sort (only visible on Library page) -->
+    <LinearLayout
+        android:id="@+id/library_filter_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/btn_lib_all"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="All"
+            android:textColor="@android:color/black"
+            android:textSize="12sp"
+            android:backgroundTint="#00A8E0"
+            android:layout_marginEnd="6dp"/>
+
+        <Button
+            android:id="@+id/btn_lib_movies"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Movies"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:backgroundTint="#555"
+            android:layout_marginEnd="6dp"/>
+
+        <Button
+            android:id="@+id/btn_lib_shows"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="TV Shows"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:backgroundTint="#555"
+            android:layout_marginEnd="16dp"/>
+
+        <Button
+            android:id="@+id/btn_lib_sort"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="↕ Recent"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:backgroundTint="#444"/>
+
+    </LinearLayout>
+
+    <!-- Category filter chips: [All | Prime]  [All | Movies | Series] -->
+    <LinearLayout
+        android:id="@+id/category_filter_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <Button
+            android:id="@+id/btn_cat_all"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="All"
+            android:textColor="@android:color/black"
+            android:textSize="12sp"
+            android:backgroundTint="#00A8E0"
+            android:layout_marginEnd="6dp"
+            android:nextFocusDown="@id/recycler_view"/>
+
+        <Button
+            android:id="@+id/btn_cat_prime"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Prime"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:backgroundTint="#555"
+            android:layout_marginEnd="20dp"
+            android:nextFocusDown="@id/recycler_view"/>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="#555"
+            android:layout_marginEnd="20dp"/>
+
+        <Button
+            android:id="@+id/btn_type_all"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="All Types"
+            android:textColor="@android:color/black"
+            android:textSize="12sp"
+            android:backgroundTint="#00A8E0"
+            android:layout_marginEnd="6dp"
+            android:nextFocusDown="@id/recycler_view"/>
+
+        <Button
+            android:id="@+id/btn_cat_movies"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Movies"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:backgroundTint="#555"
+            android:layout_marginEnd="6dp"
+            android:nextFocusDown="@id/recycler_view"/>
+
+        <Button
+            android:id="@+id/btn_cat_series"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Series"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:backgroundTint="#555"
+            android:nextFocusDown="@id/recycler_view"/>
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/tv_error"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FF4444"
+        android:visibility="gone"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:descendantFocusability="afterDescendants"
+        android:nextFocusUp="@id/btn_cat_all"/>
+
+</LinearLayout>
