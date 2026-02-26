@@ -73,10 +73,9 @@ The app reads its auth token from `/data/local/tmp/.device-token` at runtime. Ge
 
 An Android TV emulator (API 34) works for UI and API development. Widevine DRM playback requires a physical Fire TV device (L1 hardware security).
 
-## API documentation
-
-- [Watch Progress & Bookmarking APIs](docs/watch-progress-api.md) — UpdateStream, PES V2, WatchNext/Continue Watching
-
 ## Development tooling
 
 Agent instructions, build automation scripts, and API analysis are in the `dev/` folder. See `dev/README.md`.
+
+API specs for features not yet implemented:
+- [Watch Progress & Bookmarking APIs](dev/analysis/watch-progress-api.md) — UpdateStream, PES V2, WatchNext (to be implemented for resume/continue watching)
