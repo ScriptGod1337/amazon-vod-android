@@ -102,7 +102,12 @@ class MainActivity : AppCompatActivity() {
         btnLibShows = findViewById(R.id.btn_lib_shows)
         btnLibSort = findViewById(R.id.btn_lib_sort)
 
-        val tokenFile = File("/data/local/tmp/.device-token")
+        val tokenFile = LoginActivity.findTokenFile(this)
+            ?: run {
+                startActivity(Intent(this, LoginActivity::class.java))
+                finish()
+                return
+            }
         authService = AmazonAuthService(tokenFile)
         apiService = AmazonApiService(authService)
 

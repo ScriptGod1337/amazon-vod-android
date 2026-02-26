@@ -69,7 +69,18 @@
             android:imeOptions="actionDone"
             android:focusable="true"
             android:focusableInTouchMode="true"
-            android:layout_marginBottom="24dp"/>
+            android:layout_marginBottom="8dp"/>
+
+        <CheckBox
+            android:id="@+id/cb_show_password"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show password"
+            android:textColor="#AAAAAA"
+            android:textSize="13sp"
+            android:buttonTint="#00A8E0"
+            android:focusable="true"
+            android:layout_marginBottom="16dp"/>
 
         <!-- MFA field (hidden initially) -->
         <LinearLayout
@@ -82,7 +93,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="MFA Code"
+                android:text="Verification Code"
                 android:textColor="#AAAAAA"
                 android:textSize="14sp"
                 android:layout_marginBottom="4dp"/>

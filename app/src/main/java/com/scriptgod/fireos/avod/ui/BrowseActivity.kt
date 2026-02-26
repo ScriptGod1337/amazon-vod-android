@@ -49,7 +49,8 @@ class BrowseActivity : AppCompatActivity() {
         tvTitle = findViewById(R.id.tv_browse_title)
         tvSubtitle = findViewById(R.id.tv_browse_subtitle)
 
-        val tokenFile = File("/data/local/tmp/.device-token")
+        val tokenFile = LoginActivity.findTokenFile(this)
+            ?: run { finish(); return }
         val authService = AmazonAuthService(tokenFile)
         apiService = AmazonApiService(authService)
 

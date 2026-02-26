@@ -113,7 +113,8 @@ class PlayerActivity : AppCompatActivity() {
 
         resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
 
-        val tokenFile = File("/data/local/tmp/.device-token")
+        val tokenFile = LoginActivity.findTokenFile(this)
+            ?: run { finish(); return }
         authService = AmazonAuthService(tokenFile)
         apiService = AmazonApiService(authService)
 
