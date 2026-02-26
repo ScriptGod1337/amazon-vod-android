@@ -4,6 +4,8 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.26_2] - 2026-02-26
+
 ### Added
 - CHANGELOG.md
 - "This title requires purchase" message when content is not included in Prime
