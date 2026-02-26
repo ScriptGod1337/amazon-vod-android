@@ -36,13 +36,18 @@ jobs:
       - name: Generate version name
         id: version
         run: |
-          DATE=$(date -u +%Y.%m.%d)
-          # Count builds for this date (based on existing tags)
-          COUNT=1
-          while git tag -l "v${DATE}_${COUNT}" | grep -q .; do
-            COUNT=$((COUNT + 1))
-          done
-          VERSION="${DATE}_${COUNT}"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            # Use the tag name directly (strip leading "v")
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            # Auto-generate from date for PRs / manual runs
+            DATE=$(date -u +%Y.%m.%d)
+            COUNT=1
+            while git tag -l "v${DATE}_${COUNT}" | grep -q .; do
+              COUNT=$((COUNT + 1))
+            done
+            VERSION="${DATE}_${COUNT}"
+          fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
