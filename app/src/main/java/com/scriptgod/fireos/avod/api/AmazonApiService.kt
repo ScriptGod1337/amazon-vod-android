@@ -1,9 +1,9 @@
-package com.firetv.player.api
+package com.scriptgod.fireos.avod.api
 
 import android.util.Log
-import com.firetv.player.auth.AmazonAuthService
-import com.firetv.player.model.ContentItem
-import com.firetv.player.model.PlaybackInfo
+import com.scriptgod.fireos.avod.auth.AmazonAuthService
+import com.scriptgod.fireos.avod.model.ContentItem
+import com.scriptgod.fireos.avod.model.PlaybackInfo
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import okhttp3.MediaType.Companion.toMediaType

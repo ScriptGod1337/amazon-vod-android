@@ -1,4 +1,4 @@
-# Amazon Fire TV Player
+# ScriptGod's FireOS AmazonVOD
 
 Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content with Widevine L1 DRM.
 
@@ -18,7 +18,7 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 ## Architecture
 
 ```
-com.firetv.player
+com.scriptgod.fireos.avod
  +-- auth/
  |   +-- AmazonAuthService.kt      Token management, OkHttp interceptors (auth, headers, logging)
  +-- api/
@@ -62,7 +62,7 @@ adb shell chmod 644 /data/local/tmp/.device-token
 adb install -r app/build/outputs/apk/release/app-release.apk
 
 # Launch
-adb shell am start -n com.firetv.player/.ui.MainActivity
+adb shell am start -n com.scriptgod.fireos.avod/.ui.MainActivity
 ```
 
 ## Token

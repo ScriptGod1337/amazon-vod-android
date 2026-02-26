@@ -1,4 +1,4 @@
-package com.firetv.player.ui
+package com.scriptgod.fireos.avod.ui
 
 import android.view.LayoutInflater
 import android.view.View
@@ -9,8 +9,8 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
-import com.firetv.player.R
-import com.firetv.player.model.ContentItem
+import com.scriptgod.fireos.avod.R
+import com.scriptgod.fireos.avod.model.ContentItem
 
 class ContentAdapter(
     private val onItemClick: (ContentItem) -> Unit,

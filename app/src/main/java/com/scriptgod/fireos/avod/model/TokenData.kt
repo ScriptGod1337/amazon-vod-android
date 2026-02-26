@@ -1,4 +1,4 @@
-package com.firetv.player.model
+package com.scriptgod.fireos.avod.model
 
 import com.google.gson.annotations.SerializedName
 

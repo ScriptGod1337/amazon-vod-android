@@ -1,4 +1,4 @@
-package com.firetv.player.model
+package com.scriptgod.fireos.avod.model
 
 data class ContentItem(
     val asin: String,

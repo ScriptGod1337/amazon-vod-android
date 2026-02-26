@@ -1,11 +1,11 @@
-package com.firetv.player.drm
+package com.scriptgod.fireos.avod.drm
 
 import android.util.Base64
 import android.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.drm.ExoMediaDrm
 import androidx.media3.exoplayer.drm.MediaDrmCallback
-import com.firetv.player.auth.AmazonAuthService
+import com.scriptgod.fireos.avod.auth.AmazonAuthService
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import okhttp3.MediaType.Companion.toMediaType

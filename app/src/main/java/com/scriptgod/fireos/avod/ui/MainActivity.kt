@@ -1,4 +1,4 @@
-package com.firetv.player.ui
+package com.scriptgod.fireos.avod.ui
 
 import android.content.Intent
 import android.graphics.Color
@@ -16,13 +16,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.firetv.player.R
+import com.scriptgod.fireos.avod.R
 import android.widget.LinearLayout
-import com.firetv.player.api.AmazonApiService
-import com.firetv.player.api.AmazonApiService.LibraryFilter
-import com.firetv.player.api.AmazonApiService.LibrarySort
-import com.firetv.player.auth.AmazonAuthService
-import com.firetv.player.model.ContentItem
+import com.scriptgod.fireos.avod.api.AmazonApiService
+import com.scriptgod.fireos.avod.api.AmazonApiService.LibraryFilter
+import com.scriptgod.fireos.avod.api.AmazonApiService.LibrarySort
+import com.scriptgod.fireos.avod.auth.AmazonAuthService
+import com.scriptgod.fireos.avod.model.ContentItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

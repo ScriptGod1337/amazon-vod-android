@@ -1,4 +1,4 @@
-package com.firetv.player.ui
+package com.scriptgod.fireos.avod.ui
 
 import android.os.Bundle
 import android.util.Log
@@ -17,11 +17,11 @@ import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
 import androidx.media3.exoplayer.drm.DrmSessionManagerProvider
 import androidx.media3.exoplayer.drm.FrameworkMediaDrm
 import androidx.media3.ui.PlayerView
-import com.firetv.player.R
-import com.firetv.player.api.AmazonApiService
-import com.firetv.player.auth.AmazonAuthService
-import com.firetv.player.drm.AmazonLicenseService
-import com.firetv.player.model.PlaybackInfo
+import com.scriptgod.fireos.avod.R
+import com.scriptgod.fireos.avod.api.AmazonApiService
+import com.scriptgod.fireos.avod.auth.AmazonAuthService
+import com.scriptgod.fireos.avod.drm.AmazonLicenseService
+import com.scriptgod.fireos.avod.model.PlaybackInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

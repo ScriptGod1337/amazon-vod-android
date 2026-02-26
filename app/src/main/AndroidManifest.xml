@@ -12,7 +12,7 @@
         android:allowBackup="false"
         android:banner="@drawable/app_banner"
         android:icon="@drawable/app_banner"
-        android:label="Prime Video"
+        android:label="@string/app_name"
         android:theme="@style/Theme.FireTV"
         android:usesCleartextTraffic="false">
 

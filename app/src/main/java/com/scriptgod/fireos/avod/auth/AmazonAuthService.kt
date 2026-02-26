@@ -1,8 +1,8 @@
-package com.firetv.player.auth
+package com.scriptgod.fireos.avod.auth
 
 import android.util.Log
-import com.firetv.player.model.TokenData
-import com.firetv.player.model.TokenRefreshResponse
+import com.scriptgod.fireos.avod.model.TokenData
+import com.scriptgod.fireos.avod.model.TokenRefreshResponse
 import com.google.gson.Gson
 import okhttp3.FormBody
 import okhttp3.Interceptor

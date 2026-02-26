@@ -1,4 +1,4 @@
-package com.firetv.player.ui
+package com.scriptgod.fireos.avod.ui
 
 import android.content.Context
 import android.util.AttributeSet

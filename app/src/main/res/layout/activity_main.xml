@@ -13,7 +13,7 @@
         android:orientation="horizontal"
         android:layout_marginBottom="16dp">
 
-        <com.firetv.player.ui.DpadEditText
+        <com.scriptgod.fireos.avod.ui.DpadEditText
             android:id="@+id/et_search"
             android:layout_width="0dp"
             android:layout_height="48dp"

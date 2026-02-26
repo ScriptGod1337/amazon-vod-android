@@ -5,6 +5,7 @@ app/build/
 local.properties
 *.apk
 *.aab
+gradle/wrapper/gradle-wrapper.jar
 
 # Kotlin
 .kotlin/

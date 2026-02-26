@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.firetv.player"
+    namespace = "com.scriptgod.fireos.avod"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.firetv.player"
+        applicationId = "com.scriptgod.fireos.avod"
         minSdk = 25
         targetSdk = 34
         versionCode = 1
