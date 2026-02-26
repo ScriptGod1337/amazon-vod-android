@@ -62,7 +62,7 @@ jobs:
 
       - name: Build release APK
         run: |
-          ./gradlew assembleRelease \
+          gradle assembleRelease \
             -PversionNameOverride=${{ steps.version.outputs.version }} \
             -PversionCodeOverride=$(date -u +%Y%m%d)
 
