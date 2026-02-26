@@ -384,3 +384,58 @@ Implemented full watch progress tracking per `dev/analysis/watch-progress-api.md
 - Added CI/CD section with secrets table and versioning explanation
 - Updated deploy instructions with new LoginActivity entry point
 - Added authentication section explaining both in-app login and dev token workflows
+
+## Phase 17: PENDING — AI Code Review
+
+Full codebase review performed by an AI agent using `dev/REVIEW.md` as the checklist.
+
+### Scope
+- **Security audit**: Token handling, no credential logging, HTTPS-only, no hardcoded secrets
+- **Login flow correctness**: PKCE generation, client_id format, cookie handling, CVF/MFA detection, device registration
+- **DRM review**: Challenge wrapping, license unwrapping, provisioning flow
+- **API layer**: Error handling, retry logic, response parsing robustness
+- **Player lifecycle**: ExoPlayer setup/teardown, DRM session management, track selection, resume position
+- **UI/UX**: D-pad navigation, focus handling, RecyclerView diffing, image loading/recycling
+- **CI/CD**: Secret handling, build reproducibility, version monotonicity
+- **Code quality**: Kotlin idioms, coroutine usage, resource leaks, null safety
+
+### Deliverables
+- List of findings categorized as Critical / Warning / Info
+- Suggested fixes for any issues found
+- Confirmation that security checklist passes
+
+## Phase 18: PENDING — UI Redesign
+
+Redesign the app UI from functional prototype to a polished, modern streaming experience.
+
+### Goals
+- Transform the current flat grid + button layout into a visually appealing TV-first interface
+- Match the look and feel of modern streaming apps (hero banners, horizontal carousels, smooth animations)
+- Maintain full D-pad/remote navigation support
+
+### Planned changes
+
+#### Home screen
+- **Hero banner**: Large featured content banner at top with backdrop image, title, synopsis, and Play button
+- **Horizontal carousels**: Replace single grid with categorized rows ("Continue Watching", "Trending", "Watchlist", "Recently Added")
+- **Row headers**: Section titles with "See All" navigation
+- **Card redesign**: Rounded corners, shadow/elevation, focus scale animation, gradient overlay with title
+
+#### Navigation
+- **Side rail / top bar**: Replace flat button row with a collapsible side navigation rail or a fixed top nav bar with icons
+- **Smooth transitions**: Fade/slide animations between screens and content loads
+- **Loading states**: Skeleton placeholders instead of blank screen while content loads
+
+#### Series / Browse
+- **Detail page**: Full-width backdrop, season tabs, episode list with thumbnails and descriptions
+- **Parallax scrolling**: Backdrop image parallax on scroll
+
+#### Player
+- **Overlay controls**: Semi-transparent gradient overlay with transport controls, progress bar, and track info
+- **Thumbnail preview**: Show frame previews on seek (if available)
+
+#### General
+- **Color palette**: Refine from flat cyan to a gradient/themed palette
+- **Typography**: Consistent text hierarchy (title, subtitle, body, caption)
+- **Focus states**: Animated scale + glow border instead of simple highlight
+- **Shimmer loading**: Placeholder animations during API calls

@@ -56,6 +56,14 @@ com.scriptgod.fireos.avod
 |:---:|:---:|
 | ![Seasons](screenshots/07_series_drilldown.png) | ![Episodes](screenshots/08_episodes.png) |
 
+## Roadmap
+
+See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history and upcoming work.
+
+**Next up:**
+- **Phase 17** — AI Code Review (security audit, code quality, best practices)
+- **Phase 18** — UI Redesign (hero banners, horizontal carousels, animations, polished streaming UX)
+
 ## Requirements
 
 - Android SDK (API 34, build-tools 34.0.0)
@@ -107,6 +115,8 @@ The app auto-detects an existing token and skips the login screen. Generate the 
 ## CI/CD
 
 GitHub Actions builds APKs on version tags (`v*`), pull requests to `main`, and manual dispatch. Versioning uses the date format `YYYY.MM.DD_N` (e.g., `2026.02.26_1`).
+
+[View recent builds](https://github.com/ScriptGod1337/amazon-vod-android/actions) | [Download latest release](https://github.com/ScriptGod1337/amazon-vod-android/releases/latest)
 
 ### Required GitHub Secrets
 
