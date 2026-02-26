@@ -4,13 +4,16 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Play triangle -->
+    <!-- Play triangle left of center -->
     <path
         android:fillColor="#00A8E0"
-        android:pathData="M38,30 L78,54 L38,78 Z"/>
-    <!-- Subtle inner highlight -->
+        android:pathData="M40,47 L50,54 L40,61 Z"/>
+    <!-- AVOD text right of triangle, vertically centered -->
     <path
-        android:fillColor="#33BBEE"
-        android:pathData="M42,36 L72,54 L42,72 Z"
-        android:fillAlpha="0.3"/>
+        android:fillColor="#FFFFFF"
+        android:pathData="
+            M53,49 L55.5,59 L54,56 L57,56 Z
+            M58,49 L60.5,59 L63,49 Z
+            M65,49 A3.5,5 0 1,1 65,59 A3.5,5 0 1,1 65,49 Z
+            M73,49 L73,59 L75,59 A3.5,5 0 0,0 75,49 Z"/>
 </vector>
