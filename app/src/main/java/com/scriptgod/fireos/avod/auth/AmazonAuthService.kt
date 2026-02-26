@@ -23,7 +23,6 @@ class AmazonAuthService(private val tokenFile: File) {
 
     companion object {
         private const val TAG = "AmazonAuthService"
-        private const val REFRESH_ENDPOINT = "https://api.amazon.com/auth/token"
 
         // Device fingerprint — SHIELD Android TV (common.py:55-58, login.py:551-560)
         const val DEVICE_TYPE_ID = "A43PXU4ZN2AL1"
@@ -36,6 +35,9 @@ class AmazonAuthService(private val tokenFile: File) {
 
     private val gson = Gson()
     @Volatile private var tokenData: TokenData = loadToken()
+    @Volatile private var siDomain: String = "amazon.com"
+
+    fun setSiDomain(domain: String) { siDomain = domain }
 
     // Base HTTP client (no interceptor) used only for refresh calls
     private val refreshClient = OkHttpClient.Builder().build()
@@ -68,7 +70,7 @@ class AmazonAuthService(private val tokenFile: File) {
     private fun refresh() {
         val current = tokenData
         val reqId = UUID.randomUUID().toString().replace("-", "")
-        val domain = "api.amazon.com"
+        val domain = "api.$siDomain"
 
         val body = FormBody.Builder()
             .add("domain", "DeviceLegacy")
@@ -85,8 +87,9 @@ class AmazonAuthService(private val tokenFile: File) {
 
         // Refresh call uses a stripped-down header set (login.py:591-593):
         // no x-gasc-enabled, no X-Requested-With; add identity domain + requestid
+        val refreshUrl = "https://$domain/auth/token"
         val request = Request.Builder()
-            .url(REFRESH_ENDPOINT)
+            .url(refreshUrl)
             .post(body)
             .header("Accept-Charset", "utf-8")
             .header("User-Agent", USER_AGENT)

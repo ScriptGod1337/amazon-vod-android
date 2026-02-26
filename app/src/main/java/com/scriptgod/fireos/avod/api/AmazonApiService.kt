@@ -18,18 +18,21 @@ import okhttp3.RequestBody.Companion.toRequestBody
  */
 class AmazonApiService(private val authService: AmazonAuthService) {
 
+    data class TerritoryInfo(val atvUrl: String, val marketplaceId: String, val sidomain: String, val lang: String)
+
     companion object {
         private const val TAG = "AmazonApiService"
 
-        // Territory → (ATVUrl, MarketplaceID) mapping (api-map.md)
+        // Territory → TerritoryInfo mapping (api-map.md, Kodi login.py:55-78)
         private val TERRITORY_MAP = mapOf(
-            "ATVPDKIKX0DER" to ("https://atv-ps.amazon.com" to "ATVPDKIKX0DER"),           // US
-            "A1F83G8C2ARO7P" to ("https://atv-ps-eu.amazon.co.uk" to "A1F83G8C2ARO7P"),    // UK
-            "A1PA6795UKMFR9" to ("https://atv-ps-eu.amazon.de" to "A1PA6795UKMFR9"),       // DE
-            "A1VC38T7YXB528" to ("https://atv-ps-fe.amazon.co.jp" to "A1VC38T7YXB528"),    // JP
-            "ART4WZ8MWBX2Y"  to ("https://atv-ps.primevideo.com" to "ART4WZ8MWBX2Y"),      // PV US
-            "A3K6Y4MI8GDYMT" to ("https://atv-ps-eu.primevideo.com" to "A3K6Y4MI8GDYMT"),  // PV EU
-            "A15PK738MTQHSO" to ("https://atv-ps-fe.primevideo.com" to "A15PK738MTQHSO")   // PV FE
+            "A1PA6795UKMFR9" to TerritoryInfo("https://atv-ps-eu.amazon.de", "A1PA6795UKMFR9", "amazon.de", "de_DE"),           // DE
+            "A1F83G8C2ARO7P" to TerritoryInfo("https://atv-ps-eu.amazon.co.uk", "A1F83G8C2ARO7P", "amazon.co.uk", "en_US"),     // UK
+            "ATVPDKIKX0DER"  to TerritoryInfo("https://atv-ps.amazon.com", "ATVPDKIKX0DER", "amazon.com", "en_US"),             // US
+            "A1VC38T7YXB528" to TerritoryInfo("https://atv-ps-fe.amazon.co.jp", "A1VC38T7YXB528", "amazon.co.jp", "ja_JP"),     // JP
+            "A3K6Y4MI8GDYMT" to TerritoryInfo("https://atv-ps-eu.primevideo.com", "A3K6Y4MI8GDYMT", "amazon.com", "en_US"),     // PV EU
+            "A2MFUE2XK8ZSSY" to TerritoryInfo("https://atv-ps-eu.primevideo.com", "A2MFUE2XK8ZSSY", "amazon.com", "en_US"),     // PV EU Alt
+            "A15PK738MTQHSO" to TerritoryInfo("https://atv-ps-fe.primevideo.com", "A15PK738MTQHSO", "amazon.com", "en_US"),     // PV FE
+            "ART4WZ8MWBX2Y"  to TerritoryInfo("https://atv-ps.primevideo.com", "ART4WZ8MWBX2Y", "amazon.com", "en_US")          // PV US
         )
 
         // Fallback US defaults
@@ -61,48 +64,98 @@ class AmazonApiService(private val authService: AmazonAuthService) {
     // Territory-resolved values, populated by detectTerritory()
     @Volatile private var atvUrl: String = DEFAULT_ATV_URL
     @Volatile private var marketplaceId: String = DEFAULT_MARKETPLACE_ID
+    @Volatile private var sidomain: String = "amazon.com"
     @Volatile private var lang: String = "en_US"
     @Volatile private var territoryDetected: Boolean = false
 
     /**
-     * Detects the user's territory by calling GetAppStartupConfig (login.py:62-63).
-     * Sets atvUrl, marketplaceId and lang based on the response.
+     * Detects the user's territory by calling GetAppStartupConfig (login.py:55-78).
+     * 3-layer detection matching Kodi logic:
+     *  1. avMarketplace found in TERRITORY_MAP → use preset
+     *  2. avMarketplace + defaultVideoWebsite + homeRegion → construct dynamically
+     *  3. No marketplace but have defaultVideoWebsite → construct from URL alone
+     *  4. Fallback: keep US defaults
+     * Sets atvUrl, marketplaceId, sidomain and lang. Pushes sidomain to authService.
      * Must be called before any catalog/playback calls.
      */
     fun detectTerritory() {
         val did = authService.getDeviceId()
+        val locales = "da_DK,de_DE,en_US,en_GB,es_ES,fr_FR,it_IT,ja_JP,ko_KR," +
+                      "nl_NL,pl_PL,pt_BR,pt_PT,ru_RU,sv_SE,tr_TR,zh_CN,zh_TW"
         val url = "https://atv-ps.amazon.com/cdp/usage/v3/GetAppStartupConfig" +
-                  "?deviceTypeID=A28RQHJKHM2A2W" +
+                  "?deviceTypeID=${AmazonAuthService.DEVICE_TYPE_ID}" +
                   "&deviceID=$did" +
-                  "&firmware=1&version=1&supportedLocales=en_US&format=json"
+                  "&firmware=1&version=1&supportedLocales=$locales&format=json"
         try {
             val request = Request.Builder().url(url).get().build()
             val response = client.newCall(request).execute()
             val body = response.body?.string()
             if (response.isSuccessful && body != null) {
                 val json = gson.fromJson(body, JsonObject::class.java)
-                val marketplace = json?.getAsJsonObject("territoryConfig")
+                val territoryConfig = json?.getAsJsonObject("territoryConfig")
+                val customerConfig = json?.getAsJsonObject("customerConfig")
+                val marketplace = territoryConfig
                     ?.getAsJsonPrimitive("avMarketplace")?.asString
-                val uxLocale = json?.getAsJsonObject("customerConfig")
+                val defaultVideoWebsite = territoryConfig
+                    ?.getAsJsonPrimitive("defaultVideoWebsite")?.asString
+                // homeRegion is under customerConfig (Kodi login.py:70)
+                val homeRegion = customerConfig
+                    ?.getAsJsonPrimitive("homeRegion")?.asString
+                val uxLocale = customerConfig
                     ?.getAsJsonObject("locale")
                     ?.getAsJsonPrimitive("uxLocale")?.asString
 
                 if (!marketplace.isNullOrEmpty()) {
                     val territory = TERRITORY_MAP[marketplace]
                     if (territory != null) {
-                        atvUrl = territory.first
-                        marketplaceId = territory.second
+                        // Layer 1: known marketplace in map
+                        atvUrl = territory.atvUrl
+                        marketplaceId = territory.marketplaceId
+                        sidomain = territory.sidomain
+                        lang = territory.lang
+                    } else if (!defaultVideoWebsite.isNullOrEmpty()) {
+                        // Layer 2: unknown marketplace but have website + region
+                        val dynamic = buildDynamicTerritory(defaultVideoWebsite, homeRegion)
+                        atvUrl = dynamic.atvUrl
+                        marketplaceId = marketplace
+                        sidomain = dynamic.sidomain
                     }
+                } else if (!defaultVideoWebsite.isNullOrEmpty()) {
+                    // Layer 3: no marketplace but have website
+                    val dynamic = buildDynamicTerritory(defaultVideoWebsite, homeRegion)
+                    atvUrl = dynamic.atvUrl
+                    sidomain = dynamic.sidomain
                 }
-                if (!uxLocale.isNullOrEmpty()) {
+
+                // Override lang from uxLocale if it looks like a valid locale (xx_XX)
+                if (!uxLocale.isNullOrEmpty() && uxLocale.matches(Regex("[a-z]{2}_[A-Z]{2}"))) {
                     lang = uxLocale
                 }
             }
         } catch (e: Exception) {
-            Log.i(TAG, "Territory detection failed: ${e.message}")
+            Log.w(TAG, "Territory detection failed: ${e.message}")
         }
-        Log.i(TAG, "Territory: atvUrl=$atvUrl marketplace=$marketplaceId lang=$lang")
+        authService.setSiDomain(sidomain)
+        Log.w(TAG, "Territory: atvUrl=$atvUrl marketplace=$marketplaceId sidomain=$sidomain lang=$lang")
         territoryDetected = true
+    }
+
+    /**
+     * Constructs territory info dynamically from defaultVideoWebsite and homeRegion.
+     * Mirrors Kodi login.py:69-75.
+     */
+    private fun buildDynamicTerritory(defaultVideoWebsite: String, homeRegion: String?): TerritoryInfo {
+        val regionSuffix = when (homeRegion) {
+            "EU" -> "-eu"
+            "FE" -> "-fe"
+            else -> ""
+        }
+        val atvUrl = defaultVideoWebsite
+            .replace("www.", "")
+            .replace("://", "://atv-ps$regionSuffix.")
+        val host = android.net.Uri.parse(defaultVideoWebsite).host ?: "amazon.com"
+        val sd = if (host.contains("primevideo")) "amazon.com" else host.removePrefix("www.")
+        return TerritoryInfo(atvUrl = atvUrl, marketplaceId = "", sidomain = sd, lang = "en_US")
     }
 
     private fun deviceId() = authService.getDeviceId()

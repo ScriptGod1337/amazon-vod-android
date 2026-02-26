@@ -84,9 +84,21 @@ Implement token refresh as an OkHttp `Interceptor`:
 
 ---
 
-## Decision 7: Region detection — hardcode US initially
+## Decision 7: Region detection — dynamic territory detection
 
-The plugin detects region via `GetAppStartupConfig` or user settings. For v1, we'll default to US (`atv-ps.amazon.com`, marketplace `ATVPDKIKX0DER`) and can add region selection later.
+~~Initially hardcoded to US.~~ Now fully dynamic via `GetAppStartupConfig` with 3-layer detection matching Kodi `login.py:55-78`:
+
+1. **Layer 1**: `avMarketplace` found in `TERRITORY_MAP` → use preset (atvUrl, marketplaceId, sidomain, lang)
+2. **Layer 2**: Unknown marketplace + `defaultVideoWebsite` + `homeRegion` → construct URL dynamically
+3. **Layer 3**: No marketplace but have `defaultVideoWebsite` → construct from URL alone
+4. **Fallback**: US defaults (`atv-ps.amazon.com`, `ATVPDKIKX0DER`)
+
+Key findings during implementation:
+- `deviceTypeID` in the request MUST match the registered device type (our `A43PXU4ZN2AL1`, not Kodi's `A28RQHJKHM2A2W`)
+- `supportedLocales` must include the user's locale (send 18 locales like Kodi)
+- `homeRegion` is under `customerConfig`, not `territoryConfig`
+- `uxLocale` can return error strings — validate with regex before using
+- Token refresh must use territory-specific `api.{sidomain}` (e.g. `api.amazon.de` for DE)
 
 The `.device-token` `device_id` is used as the `deviceID` parameter and as `device_serial` in device data.
 

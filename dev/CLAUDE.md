@@ -29,7 +29,8 @@ val token = Gson().fromJson(File("/home/vscode/amazon-vod-android/.device-token"
 ```
 
 ### Token Refresh
-On 401: POST to `https://api.amazon.com/auth/token` with `refresh_token` + device data.
+On 401: POST to `https://api.{sidomain}/auth/token` with `refresh_token` + device data.
+`sidomain` is set per territory (e.g. `amazon.de` for DE, `amazon.com` for US) by `AmazonApiService.detectTerritory()`.
 Update `.device-token` with the new token. Implement as an OkHttp interceptor in `AmazonAuthService.kt`.
 
 ### Security Rules

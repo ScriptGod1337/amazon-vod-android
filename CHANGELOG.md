@@ -4,6 +4,20 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.27_1] - 2026-02-27
+
+### Fixed
+- Territory/region detection: DE account now correctly resolves to `atv-ps-eu.amazon.de` / `A1PA6795UKMFR9` / `amazon.de` instead of falling back to US defaults
+- Token refresh endpoint: now uses territory-specific `api.{sidomain}` (e.g. `api.amazon.de` for DE) instead of hardcoded `api.amazon.com`
+- GetAppStartupConfig device type ID mismatch: was sending Kodi's `A28RQHJKHM2A2W` instead of our registered `A43PXU4ZN2AL1`
+- Locale detection: `supportedLocales` now sends 18 locales (matching Kodi) instead of only `en_US`
+- Invalid `uxLocale` values (e.g. `LDS_ILLEGAL_ARGUMENT`) rejected with regex validation; falls back to territory default
+
+### Changed
+- `TERRITORY_MAP` expanded with `TerritoryInfo` data class (adds `sidomain` and `lang` per territory)
+- Added `A2MFUE2XK8ZSSY` (PV EU Alt) territory entry
+- Territory detection now uses 3-layer fallback matching Kodi `login.py:55-78`
+
 ## [2026.02.26_2] - 2026-02-26
 
 ### Added

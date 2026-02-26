@@ -294,8 +294,11 @@ Used by `atv_api.py` — alternative data source (data_source=2).
 ## Territory / Startup Config
 
 ### GetAppStartupConfig
-- **URL**: `https://atv-ps.amazon.com/cdp/usage/v3/GetAppStartupConfig?deviceTypeID=A28RQHJKHM2A2W&deviceID={deviceid}&firmware=1&version=1&supportedLocales={loc}&format=json`
-- **Response**: `{ "territoryConfig": { "defaultVideoWebsite": ..., "avMarketplace": ... }, "customerConfig": { "homeRegion": ..., "locale": { "uxLocale": ... } } }`
+- **URL**: `https://atv-ps.amazon.com/cdp/usage/v3/GetAppStartupConfig?deviceTypeID={deviceTypeID}&deviceID={deviceid}&firmware=1&version=1&supportedLocales={loc}&format=json`
+- **IMPORTANT**: `deviceTypeID` must match the registered device type (e.g. `A43PXU4ZN2AL1`), not Kodi's default `A28RQHJKHM2A2W`. Mismatch returns `CDP.Authorization: Device type id in request does not match.`
+- **`supportedLocales`**: Must include the user's locale. Send all 18: `da_DK,de_DE,en_US,en_GB,es_ES,fr_FR,it_IT,ja_JP,ko_KR,nl_NL,pl_PL,pt_BR,pt_PT,ru_RU,sv_SE,tr_TR,zh_CN,zh_TW`
+- **Response**: `{ "territoryConfig": { "defaultVideoWebsite": ..., "avMarketplace": ..., "primeSignupBaseUrl": ... }, "customerConfig": { "homeRegion": ..., "locale": { "uxLocale": ... } }, "deviceConfig": {...}, ... }`
+- **Note**: `homeRegion` is under `customerConfig`, NOT `territoryConfig`. `uxLocale` may return error strings (e.g. `LDS_ILLEGAL_ARGUMENT`) — validate before using.
 - Source: `login.py:62-63`
 
 ---

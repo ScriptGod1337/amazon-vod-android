@@ -196,9 +196,7 @@ Also fixed `ContentAdapter` to clear images on recycled ViewHolders.
 - `parseCatalogBrowseItems()` — parses Kodi-style catalog response format
 
 ### Territory detection note
-- `detectTerritory()` returns `marketplace=null` on current device — GetAppStartupConfig response (174 bytes) doesn't contain `territoryConfig.avMarketplace`
-- App falls back to US defaults (`atv-ps.amazon.com` / `ATVPDKIKX0DER`) — works for mobile/switchblade API endpoints which are global
-- Catalog Browse endpoint (`/cdp/catalog/Browse`) returns 404 on global US URL — requires territory-specific URL (e.g. `atv-ps-eu.amazon.de`)
+- Territory detection now fully functional — see "Territory Detection Fix" section below
 - Freevee (Amazon's free ad-supported service) is not available in all territories (e.g. DE)
 
 ### UI changes
@@ -384,6 +382,34 @@ Implemented full watch progress tracking per `dev/analysis/watch-progress-api.md
 - Added CI/CD section with secrets table and versioning explanation
 - Updated deploy instructions with new LoginActivity entry point
 - Added authentication section explaining both in-app login and dev token workflows
+
+## Territory Detection Fix (post-Phase 16)
+
+### Root causes found and fixed
+1. **`deviceTypeID` mismatch**: `GetAppStartupConfig` was using Kodi's default `A28RQHJKHM2A2W` while our device was registered with `A43PXU4ZN2AL1`. API returned `CDP.Authorization: Device type id in request does not match.`
+2. **`supportedLocales=en_US`** — only sent one locale; Kodi sends 18 locales. Amazon requires the user's locale to be listed to return territory info
+3. **No `sidomain`** — token refresh was hardcoded to `api.amazon.com`. DE accounts need `api.amazon.de`
+4. **`homeRegion` parsed from wrong parent** — was looking in `territoryConfig`, actually under `customerConfig`
+5. **Invalid `uxLocale`** — API can return error strings like `LDS_ILLEGAL_ARGUMENT` instead of a valid locale
+
+### Changes
+- `AmazonApiService.kt`:
+  - `TerritoryInfo` data class replaces `Pair<String, String>` — adds `sidomain` and `lang`
+  - `TERRITORY_MAP` expanded with 8 entries including `A2MFUE2XK8ZSSY` (PV EU Alt)
+  - `detectTerritory()` rewritten with 3-layer detection (Kodi `login.py:55-78`)
+  - `buildDynamicTerritory()` helper for unknown marketplaces (constructs URL from `defaultVideoWebsite` + `homeRegion`)
+  - `supportedLocales` sends 18 locales
+  - `uxLocale` validated with regex `[a-z]{2}_[A-Z]{2}`
+  - `deviceTypeID` uses `AmazonAuthService.DEVICE_TYPE_ID` instead of hardcoded Kodi value
+- `AmazonAuthService.kt`:
+  - Removed hardcoded `REFRESH_ENDPOINT` constant
+  - Added `siDomain` field + `setSiDomain()` setter
+  - Token refresh uses `https://api.$siDomain/auth/token`
+
+### Verified on Fire TV
+- Territory: `atvUrl=https://atv-ps-eu.amazon.de marketplace=A1PA6795UKMFR9 sidomain=amazon.de lang=de_DE`
+- Catalog: 20 watchlist + 74 home items loaded from DE endpoint with `de_DE` locale
+- No errors in logcat
 
 ## Phase 17: PENDING — AI Code Review
 
