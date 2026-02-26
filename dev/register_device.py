@@ -11,8 +11,10 @@ from hashlib import sha256
 from base64 import urlsafe_b64encode, b64encode, b16encode
 from urllib.parse import urlencode, urlparse, parse_qs
 
-TOKEN_PATH = '/home/vscode/amazon-vod-android/.device-token'
-ENV_PATH   = '/home/vscode/amazon-vod-android/.env'
+SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
+TOKEN_PATH  = os.path.join(PROJECT_DIR, '.device-token')
+ENV_PATH    = os.path.join(PROJECT_DIR, '.env')
 DTID       = 'A43PXU4ZN2AL1'
 HEADERS    = {
     'Accept-Charset':    'utf-8',
