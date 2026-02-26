@@ -286,3 +286,37 @@ Implemented full watch progress tracking per `dev/analysis/watch-progress-api.md
 - **UpdateStream PAUSE**: fires on HOME key press, `SUCCESS` (t=16s)
 - **UpdateStream STOP**: fires from `onStop()` lifecycle, `SUCCESS` (t=16s)
 - Server-directed interval (`statusCallbackIntervalSeconds: 180`) parsed and applied
+
+## Phase 14: COMPLETE — Audio & Subtitle Track Selection
+
+### Implementation
+
+#### API changes (`AmazonApiService.kt`)
+- `extractSubtitleTracks()` — parses `subtitleUrls[]` and `forcedNarratives[]` from GetPlaybackResources response
+- Returns list of `SubtitleTrack(url, languageCode, type)` where type is "regular", "sdh", or "forced"
+- Already requesting `desiredResources=PlaybackUrls,SubtitleUrls,ForcedNarratives` and `audioTrackId=all`
+
+#### Model changes (`ContentItem.kt`)
+- Added `SubtitleTrack` data class (url, languageCode, type)
+- Added `subtitleTracks` field to `PlaybackInfo`
+
+#### Player changes (`PlayerActivity.kt`)
+- `DefaultTrackSelector` — replaces ExoPlayer's implicit selector; enables programmatic track overrides
+- External subtitle tracks added as `MediaItem.SubtitleConfiguration` (TTML format) on the `MediaItem`
+- Audio tracks automatically available from DASH manifest (ExoPlayer parses MPD Adaptation Sets)
+- `showTrackSelectionDialog(trackType)` — builds AlertDialog listing available audio or text tracks
+  - Audio: shows language + channel layout (5.1, Stereo, etc.)
+  - Subtitles: shows language + type label (SDH, Forced); includes "Off" option
+  - Applies selection via `TrackSelectionOverride` on `trackSelectionParameters`
+- Audio/Subtitle buttons shown at top-right when playback starts (STATE_READY)
+
+#### Layout changes (`activity_player.xml`)
+- Added `track_buttons` LinearLayout at top-right with `btn_audio` and `btn_subtitle` buttons
+- Semi-transparent black background, white text, D-pad focusable
+
+### Verified
+- Build: `assembleRelease` SUCCESS
+- Deploy: APK installed on Fire TV Stick 4K
+- Video plays with Widevine L1 (audio codec active ~640kbps)
+- Track buttons visible during playback, D-pad navigable
+- No crashes on button press or track selection

@@ -4,6 +4,7 @@ import android.util.Log
 import com.scriptgod.fireos.avod.auth.AmazonAuthService
 import com.scriptgod.fireos.avod.model.ContentItem
 import com.scriptgod.fireos.avod.model.PlaybackInfo
+import com.scriptgod.fireos.avod.model.SubtitleTrack
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import okhttp3.MediaType.Companion.toMediaType
@@ -639,9 +640,9 @@ class AmazonApiService(private val authService: AmazonAuthService) {
             ?: throw RuntimeException("Could not extract manifest URL from response")
 
         val licenseUrl = buildLicenseUrl(asin, did)
+        val subtitles = extractSubtitleTracks(body)
 
-        Log.d(TAG, "Playback info fetched for ASIN: $asin")
-        return PlaybackInfo(manifestUrl = manifestUrl, licenseUrl = licenseUrl, asin = asin)
+        return PlaybackInfo(manifestUrl = manifestUrl, licenseUrl = licenseUrl, asin = asin, subtitleTracks = subtitles)
     }
 
     /**
@@ -675,6 +676,33 @@ class AmazonApiService(private val authService: AmazonAuthService) {
         } catch (e: Exception) {
             Log.e(TAG, "Error extracting manifest URL", e)
             null
+        }
+    }
+
+    private fun extractSubtitleTracks(json: String): List<SubtitleTrack> {
+        return try {
+            val root = gson.fromJson(json, JsonObject::class.java)
+            val tracks = mutableListOf<SubtitleTrack>()
+            // subtitleUrls array
+            root.getAsJsonArray("subtitleUrls")?.forEach { elem ->
+                val obj = elem.asJsonObject
+                val url = obj.get("url")?.asString ?: return@forEach
+                val lang = obj.get("languageCode")?.asString ?: "und"
+                val type = obj.get("type")?.asString ?: "regular"
+                tracks.add(SubtitleTrack(url, lang, type))
+            }
+            // forcedNarratives array
+            root.getAsJsonArray("forcedNarratives")?.forEach { elem ->
+                val obj = elem.asJsonObject
+                val url = obj.get("url")?.asString ?: return@forEach
+                val lang = obj.get("languageCode")?.asString ?: "und"
+                tracks.add(SubtitleTrack(url, lang, "forced"))
+            }
+            Log.w(TAG, "Extracted ${tracks.size} subtitle tracks")
+            tracks
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to extract subtitles", e)
+            emptyList()
         }
     }
 

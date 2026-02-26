@@ -14,8 +14,15 @@ data class ContentItem(
     val isInWatchlist: Boolean = false
 )
 
+data class SubtitleTrack(
+    val url: String,
+    val languageCode: String,
+    val type: String // "sdh", "regular", "forced"
+)
+
 data class PlaybackInfo(
     val manifestUrl: String,
     val licenseUrl: String,
-    val asin: String
+    val asin: String,
+    val subtitleTracks: List<SubtitleTrack> = emptyList()
 )

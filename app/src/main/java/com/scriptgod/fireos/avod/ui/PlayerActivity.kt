@@ -1,15 +1,21 @@
 package com.scriptgod.fireos.avod.ui
 
+import android.app.AlertDialog
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
@@ -17,6 +23,7 @@ import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
 import androidx.media3.exoplayer.drm.DrmSessionManagerProvider
 import androidx.media3.exoplayer.drm.FrameworkMediaDrm
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
 import com.scriptgod.fireos.avod.R
 import com.scriptgod.fireos.avod.api.AmazonApiService
@@ -52,8 +59,12 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var playerView: PlayerView
     private lateinit var progressBar: ProgressBar
     private lateinit var tvError: TextView
+    private lateinit var trackButtons: LinearLayout
+    private lateinit var btnAudio: Button
+    private lateinit var btnSubtitle: Button
 
     private var player: ExoPlayer? = null
+    private var trackSelector: DefaultTrackSelector? = null
     private lateinit var authService: AmazonAuthService
     private lateinit var apiService: AmazonApiService
 
@@ -89,6 +100,12 @@ class PlayerActivity : AppCompatActivity() {
         playerView = findViewById(R.id.player_view)
         progressBar = findViewById(R.id.progress_bar)
         tvError = findViewById(R.id.tv_error)
+        trackButtons = findViewById(R.id.track_buttons)
+        btnAudio = findViewById(R.id.btn_audio)
+        btnSubtitle = findViewById(R.id.btn_subtitle)
+
+        btnAudio.setOnClickListener { showTrackSelectionDialog(C.TRACK_TYPE_AUDIO) }
+        btnSubtitle.setOnClickListener { showTrackSelectionDialog(C.TRACK_TYPE_TEXT) }
 
         val asin = intent.getStringExtra(EXTRA_ASIN)
             ?: run { showError("No ASIN provided"); return }
@@ -143,13 +160,32 @@ class PlayerActivity : AppCompatActivity() {
             authService.buildAuthenticatedClient()
         )
 
+        // Build MediaItem with external subtitle tracks from API
+        val subtitleConfigs = info.subtitleTracks.map { sub ->
+            MediaItem.SubtitleConfiguration.Builder(android.net.Uri.parse(sub.url))
+                .setMimeType(MimeTypes.APPLICATION_TTML)
+                .setLanguage(sub.languageCode)
+                .setLabel(buildSubtitleLabel(sub.languageCode, sub.type))
+                .setSelectionFlags(if (sub.type == "forced") C.SELECTION_FLAG_FORCED else 0)
+                .build()
+        }
+
+        val mediaItem = MediaItem.Builder()
+            .setUri(info.manifestUrl)
+            .setSubtitleConfigurations(subtitleConfigs)
+            .build()
+
         val mediaSource = DashMediaSource.Factory(dataSourceFactory)
             .setDrmSessionManagerProvider(drmSessionManager.asDrmSessionManagerProvider())
-            .createMediaSource(MediaItem.fromUri(info.manifestUrl))
+            .createMediaSource(mediaItem)
+
+        val selector = DefaultTrackSelector(this)
+        trackSelector = selector
 
         val resumeMs = resumePrefs.getLong(currentAsin, 0L)
 
         player = ExoPlayer.Builder(this, renderersFactory)
+            .setTrackSelector(selector)
             .build()
             .also { exoPlayer ->
                 playerView.player = exoPlayer
@@ -166,12 +202,22 @@ class PlayerActivity : AppCompatActivity() {
         progressBar.visibility = View.GONE
     }
 
+    private fun buildSubtitleLabel(langCode: String, type: String): String {
+        val lang = java.util.Locale.forLanguageTag(langCode).displayLanguage
+        return when (type) {
+            "sdh" -> "$lang [SDH]"
+            "forced" -> "$lang [Forced]"
+            else -> lang
+        }
+    }
+
     private val playerListener = object : Player.Listener {
         override fun onPlaybackStateChanged(state: Int) {
             when (state) {
                 Player.STATE_BUFFERING -> progressBar.visibility = View.VISIBLE
                 Player.STATE_READY -> {
                     progressBar.visibility = View.GONE
+                    trackButtons.visibility = View.VISIBLE
                     if (!streamReportingStarted) {
                         streamReportingStarted = true
                         startStreamReporting()
@@ -279,6 +325,81 @@ class PlayerActivity : AppCompatActivity() {
         } else {
             resumePrefs.edit().putLong(currentAsin, posMs).apply()
         }
+    }
+
+    private fun showTrackSelectionDialog(trackType: Int) {
+        val p = player ?: return
+        val tracks = p.currentTracks
+        val typeName = if (trackType == C.TRACK_TYPE_AUDIO) "Audio" else "Subtitles"
+
+        val groups = tracks.groups.filter { it.type == trackType }
+        if (groups.isEmpty()) {
+            android.widget.Toast.makeText(this, "No $typeName tracks available", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val labels = mutableListOf<String>()
+        val trackIndices = mutableListOf<Pair<Int, Int>>() // groupIndex, trackIndex
+        var selectedIndex = -1
+
+        // "Off" option for subtitles
+        if (trackType == C.TRACK_TYPE_TEXT) {
+            labels.add("Off")
+            trackIndices.add(Pair(-1, -1))
+            // Check if all text tracks are disabled
+            val anySelected = groups.any { it.isSelected }
+            if (!anySelected) selectedIndex = 0
+        }
+
+        for ((gi, group) in groups.withIndex()) {
+            for (ti in 0 until group.length) {
+                val format = group.getTrackFormat(ti)
+                val lang = format.language?.let { java.util.Locale.forLanguageTag(it).displayLanguage } ?: "Unknown"
+                val label = format.label
+                val name = when {
+                    label != null -> label
+                    trackType == C.TRACK_TYPE_AUDIO -> {
+                        val channels = when (format.channelCount) {
+                            6 -> "5.1"
+                            8 -> "7.1"
+                            2 -> "Stereo"
+                            1 -> "Mono"
+                            else -> "${format.channelCount}ch"
+                        }
+                        "$lang ($channels)"
+                    }
+                    else -> lang
+                }
+                labels.add(name)
+                trackIndices.add(Pair(gi, ti))
+                if (group.isTrackSelected(ti)) {
+                    selectedIndex = labels.size - 1
+                }
+            }
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(typeName)
+            .setSingleChoiceItems(labels.toTypedArray(), selectedIndex) { dialog, which ->
+                val (gi, ti) = trackIndices[which]
+                if (gi == -1) {
+                    // "Off" — disable all text tracks
+                    val builder = p.trackSelectionParameters.buildUpon()
+                    builder.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                    p.trackSelectionParameters = builder.build()
+                } else {
+                    // Enable track type and select specific track
+                    val group = groups[gi]
+                    val builder = p.trackSelectionParameters.buildUpon()
+                    builder.setTrackTypeDisabled(trackType, false)
+                    builder.setOverrideForType(
+                        TrackSelectionOverride(group.mediaTrackGroup, ti)
+                    )
+                    p.trackSelectionParameters = builder.build()
+                }
+                dialog.dismiss()
+            }
+            .show()
     }
 
     private fun showError(message: String) {
