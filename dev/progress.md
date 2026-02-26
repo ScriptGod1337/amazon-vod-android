@@ -320,3 +320,67 @@ Implemented full watch progress tracking per `dev/analysis/watch-progress-api.md
 - Video plays with Widevine L1 (audio codec active ~640kbps)
 - Track buttons visible during playback, D-pad navigable
 - No crashes on button press or track selection
+
+## Phase 15: COMPLETE — In-App Login
+
+### Implementation
+
+#### LoginActivity.kt (new)
+- Full Amazon OAuth login flow: email + password → MFA (optional) → device registration → token save
+- **PKCE challenge**: SHA-256 code verifier/challenge for OAuth security
+- **OAuth sign-in**: POST to `api.amazon.com/ap/signin` with OpenID 2.0 + OAuth 2.0 extension params
+- **MFA support**: Detects when Amazon returns MFA challenge; shows OTP input field; resubmits with `otpCode`/`mfaResponse`
+- **Device registration**: POST to `api.amazon.com/auth/register` with authorization_code + code_verifier + device fingerprint
+- **Token persistence**: Saves TokenData (access_token, refresh_token, device_id, expires_at) to `/data/local/tmp/.device-token`
+- **Auto-skip**: If valid token file already exists, skips login and launches MainActivity directly
+- **Skip button**: "Use Device Token" fallback for development/debugging when .device-token is pre-pushed via ADB
+
+#### Layout (`activity_login.xml`)
+- Email field (textEmailAddress input)
+- Password field (textPassword input)
+- MFA container (hidden initially, shown when 2FA required)
+- Sign In button (blue #00A8E0)
+- Status text (errors in red, info in blue, success in green)
+- Progress spinner during network calls
+- "Use Device Token" skip button (visible only when token file exists)
+
+#### AndroidManifest changes
+- `LoginActivity` is now the LAUNCHER activity (entry point)
+- `MainActivity` changed to `exported="false"` (launched from LoginActivity after auth)
+- Login flow: LoginActivity → (check token / perform login) → MainActivity
+
+#### Compatibility
+- `.device-token` file continues to work exactly as before for debugging
+- Existing devices with pre-pushed tokens skip login automatically
+- New devices show login screen, register via OAuth, then proceed to browse
+
+## Phase 16: COMPLETE — GitHub Actions CI/CD
+
+### Implementation
+
+#### GitHub Actions workflow (`.github/workflows/build.yml`)
+- **Triggers**: push to main, pull requests to main, manual workflow_dispatch
+- **Build environment**: Ubuntu latest, JDK 17 (Temurin), Android SDK via android-actions/setup-android
+- **Date-based versioning**: `YYYY.MM.DD_N` format (e.g., `2026.02.26_1`), auto-increments N per day based on existing git tags
+- **Signing**: Decodes `release.keystore` from GitHub Secret (base64), configures signing via environment variables
+- **APK output**: Renamed to `FireOS-AVOD-{version}.apk` and uploaded as artifact (90-day retention)
+- **Auto-release**: On push to main, creates a GitHub Release with tag `v{version}` and attaches signed APK
+
+#### Build config changes (`app/build.gradle.kts`)
+- `versionName` reads from `-PversionNameOverride` Gradle property (default: `1.0-dev`)
+- `versionCode` reads from `-PversionCodeOverride` Gradle property (default: `1`)
+- Signing config reads keystore path/passwords from environment variables with local fallbacks
+- Local development continues to work unchanged (env vars fall back to hardcoded dev values)
+
+#### Required GitHub Secrets
+- `RELEASE_KEYSTORE_BASE64` — base64-encoded release.keystore
+- `RELEASE_STORE_PASSWORD` — keystore password
+- `RELEASE_KEY_ALIAS` — key alias
+- `RELEASE_KEY_PASSWORD` — key password
+
+### README updated
+- Added all new features (login, track selection, watch progress, resume, CI/CD)
+- Updated architecture diagram with LoginActivity
+- Added CI/CD section with secrets table and versioning explanation
+- Updated deploy instructions with new LoginActivity entry point
+- Added authentication section explaining both in-app login and dev token workflows

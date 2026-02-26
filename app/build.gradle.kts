@@ -11,16 +11,17 @@ android {
         applicationId = "com.scriptgod.fireos.avod"
         minSdk = 25
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = (findProperty("versionCodeOverride") as? String)?.toIntOrNull() ?: 1
+        versionName = (findProperty("versionNameOverride") as? String) ?: "1.0-dev"
     }
 
     signingConfigs {
         create("release") {
-            storeFile = file("/home/vscode/amazon-vod-android/release.keystore")
-            storePassword = "firetv_store"
-            keyAlias = "firetv"
-            keyPassword = "firetv_store"
+            storeFile = file(System.getenv("RELEASE_STORE_FILE")
+                ?: "/home/vscode/amazon-vod-android/release.keystore")
+            storePassword = System.getenv("RELEASE_STORE_PASSWORD") ?: "firetv_store"
+            keyAlias = System.getenv("RELEASE_KEY_ALIAS") ?: "firetv"
+            keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: "firetv_store"
         }
     }
 
