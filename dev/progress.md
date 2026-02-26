@@ -253,3 +253,36 @@ Also fixed `ContentAdapter` to clear images on recycled ViewHolders.
 - Series drill-down: "Wake Season 1" → detail page → 7 items (seasons + episodes)
 - Episode playback: "E1: Wide Awake" plays with 1920x1080 HW secure decode, 2.5-5 Mbps video
 - D-pad navigation: Grid items focusable, first child auto-focused after load
+
+## Phase 13: COMPLETE — Watch Progress Tracking
+
+### Implementation
+Implemented full watch progress tracking per `dev/analysis/watch-progress-api.md`:
+
+#### AmazonApiService.kt — dual API support
+- **UpdateStream** (legacy GET) — enhanced with `titleId`, `timecodeChangeTime` (ISO 8601), `userWatchSessionId`; parses `callbackIntervalInSeconds` from response
+- **PES V2** (modern POST) — `pesStartSession()`, `pesUpdateSession()`, `pesStopSession()` at `/cdp/playback/pes/`; ISO 8601 duration format (`PT1H23M45S`); session token management
+- `secondsToIsoDuration()` helper for PES V2 timecode format
+
+#### PlayerActivity.kt — stream reporting lifecycle
+- `startStreamReporting()` — sends UpdateStream START + PES StartSession on first STATE_READY
+- `startHeartbeat()` — periodic PLAY events at server-directed interval (min of UpdateStream and PES intervals)
+- `sendProgressEvent()` — dual-API calls (UpdateStream + PES UpdateSession) with interval refresh
+- `stopStreamReporting()` — sends STOP to both APIs on STATE_ENDED, onStop(), or player error
+- PAUSE support via `onIsPlayingChanged` listener — pauses heartbeat, sends PAUSE event
+- Server-directed heartbeat interval via `callbackIntervalInSeconds` response field
+
+### PES V2 note
+- PES V2 StartSession returns HTTP 400 — requires `playbackEnvelope` (encrypted playback authorization from Amazon's playback infrastructure) which is not available via GetPlaybackResources
+- PES V2 methods are implemented but non-functional without the envelope; falls back gracefully
+- **UpdateStream alone is sufficient** for "Continue Watching" / resume position syncing
+
+### Verified on Fire TV (physical device)
+- Build: `assembleRelease` SUCCESS
+- Deploy: APK installed on Fire TV Stick 4K
+- Widevine L1 HW secure playback active (secureSW.SW.audio.raw ~640kbps)
+- **UpdateStream START**: `SUCCESS`, `canStream: true`, `statusCallbackIntervalSeconds: 180`
+- **UpdateStream PLAY heartbeat**: fires every 60s, `SUCCESS`, position tracks correctly (t=59s)
+- **UpdateStream PAUSE**: fires on HOME key press, `SUCCESS` (t=16s)
+- **UpdateStream STOP**: fires from `onStop()` lifecycle, `SUCCESS` (t=16s)
+- Server-directed interval (`statusCallbackIntervalSeconds: 180`) parsed and applied

@@ -1,5 +1,6 @@
 package com.scriptgod.fireos.avod.ui
 
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -57,8 +58,14 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var apiService: AmazonApiService
 
     private val scope = CoroutineScope(Dispatchers.Main + Job())
-    private var updateStreamJob: Job? = null
+    private var heartbeatJob: Job? = null
     private var currentAsin: String = ""
+    private var watchSessionId: String = UUID.randomUUID().toString()
+    private var pesSessionToken: String = ""
+    private var heartbeatIntervalMs: Long = 60_000
+    private var streamReportingStarted: Boolean = false
+    private var resumeSeeked: Boolean = false
+    private lateinit var resumePrefs: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,6 +94,8 @@ class PlayerActivity : AppCompatActivity() {
             ?: run { showError("No ASIN provided"); return }
         currentAsin = asin
 
+        resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
+
         val tokenFile = File("/data/local/tmp/.device-token")
         authService = AmazonAuthService(tokenFile)
         apiService = AmazonApiService(authService)
@@ -109,7 +118,7 @@ class PlayerActivity : AppCompatActivity() {
                 }
                 setupPlayer(info)
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to fetch playback info", e)
+                Log.e(TAG, "Failed to fetch playback info: ${e.message}", e)
                 showError("Playback error: ${e.message}")
             }
         }
@@ -138,6 +147,8 @@ class PlayerActivity : AppCompatActivity() {
             .setDrmSessionManagerProvider(drmSessionManager.asDrmSessionManagerProvider())
             .createMediaSource(MediaItem.fromUri(info.manifestUrl))
 
+        val resumeMs = resumePrefs.getLong(currentAsin, 0L)
+
         player = ExoPlayer.Builder(this, renderersFactory)
             .build()
             .also { exoPlayer ->
@@ -145,6 +156,10 @@ class PlayerActivity : AppCompatActivity() {
                 exoPlayer.setMediaSource(mediaSource)
                 exoPlayer.addListener(playerListener)
                 exoPlayer.prepare()
+                if (resumeMs > 10_000) {
+                    exoPlayer.seekTo(resumeMs)
+                    resumeSeeked = true
+                }
                 exoPlayer.playWhenReady = true
             }
 
@@ -157,41 +172,112 @@ class PlayerActivity : AppCompatActivity() {
                 Player.STATE_BUFFERING -> progressBar.visibility = View.VISIBLE
                 Player.STATE_READY -> {
                     progressBar.visibility = View.GONE
-                    // Start stream reporting on first ready
-                    startStreamReporting()
+                    if (!streamReportingStarted) {
+                        streamReportingStarted = true
+                        startStreamReporting()
+                    }
                 }
                 Player.STATE_ENDED -> {
-                    sendUpdateStream("STOP")
-                    updateStreamJob?.cancel()
+                    stopStreamReporting()
+                    // Finished watching — clear resume position
+                    resumePrefs.edit().remove(currentAsin).apply()
                 }
                 Player.STATE_IDLE -> {}
+            }
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            if (!streamReportingStarted) return
+            if (isPlaying) {
+                // Resumed from pause — restart heartbeat
+                startHeartbeat()
+            } else if (player?.playbackState == Player.STATE_READY) {
+                // Paused (not buffering/ended)
+                sendProgressEvent("PAUSE")
+                heartbeatJob?.cancel()
             }
         }
 
         override fun onPlayerError(error: PlaybackException) {
             Log.e(TAG, "Player error: ${error.errorCodeName}", error)
             showError("Playback error: ${error.errorCodeName}\n${error.message}")
-            sendUpdateStream("STOP")
+            stopStreamReporting()
         }
     }
 
     private fun startStreamReporting() {
-        sendUpdateStream("START")
-        updateStreamJob?.cancel()
-        // Periodic PLAY heartbeat every 60 seconds (playback.py:664)
-        updateStreamJob = scope.launch {
-            delay(60_000)
+        val positionSecs = currentPositionSecs()
+        scope.launch(Dispatchers.IO) {
+            // UpdateStream START
+            val interval = apiService.updateStream(currentAsin, "START", positionSecs, watchSessionId)
+            heartbeatIntervalMs = interval * 1000L
+
+            // PES V2 StartSession
+            val (token, pesInterval) = apiService.pesStartSession(currentAsin, positionSecs)
+            pesSessionToken = token
+            // Use the shorter of the two intervals
+            if (pesInterval > 0) {
+                heartbeatIntervalMs = minOf(heartbeatIntervalMs, pesInterval * 1000L)
+            }
+            Log.w(TAG, "Stream reporting started, heartbeat=${heartbeatIntervalMs}ms")
+        }
+        startHeartbeat()
+    }
+
+    private fun startHeartbeat() {
+        heartbeatJob?.cancel()
+        heartbeatJob = scope.launch {
+            delay(heartbeatIntervalMs)
             while (true) {
-                sendUpdateStream("PLAY")
-                delay(60_000)
+                sendProgressEvent("PLAY")
+                delay(heartbeatIntervalMs)
             }
         }
     }
 
-    private fun sendUpdateStream(event: String) {
-        val positionSecs = (player?.currentPosition ?: 0) / 1000
+    private fun sendProgressEvent(event: String) {
+        val positionSecs = currentPositionSecs()
         scope.launch(Dispatchers.IO) {
-            apiService.updateStream(currentAsin, event, positionSecs)
+            // UpdateStream
+            val interval = apiService.updateStream(currentAsin, event, positionSecs, watchSessionId)
+            val newIntervalMs = interval * 1000L
+            if (newIntervalMs != heartbeatIntervalMs) {
+                heartbeatIntervalMs = newIntervalMs
+                Log.w(TAG, "Heartbeat interval updated to ${heartbeatIntervalMs}ms")
+            }
+
+            // PES V2 UpdateSession
+            if (pesSessionToken.isNotEmpty()) {
+                val (token, _) = apiService.pesUpdateSession(pesSessionToken, event, positionSecs, currentAsin)
+                if (token.isNotEmpty()) pesSessionToken = token
+            }
+        }
+    }
+
+    private fun stopStreamReporting() {
+        heartbeatJob?.cancel()
+        val positionSecs = currentPositionSecs()
+        scope.launch(Dispatchers.IO) {
+            apiService.updateStream(currentAsin, "STOP", positionSecs, watchSessionId)
+            if (pesSessionToken.isNotEmpty()) {
+                apiService.pesStopSession(pesSessionToken, positionSecs, currentAsin)
+                pesSessionToken = ""
+            }
+        }
+    }
+
+    private fun currentPositionSecs(): Long = (player?.currentPosition ?: 0) / 1000
+
+    private fun saveResumePosition() {
+        val p = player ?: return
+        val posMs = p.currentPosition
+        val durMs = p.duration
+        if (posMs < 10_000) return // too early, don't save
+        if (durMs > 0 && posMs >= durMs * 9 / 10) {
+            // >= 90% watched — clear (fully watched)
+            resumePrefs.edit().remove(currentAsin).apply()
+        } else {
+            resumePrefs.edit().putLong(currentAsin, posMs).apply()
         }
     }
 
@@ -223,8 +309,11 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        sendUpdateStream("STOP")
-        updateStreamJob?.cancel()
+        saveResumePosition()
+        if (streamReportingStarted) {
+            stopStreamReporting()
+            streamReportingStarted = false
+        }
         player?.stop()
     }
 

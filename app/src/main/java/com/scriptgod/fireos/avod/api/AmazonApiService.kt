@@ -756,27 +756,143 @@ class AmazonApiService(private val authService: AmazonAuthService) {
         }
     }
 
+    // --- Watch Progress Tracking (dev/analysis/watch-progress-api.md) ---
+
     /**
-     * Reports playback state to Amazon (decisions.md Decision 10, playback.py:740-748).
-     * Events: START, PLAY, STOP
+     * UpdateStream (legacy bookmarking) — GET /cdp/usage/UpdateStream
+     * Returns server-directed callback interval in seconds, or default 60.
      */
-    fun updateStream(asin: String, event: String, timecodeSeconds: Long) {
+    fun updateStream(
+        asin: String,
+        event: String,
+        timecodeSeconds: Long,
+        sessionId: String = ""
+    ): Int {
         val did = deviceId()
+        val now = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
+            .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+            .format(java.util.Date())
         val url = "$atvUrl/cdp/usage/UpdateStream" +
-                  "?asin=$asin" +
+                  "?titleId=$asin" +
                   "&event=$event" +
                   "&timecode=$timecodeSeconds" +
+                  "&timecodeChangeTime=${java.net.URLEncoder.encode(now, "UTF-8")}" +
+                  (if (sessionId.isNotEmpty()) "&userWatchSessionId=$sessionId" else "") +
                   "&deviceTypeID=${AmazonAuthService.DEVICE_TYPE_ID}" +
                   "&firmware=1" +
                   "&deviceID=$did" +
                   "&marketplaceID=$marketplaceId" +
                   "&format=json"
-        try {
+        return try {
             val request = Request.Builder().url(url).get().build()
-            client.newCall(request).execute().close()
-            Log.d(TAG, "UpdateStream $event sent for $asin")
+            val response = client.newCall(request).execute()
+            val body = response.body?.string()
+            response.close()
+            Log.w(TAG, "UpdateStream $event t=${timecodeSeconds}s for $asin")
+            // Parse callbackIntervalInSeconds from response
+            if (body != null) {
+                try {
+                    val json = gson.fromJson(body, JsonObject::class.java)
+                    json?.get("callbackIntervalInSeconds")?.asInt ?: 60
+                } catch (_: Exception) { 60 }
+            } else 60
         } catch (e: Exception) {
             Log.w(TAG, "UpdateStream failed (non-fatal)", e)
+            60
+        }
+    }
+
+    /**
+     * PES V2 StartSession — POST /cdp/playback/pes/StartSession
+     * Returns (sessionToken, callbackIntervalInSeconds).
+     */
+    fun pesStartSession(asin: String, timecodeSeconds: Long): Pair<String, Int> {
+        val duration = secondsToIsoDuration(timecodeSeconds)
+        val payload = JsonObject().apply {
+            add("streamInfo", JsonObject().apply {
+                addProperty("eventType", "START")
+                add("vodProgressInfo", JsonObject().apply {
+                    addProperty("currentProgressTime", duration)
+                    addProperty("timeFormat", "ISO8601DURATION")
+                })
+            })
+        }
+        return pesRequest("/cdp/playback/pes/StartSession", payload, asin)
+    }
+
+    /**
+     * PES V2 UpdateSession — POST /cdp/playback/pes/UpdateSession
+     * Returns (sessionToken, callbackIntervalInSeconds).
+     */
+    fun pesUpdateSession(sessionToken: String, event: String, timecodeSeconds: Long, asin: String): Pair<String, Int> {
+        val duration = secondsToIsoDuration(timecodeSeconds)
+        val payload = JsonObject().apply {
+            addProperty("sessionToken", sessionToken)
+            add("streamInfo", JsonObject().apply {
+                addProperty("eventType", event)
+                add("vodProgressInfo", JsonObject().apply {
+                    addProperty("currentProgressTime", duration)
+                    addProperty("timeFormat", "ISO8601DURATION")
+                })
+            })
+        }
+        return pesRequest("/cdp/playback/pes/UpdateSession", payload, asin)
+    }
+
+    /**
+     * PES V2 StopSession — POST /cdp/playback/pes/StopSession
+     */
+    fun pesStopSession(sessionToken: String, timecodeSeconds: Long, asin: String) {
+        val duration = secondsToIsoDuration(timecodeSeconds)
+        val payload = JsonObject().apply {
+            addProperty("sessionToken", sessionToken)
+            add("streamInfo", JsonObject().apply {
+                addProperty("eventType", "STOP")
+                add("vodProgressInfo", JsonObject().apply {
+                    addProperty("currentProgressTime", duration)
+                    addProperty("timeFormat", "ISO8601DURATION")
+                })
+            })
+        }
+        pesRequest("/cdp/playback/pes/StopSession", payload, asin)
+    }
+
+    private fun pesRequest(path: String, payload: JsonObject, asin: String): Pair<String, Int> {
+        val url = "$atvUrl$path"
+        val body = payload.toString().toRequestBody("application/json".toMediaType())
+        val request = Request.Builder()
+            .url(url)
+            .post(body)
+            .build()
+        return try {
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string()
+            response.close()
+            Log.w(TAG, "PES ${path.substringAfterLast('/')} for $asin: HTTP ${response.code}")
+            if (responseBody != null && response.isSuccessful) {
+                val json = gson.fromJson(responseBody, JsonObject::class.java)
+                val token = json?.get("sessionToken")?.asString ?: ""
+                val interval = json?.get("callbackIntervalInSeconds")?.asInt ?: 60
+                Pair(token, interval)
+            } else {
+                Pair("", 60)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "PES request failed (non-fatal): $path", e)
+            Pair("", 60)
+        }
+    }
+
+    /** Converts seconds to ISO 8601 duration, e.g. 3661 -> "PT1H1M1S" */
+    private fun secondsToIsoDuration(seconds: Long): String {
+        val h = seconds / 3600
+        val m = (seconds % 3600) / 60
+        val s = seconds % 60
+        return buildString {
+            append("PT")
+            if (h > 0) append("${h}H")
+            if (m > 0) append("${m}M")
+            append("${s}S")
         }
     }
 }
