@@ -420,9 +420,19 @@ Implemented full watch progress tracking per `dev/analysis/watch-progress-api.md
 
 ### Watchlist pagination
 - **Problem**: `getWatchlistPage()` only loaded `watchlistInitial` (first ~20 items)
-- **Fix**: Added `getWatchlistPage(startIndex)` with `watchlistNext` transform (matching library pagination pattern)
+- **Root cause**: Used `getDataByTransform` (JS transforms) which only supports initial page; `watchlistNext/v3.js` returns HTTP 500; `watchlistInitial` ignores `startIndex` param causing infinite loop
+- **Fix**: Switched to `getDataByJvmTransform` (Kotlin switchblade transforms) matching Prime Video 3.0.438 decompilation:
+  - Initial: `dv-android/watchlist/initial/v1.kt` with `pageType=watchlist&pageId=Watchlist`
+  - Next: `dv-android/watchlist/next/v1.kt` with `serviceToken` + `pageSize=20` from `paginationModel.parameters`
+- Added `extractPaginationParams()` helper that replays all pagination keys from previous response
+- Added root-level `collectionItemList` parsing in `parseContentItems()` (next-page response format)
 - Added `loadWatchlistInitial()` / `loadWatchlistNextPage()` in `MainActivity` with infinite scroll
-- `getWatchlistAsins()` now loads all pages for complete watchlist indicators on startup
+- `getWatchlistAsins()` now loads all pages with stall detection and max-page safety limit
+- **Verified**: 113 watchlist items loaded across 6 pages (20+20+20+20+20+13), no duplicates
+
+### Duplicate content items
+- **Problem**: Home page showed duplicate movies from overlapping collections
+- **Fix**: Added `distinctBy { it.asin }` in `parseContentItems()` — reduced home from 74 to 57 items
 
 ### Title sorting
 - **Problem**: All content pages displayed in API return order (unsorted)

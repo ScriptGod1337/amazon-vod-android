@@ -363,21 +363,88 @@ class AmazonApiService(private val authService: AmazonAuthService) {
     }
 
     fun getWatchlistPage(): List<ContentItem> {
-        return getWatchlistPage(0)
+        return getWatchlistPageWithPagination("").first
     }
 
     /**
-     * Paginated watchlist fetch.
-     * startIndex=0 → watchlistInitial, startIndex>0 → watchlistNext.
+     * Paginated watchlist fetch using switchblade JVM transforms (watchlist-api-prime-3.0.438.2347.md).
+     * Initial: /cdp/switchblade/android/getDataByJvmTransform/v1/dv-android/watchlist/initial/v1.kt
+     * Next:    /cdp/switchblade/android/getDataByJvmTransform/v1/dv-android/watchlist/next/v1.kt
+     * Returns Pair(items, nextPageParams) where nextPageParams is empty when no more pages.
      */
-    fun getWatchlistPage(startIndex: Int): List<ContentItem> {
-        val transform = if (startIndex > 0)
-            "dv-android/watchlist/watchlistNext/v3.js"
-        else
-            "dv-android/watchlist/watchlistInitial/v3.js"
-        val params = baseParams() + "&appendTapsData=true" +
-            (if (startIndex > 0) "&startIndex=$startIndex" else "")
-        return getMobilePage(transform, params)
+    fun getWatchlistPageWithPagination(extraParams: String = ""): Pair<List<ContentItem>, String> {
+        val isNextPage = extraParams.isNotEmpty()
+        val transform = if (isNextPage) "dv-android/watchlist/next/v1.kt"
+                         else "dv-android/watchlist/initial/v1.kt"
+
+        val params = if (isNextPage) {
+            // Next page: base params + pagination params + pageSize
+            baseParams() + "&pageSize=20" + extraParams
+        } else {
+            // Initial page: base params + watchlist context
+            baseParams() + "&pageType=watchlist&pageId=Watchlist"
+        }
+
+        val url = "$atvUrl/cdp/switchblade/android/getDataByJvmTransform/v1/$transform?$params"
+
+        val request = Request.Builder().url(url).get().build()
+        val response = client.newCall(request).execute()
+        val body = response.body?.string() ?: return Pair(emptyList(), "")
+
+        if (!response.isSuccessful) {
+            Log.w(TAG, "Watchlist request failed: HTTP ${response.code}, body=${body.take(300)}")
+            return Pair(emptyList(), "")
+        }
+
+        val items = parseContentItems(body)
+
+        // Extract paginationModel for next page
+        val nextParams = extractPaginationParams(body)
+
+        return Pair(items, nextParams)
+    }
+
+    /**
+     * Extracts pagination parameters from a switchblade response.
+     * paginationModel can be at root level, inside titles[0], or inside resource.
+     */
+    private fun extractPaginationParams(json: String): String {
+        return try {
+            val root = gson.fromJson(json, JsonObject::class.java)
+                ?.let { it.getAsJsonObject("resource") ?: it }
+
+            // Safe getter for paginationModel — getAsJsonObject throws on JsonNull
+            fun JsonObject.safePaginationModel(): JsonObject? {
+                val el = get("paginationModel") ?: return null
+                return if (el.isJsonObject) el.asJsonObject else null
+            }
+
+            // Try paginationModel at root, then inside titles[0]
+            val pgModel = root?.safePaginationModel()
+                ?: root?.getAsJsonArray("titles")
+                    ?.takeIf { it.size() > 0 }
+                    ?.get(0)?.asJsonObject
+                    ?.safePaginationModel()
+
+            if (pgModel == null) return ""
+
+            val pgParams = pgModel.getAsJsonObject("parameters") ?: return ""
+
+            // Replay all pagination parameters as query string
+            val sb = StringBuilder()
+            for ((key, value) in pgParams.entrySet()) {
+                if (value.isJsonPrimitive) {
+                    sb.append("&${android.net.Uri.encode(key)}=${android.net.Uri.encode(value.asString)}")
+                }
+            }
+            val result = sb.toString()
+
+            // Must have serviceToken to be a valid next page
+            if (!result.contains("serviceToken")) "" else result
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to extract pagination params", e)
+            ""
+        }
     }
 
     fun getLibraryPage(): List<ContentItem> {
@@ -515,6 +582,12 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                 }
             }
 
+            // Switchblade watchlist/next: root-level collectionItemList
+            val rootCollectionList = root?.getAsJsonArray("collectionItemList")
+            if (rootCollectionList != null) {
+                allItemLists.add(rootCollectionList)
+            }
+
             // Also try dataWidgetModels as a flat item list
             val dataWidgets = root?.getAsJsonArray("dataWidgetModels")
             if (dataWidgets != null) {
@@ -647,8 +720,9 @@ class AmazonApiService(private val authService: AmazonAuthService) {
         } catch (e: Exception) {
             Log.i(TAG, "Error parsing catalog response", e)
         }
-        Log.i(TAG, "Parsed ${items.size} content items")
-        return items
+        val unique = items.distinctBy { it.asin }
+        Log.w(TAG, "Parsed ${unique.size} content items (${items.size - unique.size} duplicates removed)")
+        return unique
     }
 
     /**
@@ -846,21 +920,28 @@ class AmazonApiService(private val authService: AmazonAuthService) {
     }
 
     /**
-     * Fetches all ASINs in the user's watchlist (paginated).
+     * Fetches all ASINs in the user's watchlist (paginated via paginationModel).
      * Used to mark items with isInWatchlist when displaying other pages.
      */
     fun getWatchlistAsins(): Set<String> {
         return try {
             val allAsins = mutableSetOf<String>()
-            var startIndex = 0
-            while (true) {
-                val page = getWatchlistPage(startIndex)
-                if (page.isEmpty()) break
+            var nextParams = ""
+            var pageCount = 0
+            val maxPages = 25 // safety limit: 25 * 20 = 500 items max
+            do {
+                val (page, newNextParams) = getWatchlistPageWithPagination(nextParams)
+                val prevSize = allAsins.size
                 allAsins.addAll(page.map { it.asin })
-                if (page.size < 20) break
-                startIndex += page.size
-            }
-            Log.w(TAG, "Watchlist ASINs loaded: ${allAsins.size} total")
+                pageCount++
+                // Stop if no new items were added (server returning same page)
+                if (allAsins.size == prevSize && page.isNotEmpty()) {
+                    Log.w(TAG, "Watchlist pagination stalled at page $pageCount, stopping")
+                    break
+                }
+                nextParams = newNextParams
+            } while (nextParams.isNotEmpty() && pageCount < maxPages)
+            Log.w(TAG, "Watchlist ASINs loaded: ${allAsins.size} total in $pageCount pages")
             allAsins
         } catch (e: Exception) {
             Log.w(TAG, "Failed to fetch watchlist ASINs", e)

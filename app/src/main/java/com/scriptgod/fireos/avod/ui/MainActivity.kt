@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
     private var watchlistAsins: MutableSet<String> = mutableSetOf()
 
     // Watchlist pagination state
-    private var watchlistNextIndex: Int = 0
+    private var watchlistNextParams: String = ""
     private var watchlistLoading: Boolean = false
 
     // Phase 10: Library state
@@ -191,7 +191,7 @@ class MainActivity : AppCompatActivity() {
                 if (lastVisible < totalItems - 10) return
                 when (currentNavPage) {
                     "library" -> if (!libraryLoading && libraryNextIndex > 0) loadLibraryNextPage()
-                    "watchlist" -> if (!watchlistLoading && watchlistNextIndex > 0) loadWatchlistNextPage()
+                    "watchlist" -> if (!watchlistLoading && watchlistNextParams.isNotEmpty()) loadWatchlistNextPage()
                 }
             }
         })
@@ -383,47 +383,41 @@ class MainActivity : AppCompatActivity() {
     // --- Watchlist pagination ---
 
     private fun loadWatchlistInitial() {
-        watchlistNextIndex = 0
+        watchlistNextParams = ""
         showLoading()
         lifecycleScope.launch {
             try {
-                val items = withContext(Dispatchers.IO) {
-                    apiService.getWatchlistPage(0)
+                val (items, nextParams) = withContext(Dispatchers.IO) {
+                    apiService.getWatchlistPageWithPagination("")
                 }
-                watchlistNextIndex = if (items.size >= 20) items.size else 0
-                val sorted = items.sortedBy { it.title.lowercase() }
-                showItems(sorted)
+                watchlistNextParams = nextParams
+                showItems(items)
                 if (items.isEmpty()) {
                     showError("Your watchlist is empty.")
                 }
             } catch (e: Exception) {
-                Log.i(TAG, "Error loading watchlist", e)
+                Log.w(TAG, "Error loading watchlist", e)
                 showError("Error: ${e.message}")
             }
         }
     }
 
     private fun loadWatchlistNextPage() {
-        if (watchlistLoading || watchlistNextIndex <= 0) return
+        if (watchlistLoading || watchlistNextParams.isEmpty()) return
         watchlistLoading = true
-        Log.i(TAG, "Loading watchlist next page at index $watchlistNextIndex")
         lifecycleScope.launch {
             try {
-                val newItems = withContext(Dispatchers.IO) {
-                    apiService.getWatchlistPage(watchlistNextIndex)
+                val (newItems, nextParams) = withContext(Dispatchers.IO) {
+                    apiService.getWatchlistPageWithPagination(watchlistNextParams)
                 }
+                watchlistNextParams = nextParams
                 if (newItems.isNotEmpty()) {
-                    watchlistNextIndex += newItems.size
                     val markedItems = newItems.map { it.copy(isInWatchlist = watchlistAsins.contains(it.asin)) }
                     val combined = (adapter.currentList + markedItems).sortedBy { it.title.lowercase() }
                     adapter.submitList(combined)
-                    Log.i(TAG, "Watchlist appended ${newItems.size} items, total=${combined.size}")
-                } else {
-                    watchlistNextIndex = 0
-                    Log.i(TAG, "Watchlist pagination complete — no more items")
                 }
             } catch (e: Exception) {
-                Log.i(TAG, "Error loading watchlist next page", e)
+                Log.w(TAG, "Error loading watchlist next page", e)
             } finally {
                 watchlistLoading = false
             }

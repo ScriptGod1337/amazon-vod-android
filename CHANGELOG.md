@@ -4,12 +4,22 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.27_3] - 2026-02-27
+
+### Fixed
+- Watchlist showing only 20 items: switched from `getDataByTransform` (JS) to `getDataByJvmTransform` (Kotlin) switchblade endpoints matching Prime Video 3.0.438 decompilation
+- Watchlist pagination infinite loop: `watchlistInitial` ignored `startIndex`; now uses `watchlist/next/v1.kt` with `serviceToken` from `paginationModel.parameters`
+- Duplicate movies in content grid: added `distinctBy { asin }` deduplication in `parseContentItems()`
+- Pagination `ClassCastException` on `JsonNull` in `paginationModel`
+
+### Changed
+- Watchlist endpoints: `initial/v1.kt` + `next/v1.kt` via switchblade (was `watchlistInitial/v3.js` via mobile transform)
+- Root-level `collectionItemList` now parsed (switchblade next-page response format)
+
 ## [2026.02.27_2] - 2026-02-27
 
 ### Fixed
 - Subtitles always showing "no tracks available": external subtitle tracks now loaded via `MergingMediaSource` instead of `SubtitleConfiguration` (which `DashMediaSource` ignores)
-- Watchlist only showing first page: added pagination with `watchlistNext` transform and infinite scroll
-- Watchlist ASIN indicators incomplete: startup fetch now loads all watchlist pages
 
 ### Changed
 - All content pages (home, search, watchlist) now sorted alphabetically by title
