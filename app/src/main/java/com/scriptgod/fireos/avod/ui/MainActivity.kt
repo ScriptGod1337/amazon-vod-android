@@ -69,10 +69,6 @@ class MainActivity : AppCompatActivity() {
     private var currentNavPage: String = "home"
     private var watchlistAsins: MutableSet<String> = mutableSetOf()
 
-    // Watchlist pagination state
-    private var watchlistNextParams: String = ""
-    private var watchlistLoading: Boolean = false
-
     // Phase 10: Library state
     private var libraryFilter: LibraryFilter = LibraryFilter.ALL
     private var librarySort: LibrarySort = LibrarySort.DATE_ADDED
@@ -191,7 +187,6 @@ class MainActivity : AppCompatActivity() {
                 if (lastVisible < totalItems - 10) return
                 when (currentNavPage) {
                     "library" -> if (!libraryLoading && libraryNextIndex > 0) loadLibraryNextPage()
-                    "watchlist" -> if (!watchlistLoading && watchlistNextParams.isNotEmpty()) loadWatchlistNextPage()
                 }
             }
         })
@@ -266,7 +261,7 @@ class MainActivity : AppCompatActivity() {
                 val items = withContext(Dispatchers.IO) {
                     val raw = if (query.isNotEmpty()) apiService.getSearchPage(query)
                               else when (currentNavPage) {
-                                  "watchlist" -> apiService.getWatchlistPage()
+                                  "watchlist" -> apiService.getAllWatchlistItems()
                                   else -> apiService.getHomePage()
                               }
                     applyFilters(raw)
@@ -383,14 +378,12 @@ class MainActivity : AppCompatActivity() {
     // --- Watchlist pagination ---
 
     private fun loadWatchlistInitial() {
-        watchlistNextParams = ""
         showLoading()
         lifecycleScope.launch {
             try {
-                val (items, nextParams) = withContext(Dispatchers.IO) {
-                    apiService.getWatchlistPageWithPagination("")
+                val items = withContext(Dispatchers.IO) {
+                    apiService.getAllWatchlistItems()
                 }
-                watchlistNextParams = nextParams
                 showItems(items)
                 if (items.isEmpty()) {
                     showError("Your watchlist is empty.")
@@ -398,28 +391,6 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.w(TAG, "Error loading watchlist", e)
                 showError("Error: ${e.message}")
-            }
-        }
-    }
-
-    private fun loadWatchlistNextPage() {
-        if (watchlistLoading || watchlistNextParams.isEmpty()) return
-        watchlistLoading = true
-        lifecycleScope.launch {
-            try {
-                val (newItems, nextParams) = withContext(Dispatchers.IO) {
-                    apiService.getWatchlistPageWithPagination(watchlistNextParams)
-                }
-                watchlistNextParams = nextParams
-                if (newItems.isNotEmpty()) {
-                    val markedItems = newItems.map { it.copy(isInWatchlist = watchlistAsins.contains(it.asin)) }
-                    val combined = (adapter.currentList + markedItems).sortedBy { it.title.lowercase() }
-                    adapter.submitList(combined)
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Error loading watchlist next page", e)
-            } finally {
-                watchlistLoading = false
             }
         }
     }
@@ -500,7 +471,12 @@ class MainActivity : AppCompatActivity() {
                 }
                 if (newItems.isNotEmpty()) {
                     libraryNextIndex += newItems.size
-                    val markedItems = newItems.map { it.copy(isInWatchlist = watchlistAsins.contains(it.asin)) }
+                    val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
+                    val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
+                    val markedItems = newItems.map { it.copy(
+                        isInWatchlist = watchlistAsins.contains(it.asin),
+                        watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs
+                    ) }
                     val combined = adapter.currentList + markedItems
                     adapter.submitList(combined)
                     Log.i(TAG, "Library appended ${newItems.size} items, total=${combined.size}")
@@ -585,9 +561,14 @@ class MainActivity : AppCompatActivity() {
             tvError.visibility = View.VISIBLE
         } else {
             tvError.visibility = View.GONE
-            // Mark items that are in the user's watchlist, sort by title
+            // Merge watchlist flags and local watch progress into items
+            val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
+            val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
             val markedItems = items
-                .map { it.copy(isInWatchlist = watchlistAsins.contains(it.asin)) }
+                .map { it.copy(
+                    isInWatchlist = watchlistAsins.contains(it.asin),
+                    watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs
+                ) }
                 .sortedBy { it.title.lowercase() }
             adapter.submitList(markedItems)
             // After items are submitted, request focus on first grid item for D-pad navigation
@@ -610,6 +591,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Refresh watch progress on cards when returning from player
+        val currentList = adapter.currentList
+        if (currentList.isNotEmpty()) {
+            val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
+            val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
+            val updated = currentList.map { it.copy(watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs) }
+            adapter.submitList(updated)
+        }
         // Re-focus grid when returning from another activity
         recyclerView.post {
             val firstChild = recyclerView.getChildAt(0)

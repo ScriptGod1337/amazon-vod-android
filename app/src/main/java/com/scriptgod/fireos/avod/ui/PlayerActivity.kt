@@ -203,7 +203,7 @@ class PlayerActivity : AppCompatActivity() {
                 exoPlayer.setMediaSource(mediaSource)
                 exoPlayer.addListener(playerListener)
                 exoPlayer.prepare()
-                if (resumeMs > 10_000) {
+                if (resumeMs > 10_000 && resumeMs > 0) {
                     exoPlayer.seekTo(resumeMs)
                     resumeSeeked = true
                 }
@@ -236,8 +236,8 @@ class PlayerActivity : AppCompatActivity() {
                 }
                 Player.STATE_ENDED -> {
                     stopStreamReporting()
-                    // Finished watching — clear resume position
-                    resumePrefs.edit().remove(currentAsin).apply()
+                    // Finished watching — save sentinel so cards show "fully watched"
+                    resumePrefs.edit().putLong(currentAsin, -1L).apply()
                 }
                 Player.STATE_IDLE -> {}
             }
@@ -331,8 +331,8 @@ class PlayerActivity : AppCompatActivity() {
         val durMs = p.duration
         if (posMs < 10_000) return // too early, don't save
         if (durMs > 0 && posMs >= durMs * 9 / 10) {
-            // >= 90% watched — clear (fully watched)
-            resumePrefs.edit().remove(currentAsin).apply()
+            // >= 90% watched — save sentinel so cards show "fully watched"
+            resumePrefs.edit().putLong(currentAsin, -1L).apply()
         } else {
             resumePrefs.edit().putLong(currentAsin, posMs).apply()
         }
@@ -421,6 +421,7 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        saveResumePosition()
         player?.pause()
     }
 

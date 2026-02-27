@@ -43,10 +43,10 @@ jobs:
             # Auto-generate from date for PRs / manual runs
             DATE=$(date -u +%Y.%m.%d)
             COUNT=1
-            while git tag -l "v${DATE}_${COUNT}" | grep -q .; do
+            while git tag -l "v${DATE}.${COUNT}" | grep -q .; do
               COUNT=$((COUNT + 1))
             done
-            VERSION="${DATE}_${COUNT}"
+            VERSION="${DATE}.${COUNT}"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"

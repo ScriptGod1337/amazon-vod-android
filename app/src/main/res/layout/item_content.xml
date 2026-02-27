@@ -29,6 +29,17 @@
             android:src="@android:drawable/btn_star_big_off"
             android:visibility="gone"/>
 
+        <ProgressBar
+            android:id="@+id/pb_watch_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="5dp"
+            android:layout_gravity="bottom"
+            android:max="100"
+            android:progress="0"
+            android:progressDrawable="@drawable/watch_progress_bar"
+            android:visibility="gone" />
+
     </FrameLayout>
 
     <TextView

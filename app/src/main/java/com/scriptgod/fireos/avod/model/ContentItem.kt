@@ -11,7 +11,9 @@ data class ContentItem(
     val isFreeWithAds: Boolean = false,
     val isLive: Boolean = false,
     val channelId: String = "",
-    val isInWatchlist: Boolean = false
+    val isInWatchlist: Boolean = false,
+    val runtimeMs: Long = 0,
+    val watchProgressMs: Long = 0  // 0 = not started, -1 = fully watched, >0 = position ms
 )
 
 data class SubtitleTrack(

@@ -4,6 +4,26 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.27.4] - 2026-02-27
+
+### Added
+- Watch progress bars on content cards — amber bar for in-progress, green bar for fully watched
+- Server-side watch history: progress bars reflect data from Amazon API (`remainingTimeInSeconds`, `timecodeSeconds`) so content watched in the official Prime Video app shows progress too
+- New drawable `watch_progress_bar.xml` for card progress indicator
+- `runtimeMs` and `watchProgressMs` fields on `ContentItem` data model
+
+### Fixed
+- Watchlist showing only ~20 items: now eagerly loads all pages via `getAllWatchlistItems()` instead of relying on infinite scroll
+- Episode detail pages missing progress bars: added parsing of `timecodeSeconds` + `completedAfterSeconds` (detail API format) in addition to `remainingTimeInSeconds` (home/watchlist API format)
+- Series/season cards showing inconsistent progress bars between home and watchlist: progress bars now correctly skipped for series-level items (only shown on movies and episodes)
+- Resume position not saved when navigating back from player: moved `saveResumePosition()` to `onPause()` to fix Android lifecycle ordering (PlayerActivity.onPause → MainActivity.onResume → PlayerActivity.onStop)
+
+### Changed
+- Version schema: `YYYY.MM.DD.N` (was `YYYY.MM.DD_N`)
+- Watchlist load strategy: all pages fetched upfront (removed incremental scroll-based pagination)
+- Fully watched sentinel: `SharedPreferences` stores `-1L` instead of removing the key, enabling "fully watched" vs "never watched" distinction
+- `BrowseActivity` now refreshes watch progress on `onResume()` when returning from player
+
 ## [2026.02.27_3] - 2026-02-27
 
 ### Fixed

@@ -128,7 +128,10 @@ class BrowseActivity : AppCompatActivity() {
                     tvError.text = "No content found"
                     tvError.visibility = View.VISIBLE
                 } else {
-                    adapter.submitList(withImages)
+                    val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
+                    val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
+                    val withProgress = withImages.map { it.copy(watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs) }
+                    adapter.submitList(withProgress)
                     // Focus first grid item for D-pad navigation
                     recyclerView.post {
                         val firstChild = recyclerView.getChildAt(0)
@@ -142,6 +145,23 @@ class BrowseActivity : AppCompatActivity() {
                 tvError.text = "Error: ${e.message}"
                 tvError.visibility = View.VISIBLE
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh watch progress on cards when returning from player
+        val currentList = adapter.currentList
+        if (currentList.isNotEmpty()) {
+            val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
+            val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
+            val updated = currentList.map { it.copy(watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs) }
+            adapter.submitList(updated)
+        }
+        recyclerView.post {
+            val firstChild = recyclerView.getChildAt(0)
+            if (firstChild != null) firstChild.requestFocus()
+            else recyclerView.requestFocus()
         }
     }
 

@@ -367,6 +367,30 @@ class AmazonApiService(private val authService: AmazonAuthService) {
     }
 
     /**
+     * Loads ALL watchlist items across all pages.
+     * Similar to getWatchlistAsins() but returns full ContentItem metadata.
+     */
+    fun getAllWatchlistItems(): List<ContentItem> {
+        val allItems = mutableListOf<ContentItem>()
+        var nextParams = ""
+        var pageCount = 0
+        val maxPages = 25
+        do {
+            val (page, newNextParams) = getWatchlistPageWithPagination(nextParams)
+            val prevSize = allItems.size
+            allItems.addAll(page)
+            pageCount++
+            if (allItems.size == prevSize && page.isNotEmpty()) {
+                Log.w(TAG, "Watchlist items pagination stalled at page $pageCount, stopping")
+                break
+            }
+            nextParams = newNextParams
+        } while (nextParams.isNotEmpty() && pageCount < maxPages)
+        Log.w(TAG, "All watchlist items loaded: ${allItems.size} total in $pageCount pages")
+        return allItems.distinctBy { it.asin }
+    }
+
+    /**
      * Paginated watchlist fetch using switchblade JVM transforms (watchlist-api-prime-3.0.438.2347.md).
      * Initial: /cdp/switchblade/android/getDataByJvmTransform/v1/dv-android/watchlist/initial/v1.kt
      * Next:    /cdp/switchblade/android/getDataByJvmTransform/v1/dv-android/watchlist/next/v1.kt
@@ -704,6 +728,34 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                         ?: model.safeString("channelId")
                         ?: ""
 
+                    val runtimeMs = model.safeString("runtimeMillis")?.toLongOrNull()
+                        ?: model.safeString("runtimeSeconds")?.toLongOrNull()?.times(1000)
+                        ?: model.getAsJsonObject("runtime")?.get("valueMillis")?.asLong
+                        ?: 0L
+
+                    // Server-side watch progress from two API formats:
+                    // 1. Home/watchlist (switchblade): remainingTimeInSeconds
+                    // 2. Episode detail page (mobile/atf): timecodeSeconds + completedAfterSeconds
+                    val remainingSec = model.safeString("remainingTimeInSeconds")?.toLongOrNull()
+                    val timecodeSec = model.safeString("timecodeSeconds")?.toLongOrNull()
+                    val completedAfterSec = model.safeString("completedAfterSeconds")?.toLongOrNull()
+                    // Series/season items have no meaningful per-item progress — only episodes do
+                    val isSeries = isSeriesContentType(contentType)
+                    val watchProgressMs = when {
+                        isSeries -> 0L
+                        // Format 1: remainingTimeInSeconds (home/watchlist pages)
+                        remainingSec != null && remainingSec <= 0L -> -1L  // fully watched
+                        remainingSec != null && runtimeMs > 0 -> (runtimeMs - remainingSec * 1000).coerceAtLeast(0L)
+                        // Format 2: timecodeSeconds (episode detail pages)
+                        timecodeSec != null && timecodeSec > 0 -> {
+                            val runtimeSec = runtimeMs / 1000
+                            if (completedAfterSec != null && timecodeSec >= completedAfterSec) -1L  // fully watched
+                            else if (runtimeSec > 0 && timecodeSec >= runtimeSec * 9 / 10) -1L  // >= 90% fallback
+                            else timecodeSec * 1000  // position in ms
+                        }
+                        else -> 0L  // not watched
+                    }
+
                     items.add(ContentItem(
                         asin = asin,
                         title = title,
@@ -713,7 +765,9 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                         isPrime = isPrime,
                         isFreeWithAds = isFreeWithAds,
                         isLive = isLive,
-                        channelId = channelId
+                        channelId = channelId,
+                        runtimeMs = runtimeMs,
+                        watchProgressMs = watchProgressMs
                     ))
                 }
             }
