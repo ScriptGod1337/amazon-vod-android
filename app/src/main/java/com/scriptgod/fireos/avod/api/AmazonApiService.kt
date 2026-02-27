@@ -3,8 +3,10 @@ package com.scriptgod.fireos.avod.api
 import android.util.Log
 import com.scriptgod.fireos.avod.auth.AmazonAuthService
 import com.scriptgod.fireos.avod.model.ContentItem
+import com.scriptgod.fireos.avod.model.ContentRail
 import com.scriptgod.fireos.avod.model.PlaybackInfo
 import com.scriptgod.fireos.avod.model.SubtitleTrack
+import com.google.gson.JsonArray
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import okhttp3.MediaType.Companion.toMediaType
@@ -44,6 +46,9 @@ class AmazonApiService(private val authService: AmazonAuthService) {
         private const val SOFTWARE_VERSION = "351"
         private const val SCREEN_WIDTH = "sw1600dp"
         private const val FEATURE_SCHEME = "mobile-android-features-v13-hdr"
+
+        // Prime tab service token — base64 of {"type":"lib","nav":false,"filter":{"OFFER_FILTER":["PRIME"]}}
+        private const val PRIME_SERVICE_TOKEN = "eyJ0eXBlIjoibGliIiwibmF2IjpmYWxzZSwiZmlsdGVyIjp7Ik9GRkVSX0ZJTFRFUiI6WyJQUklNRSJdfX0="
 
         /** Content type helpers — usable from Activities without an instance */
         fun isMovieContentType(ct: String) =
@@ -187,6 +192,28 @@ class AmazonApiService(private val authService: AmazonAuthService) {
     fun getHomePage(): List<ContentItem> {
         // Home page uses switchblade with pageType/pageId (android_api.py:108-128)
         return getSwitchbladePage("dv-android/landing/initial/v1.kt", "pageType=home&pageId=home")
+    }
+
+    /**
+     * Returns a map of ASIN → watchProgressMs from the v1 home page.
+     * Used to supplement v2 rails which don't include watch progress data.
+     */
+    fun getServerWatchProgressMap(): Map<String, Pair<Long, Long>> {
+        return try {
+            val items = getHomePage()
+            val map = mutableMapOf<String, Pair<Long, Long>>()
+            for (item in items) {
+                // Only include real partial progress (>0), not fully-watched (-1) or no-data (0)
+                if (item.watchProgressMs > 0 && item.runtimeMs > 0) {
+                    map[item.asin] = Pair(item.watchProgressMs, item.runtimeMs)
+                }
+            }
+            Log.w(TAG, "Server watch progress: ${map.size} items with progress")
+            map
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to fetch server watch progress", e)
+            emptyMap()
+        }
     }
 
     /**
@@ -529,6 +556,20 @@ class AmazonApiService(private val authService: AmazonAuthService) {
         return fetchAndParseContentItems(url)
     }
 
+    private fun getSwitchbladePageRaw(transform: String, extraParams: String = ""): String? {
+        val params = baseParams() + if (extraParams.isNotEmpty()) "&$extraParams" else ""
+        val url = "$atvUrl/cdp/switchblade/android/getDataByJvmTransform/v1/$transform?$params"
+        val request = Request.Builder().url(url).get().build()
+        Log.i(TAG, "Rails GET: $url")
+        val response = client.newCall(request).execute()
+        val body = response.body?.string()
+        if (!response.isSuccessful) {
+            Log.w(TAG, "Rails request failed: HTTP ${response.code}, body=${body?.take(300)}")
+            return null
+        }
+        return body
+    }
+
     private fun getMobilePage(transform: String, params: String): List<ContentItem> {
         val url = "$atvUrl/cdp/mobile/getDataByTransform/v1/$transform?$params"
         return fetchAndParseContentItems(url)
@@ -575,17 +616,147 @@ class AmazonApiService(private val authService: AmazonAuthService) {
         return if (el.isJsonPrimitive) el.asBoolean else null
     }
 
+    /**
+     * Parses items from a JsonArray of collection items.
+     * Shared between parseContentItems() and parseRails().
+     */
+    private fun parseItemsFromArray(collectionList: JsonArray): List<ContentItem> {
+        val items = mutableListOf<ContentItem>()
+        for (element in collectionList) {
+            val item = element.asJsonObject ?: continue
+            val model = item.getAsJsonObject("model") ?: item
+
+            val linkAction = model.getAsJsonObject("linkAction")
+            val asin = model.safeString("catalogId")
+                ?: model.safeString("compactGti")
+                ?: model.safeString("titleId")
+                ?: linkAction?.safeString("titleId")
+                ?: model.safeString("id")
+                ?: model.safeString("asin")
+                ?: continue
+            var title = model.safeString("title") ?: continue
+
+            val seasonNum = model.safeString("seasonNumber")
+                ?: model.safeString("number")
+            val episodeNum = model.safeString("episodeNumber")
+            val subtitle = model.safeString("ratingsBadge")
+                ?: if (seasonNum != null && episodeNum != null) "S${seasonNum} E${episodeNum}"
+                   else if (seasonNum != null) "Season $seasonNum"
+                   else if (episodeNum != null) "Episode $episodeNum"
+                   else ""
+
+            val contentType = model.safeString("contentType")
+                ?: if (seasonNum != null && episodeNum == null) "SEASON"
+                   else if (episodeNum != null) "EPISODE"
+                   else "Feature"
+
+            if (contentType.equals("SEASON", ignoreCase = true) && seasonNum != null) {
+                title = "Season $seasonNum"
+            } else if (contentType.equals("EPISODE", ignoreCase = true) && episodeNum != null) {
+                title = "E$episodeNum: $title"
+            }
+
+            val imageUrl = model.getAsJsonObject("image")
+                ?.safeString("url")
+                ?: model.safeString("imageUrl")
+                ?: model.getAsJsonObject("titleImageUrls")
+                    ?.let { urls ->
+                        urls.safeString("BOX_ART")
+                            ?: urls.safeString("COVER")
+                            ?: urls.safeString("POSTER")
+                            ?: urls.safeString("LEGACY")
+                            ?: urls.safeString("WIDE")
+                    }
+                ?: model.safeString("heroImageUrl")
+                ?: model.safeString("titleImageUrl")
+                ?: model.safeString("imagePack")
+                ?: ""
+
+            val isPrime = model.getAsJsonObject("badges")
+                ?.safeBoolean("prime")
+                ?: model.safeBoolean("showPrimeEmblem")
+                ?: model.safeBoolean("isPrime")
+                ?: model.safeBoolean("primeOnly")
+                ?: run {
+                    val badge = model.safeString("badgeInfo")
+                        ?: model.safeString("contentBadge") ?: ""
+                    !badge.contains("FREE", ignoreCase = true)
+                }
+
+            val isFreeWithAds = model.safeBoolean("isFreeWithAds")
+                ?: model.safeBoolean("freeWithAds")
+                ?: run {
+                    val badge = model.safeString("badgeInfo")
+                        ?: model.safeString("contentBadge") ?: ""
+                    badge.contains("FREE", ignoreCase = true) || badge.contains("AVOD", ignoreCase = true)
+                }
+
+            val isLive = contentType.equals("live", ignoreCase = true)
+                || contentType.equals("LiveStreaming", ignoreCase = true)
+                || model.has("liveInfo")
+                || model.has("liveState")
+                || (model.safeString("videoMaterialType")
+                    ?.equals("LiveStreaming", ignoreCase = true) ?: false)
+
+            val channelId = model.getAsJsonObject("playbackAction")
+                ?.safeString("channelId")
+                ?: model.getAsJsonObject("station")
+                    ?.safeString("id")
+                ?: model.safeString("channelId")
+                ?: ""
+
+            val runtimeMs = model.safeString("runtimeMillis")?.toLongOrNull()
+                ?: model.safeString("runtimeSeconds")?.toLongOrNull()?.times(1000)
+                ?: model.getAsJsonObject("runtime")?.get("valueMillis")?.asLong
+                ?: 0L
+
+            val remainingSec = model.safeString("remainingTimeInSeconds")?.toLongOrNull()
+            val timecodeSec = model.safeString("timecodeSeconds")?.toLongOrNull()
+            val completedAfterSec = model.safeString("completedAfterSeconds")?.toLongOrNull()
+            val isSeries = isSeriesContentType(contentType)
+            val runtimeSec = runtimeMs / 1000
+            val watchProgressMs = when {
+                isSeries -> 0L
+                // remainingSec=0 is ambiguous (could mean "no data" not "fully watched"),
+                // so only treat as progress when remaining < runtime (actual partial watch)
+                remainingSec != null && remainingSec > 0 && runtimeSec > 0 && remainingSec < runtimeSec -> {
+                    (runtimeMs - remainingSec * 1000).coerceAtLeast(1L)
+                }
+                // remainingSec equals runtime → not watched at all
+                remainingSec != null && remainingSec > 0 && runtimeSec > 0 && remainingSec >= runtimeSec -> 0L
+                // timecode-based fallback
+                timecodeSec != null && timecodeSec > 0 -> {
+                    if (completedAfterSec != null && timecodeSec >= completedAfterSec) -1L
+                    else if (runtimeSec > 0 && timecodeSec >= runtimeSec * 9 / 10) -1L
+                    else timecodeSec * 1000
+                }
+                else -> 0L
+            }
+
+            items.add(ContentItem(
+                asin = asin,
+                title = title,
+                subtitle = subtitle,
+                imageUrl = imageUrl,
+                contentType = contentType,
+                isPrime = isPrime,
+                isFreeWithAds = isFreeWithAds,
+                isLive = isLive,
+                channelId = channelId,
+                runtimeMs = runtimeMs,
+                watchProgressMs = watchProgressMs
+            ))
+        }
+        return items
+    }
+
     private fun parseContentItems(json: String): List<ContentItem> {
         val items = mutableListOf<ContentItem>()
         try {
             var root = gson.fromJson(json, JsonObject::class.java)
-            // Unwrap 'resource' key — Kodi plugin: resp.get('resource', resp) (android_api.py:145)
             root = root?.getAsJsonObject("resource") ?: root
 
-            // Collect all collectionItemList arrays from either format:
-            // Home/Browse: collections[].collectionItemList (android_api.py:225-258)
-            // Search/Detail: titles[0].collectionItemList (android_api.py:259-285)
-            val allItemLists = mutableListOf<com.google.gson.JsonArray>()
+            val allItemLists = mutableListOf<JsonArray>()
 
             val collectionsArray = root?.getAsJsonArray("collections")
             if (collectionsArray != null) {
@@ -596,7 +767,6 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                 }
             }
 
-            // Search/browse results: titles[0].collectionItemList
             val titlesArray = root?.getAsJsonArray("titles")
             if (titlesArray != null && titlesArray.size() > 0) {
                 val firstTitle = titlesArray[0]?.asJsonObject
@@ -606,20 +776,16 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                 }
             }
 
-            // Switchblade watchlist/next: root-level collectionItemList
             val rootCollectionList = root?.getAsJsonArray("collectionItemList")
             if (rootCollectionList != null) {
                 allItemLists.add(rootCollectionList)
             }
 
-            // Also try dataWidgetModels as a flat item list
             val dataWidgets = root?.getAsJsonArray("dataWidgetModels")
             if (dataWidgets != null) {
                 allItemLists.add(dataWidgets)
             }
 
-            // Series detail format: { show: {}, seasons: [], episodes: [], selectedSeason: {} }
-            // (android_api.py:186-197 — getPage('details'))
             val seasonsArray = root?.getAsJsonArray("seasons")
             if (seasonsArray != null) {
                 allItemLists.add(seasonsArray)
@@ -629,147 +795,13 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                 allItemLists.add(episodesArray)
             }
 
-
             if (allItemLists.isEmpty()) {
                 Log.i(TAG, "No parseable item lists in response keys: ${root?.keySet()?.take(10)}")
                 return emptyList()
             }
 
             for (collectionList in allItemLists) {
-                for (element in collectionList) {
-                    val item = element.asJsonObject ?: continue
-                    val model = item.getAsJsonObject("model") ?: item
-
-                    // ASIN extraction: prefer linkAction.titleId for episode/detail items
-                    // (episodes from detail page have titleId only inside linkAction)
-                    val linkAction = model.getAsJsonObject("linkAction")
-                    val asin = model.safeString("catalogId")
-                        ?: model.safeString("compactGti")
-                        ?: model.safeString("titleId")
-                        ?: linkAction?.safeString("titleId")
-                        ?: model.safeString("id")
-                        ?: model.safeString("asin")
-                        ?: continue
-                    var title = model.safeString("title") ?: continue
-
-                    // Build subtitle from available metadata
-                    val seasonNum = model.safeString("seasonNumber")
-                        ?: model.safeString("number")
-                    val episodeNum = model.safeString("episodeNumber")
-                    val subtitle = model.safeString("ratingsBadge")
-                        ?: if (seasonNum != null && episodeNum != null) "S${seasonNum} E${episodeNum}"
-                           else if (seasonNum != null) "Season $seasonNum"
-                           else if (episodeNum != null) "Episode $episodeNum"
-                           else ""
-
-                    // Infer content type: season items from detail API lack contentType
-                    // but have seasonNumber; episode items have episodeNumber
-                    val contentType = model.safeString("contentType")
-                        ?: if (seasonNum != null && episodeNum == null) "SEASON"
-                           else if (episodeNum != null) "EPISODE"
-                           else "Feature"
-
-                    // Prefix season/episode info into title
-                    if (contentType.equals("SEASON", ignoreCase = true) && seasonNum != null) {
-                        title = "Season $seasonNum"
-                    } else if (contentType.equals("EPISODE", ignoreCase = true) && episodeNum != null) {
-                        title = "E$episodeNum: $title"
-                    }
-
-                    // Image extraction: try multiple sources
-                    // Home/browse: model.image.url
-                    // Search: model.titleImageUrls.{BOX_ART,COVER,POSTER} or model.heroImageUrl
-                    val imageUrl = model.getAsJsonObject("image")
-                        ?.safeString("url")
-                        ?: model.safeString("imageUrl")
-                        ?: model.getAsJsonObject("titleImageUrls")
-                            ?.let { urls ->
-                                urls.safeString("BOX_ART")
-                                    ?: urls.safeString("COVER")
-                                    ?: urls.safeString("POSTER")
-                                    ?: urls.safeString("LEGACY")
-                                    ?: urls.safeString("WIDE")
-                            }
-                        ?: model.safeString("heroImageUrl")
-                        ?: model.safeString("titleImageUrl")
-                        ?: model.safeString("imagePack")
-                        ?: ""
-
-                    val isPrime = model.getAsJsonObject("badges")
-                        ?.safeBoolean("prime")
-                        ?: model.safeBoolean("showPrimeEmblem")
-                        ?: model.safeBoolean("isPrime")
-                        ?: model.safeBoolean("primeOnly")
-                        ?: run {
-                            val badge = model.safeString("badgeInfo")
-                                ?: model.safeString("contentBadge") ?: ""
-                            !badge.contains("FREE", ignoreCase = true)
-                        }
-
-                    val isFreeWithAds = model.safeBoolean("isFreeWithAds")
-                        ?: model.safeBoolean("freeWithAds")
-                        ?: run {
-                            val badge = model.safeString("badgeInfo")
-                                ?: model.safeString("contentBadge") ?: ""
-                            badge.contains("FREE", ignoreCase = true) || badge.contains("AVOD", ignoreCase = true)
-                        }
-
-                    val isLive = contentType.equals("live", ignoreCase = true)
-                        || contentType.equals("LiveStreaming", ignoreCase = true)
-                        || model.has("liveInfo")
-                        || model.has("liveState")
-                        || (model.safeString("videoMaterialType")
-                            ?.equals("LiveStreaming", ignoreCase = true) ?: false)
-
-                    val channelId = model.getAsJsonObject("playbackAction")
-                        ?.safeString("channelId")
-                        ?: model.getAsJsonObject("station")
-                            ?.safeString("id")
-                        ?: model.safeString("channelId")
-                        ?: ""
-
-                    val runtimeMs = model.safeString("runtimeMillis")?.toLongOrNull()
-                        ?: model.safeString("runtimeSeconds")?.toLongOrNull()?.times(1000)
-                        ?: model.getAsJsonObject("runtime")?.get("valueMillis")?.asLong
-                        ?: 0L
-
-                    // Server-side watch progress from two API formats:
-                    // 1. Home/watchlist (switchblade): remainingTimeInSeconds
-                    // 2. Episode detail page (mobile/atf): timecodeSeconds + completedAfterSeconds
-                    val remainingSec = model.safeString("remainingTimeInSeconds")?.toLongOrNull()
-                    val timecodeSec = model.safeString("timecodeSeconds")?.toLongOrNull()
-                    val completedAfterSec = model.safeString("completedAfterSeconds")?.toLongOrNull()
-                    // Series/season items have no meaningful per-item progress — only episodes do
-                    val isSeries = isSeriesContentType(contentType)
-                    val watchProgressMs = when {
-                        isSeries -> 0L
-                        // Format 1: remainingTimeInSeconds (home/watchlist pages)
-                        remainingSec != null && remainingSec <= 0L -> -1L  // fully watched
-                        remainingSec != null && runtimeMs > 0 -> (runtimeMs - remainingSec * 1000).coerceAtLeast(0L)
-                        // Format 2: timecodeSeconds (episode detail pages)
-                        timecodeSec != null && timecodeSec > 0 -> {
-                            val runtimeSec = runtimeMs / 1000
-                            if (completedAfterSec != null && timecodeSec >= completedAfterSec) -1L  // fully watched
-                            else if (runtimeSec > 0 && timecodeSec >= runtimeSec * 9 / 10) -1L  // >= 90% fallback
-                            else timecodeSec * 1000  // position in ms
-                        }
-                        else -> 0L  // not watched
-                    }
-
-                    items.add(ContentItem(
-                        asin = asin,
-                        title = title,
-                        subtitle = subtitle,
-                        imageUrl = imageUrl,
-                        contentType = contentType,
-                        isPrime = isPrime,
-                        isFreeWithAds = isFreeWithAds,
-                        isLive = isLive,
-                        channelId = channelId,
-                        runtimeMs = runtimeMs,
-                        watchProgressMs = watchProgressMs
-                    ))
-                }
+                items.addAll(parseItemsFromArray(collectionList))
             }
         } catch (e: Exception) {
             Log.i(TAG, "Error parsing catalog response", e)
@@ -777,6 +809,127 @@ class AmazonApiService(private val authService: AmazonAuthService) {
         val unique = items.distinctBy { it.asin }
         Log.w(TAG, "Parsed ${unique.size} content items (${items.size - unique.size} duplicates removed)")
         return unique
+    }
+
+    /**
+     * Fetches home page rails using the v2 landing endpoint with Prime service token.
+     * Returns Pair(rails, nextPageParams) for page-level pagination.
+     * Falls back to v1 flat grid (single rail) if v2 fails.
+     */
+    fun getHomePageRails(paginationParams: String = ""): Pair<List<ContentRail>, String> {
+        return try {
+            val isNextPage = paginationParams.isNotEmpty()
+            val transform = if (isNextPage) "dv-android/landing/next/v2.kt"
+                            else "dv-android/landing/initial/v2.kt"
+            val extraParams = if (isNextPage) {
+                "pageType=home&pageId=home&serviceToken=$PRIME_SERVICE_TOKEN&pageSize=20$paginationParams"
+            } else {
+                "pageType=home&pageId=home&serviceToken=$PRIME_SERVICE_TOKEN"
+            }
+
+            val body = getSwitchbladePageRaw(transform, extraParams)
+            if (body != null) {
+                val result = parseRails(body)
+                if (result.first.isNotEmpty()) {
+                    Log.w(TAG, "Home rails v2: ${result.first.size} rails, hasNextPage=${result.second.isNotEmpty()}")
+                    return result
+                }
+            }
+            // v2 returned empty — fall back to v1
+            Log.w(TAG, "Home rails v2 empty, falling back to v1 flat list")
+            fallbackToFlatRail()
+        } catch (e: Exception) {
+            Log.w(TAG, "Home rails v2 failed: ${e.message}, falling back to v1")
+            fallbackToFlatRail()
+        }
+    }
+
+    private fun fallbackToFlatRail(): Pair<List<ContentRail>, String> {
+        val items = getHomePage()
+        return if (items.isNotEmpty()) {
+            Pair(listOf(ContentRail(headerText = "Home", items = items)), "")
+        } else {
+            Pair(emptyList(), "")
+        }
+    }
+
+    /**
+     * Parses structured rails from a v2 landing response.
+     * Returns Pair(rails, nextPageParams).
+     */
+    private fun parseRails(json: String): Pair<List<ContentRail>, String> {
+        val rails = mutableListOf<ContentRail>()
+        try {
+            var root = gson.fromJson(json, JsonObject::class.java)
+            root = root?.getAsJsonObject("resource") ?: root
+            if (root == null) return Pair(emptyList(), "")
+
+            val collectionsArray = root.getAsJsonArray("collections")
+            if (collectionsArray != null) {
+                for (collectionElement in collectionsArray) {
+                    val collection = collectionElement?.asJsonObject ?: continue
+                    val rawHeader = collection.safeString("headerText")
+                        ?: collection.safeString("title")
+                        ?: collection.safeString("name")
+                        ?: collection.safeString("subHeaderText")
+                        ?: continue
+                    val headerText = if (rawHeader == "Carousel Title") "Featured" else rawHeader
+                    val collectionItemList = collection.getAsJsonArray("collectionItemList") ?: continue
+                    val items = parseItemsFromArray(collectionItemList)
+                    if (items.isEmpty()) continue
+
+                    val collectionId = collection.safeString("collectionId") ?: ""
+
+                    rails.add(ContentRail(
+                        headerText = headerText,
+                        items = items,
+                        collectionId = collectionId
+                    ))
+                }
+            }
+
+            // Extract page-level pagination for more rails
+            val nextParams = extractRailsPaginationParams(root)
+            return Pair(rails, nextParams)
+        } catch (e: Exception) {
+            Log.w(TAG, "Error parsing rails", e)
+        }
+        return Pair(rails, "")
+    }
+
+    /**
+     * Extracts page-level pagination params from a v2 landing response.
+     * Uses paginationModel.id as swiftId and paginationModel.startIndex.
+     */
+    private fun extractRailsPaginationParams(root: JsonObject): String {
+        // Safe getter for paginationModel
+        fun JsonObject.safePaginationModel(): JsonObject? {
+            val el = get("paginationModel") ?: return null
+            return if (el.isJsonObject) el.asJsonObject else null
+        }
+
+        val pgModel = root.safePaginationModel() ?: return ""
+        val swiftId = pgModel.safeString("id") ?: return ""
+        val startIndex = pgModel.safeString("startIndex")
+            ?: pgModel.get("startIndex")?.toString()
+            ?: return ""
+
+        val sb = StringBuilder()
+        sb.append("&swiftId=").append(android.net.Uri.encode(swiftId))
+        sb.append("&startIndex=").append(android.net.Uri.encode(startIndex))
+
+        // Replay pageContext parameters if present
+        val pageContext = pgModel.getAsJsonObject("pageContext")
+        val contextParams = pageContext?.getAsJsonObject("parameters")
+        if (contextParams != null) {
+            for ((key, value) in contextParams.entrySet()) {
+                if (value.isJsonPrimitive && key != "swiftId" && key != "startIndex") {
+                    sb.append("&${android.net.Uri.encode(key)}=${android.net.Uri.encode(value.asString)}")
+                }
+            }
+        }
+
+        return sb.toString()
     }
 
     /**
@@ -978,15 +1131,29 @@ class AmazonApiService(private val authService: AmazonAuthService) {
      * Used to mark items with isInWatchlist when displaying other pages.
      */
     fun getWatchlistAsins(): Set<String> {
+        return getWatchlistData().first
+    }
+
+    /**
+     * Fetches watchlist ASINs and watch progress map.
+     * Returns Pair(asins, progressMap) where progressMap is ASIN → Pair(watchProgressMs, runtimeMs).
+     */
+    fun getWatchlistData(): Pair<Set<String>, Map<String, Pair<Long, Long>>> {
         return try {
             val allAsins = mutableSetOf<String>()
+            val progressMap = mutableMapOf<String, Pair<Long, Long>>()
             var nextParams = ""
             var pageCount = 0
             val maxPages = 25 // safety limit: 25 * 20 = 500 items max
             do {
                 val (page, newNextParams) = getWatchlistPageWithPagination(nextParams)
                 val prevSize = allAsins.size
-                allAsins.addAll(page.map { it.asin })
+                for (item in page) {
+                    allAsins.add(item.asin)
+                    if (item.watchProgressMs > 0 && item.runtimeMs > 0) {
+                        progressMap[item.asin] = Pair(item.watchProgressMs, item.runtimeMs)
+                    }
+                }
                 pageCount++
                 // Stop if no new items were added (server returning same page)
                 if (allAsins.size == prevSize && page.isNotEmpty()) {
@@ -995,11 +1162,11 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                 }
                 nextParams = newNextParams
             } while (nextParams.isNotEmpty() && pageCount < maxPages)
-            Log.w(TAG, "Watchlist ASINs loaded: ${allAsins.size} total in $pageCount pages")
-            allAsins
+            Log.w(TAG, "Watchlist loaded: ${allAsins.size} ASINs, ${progressMap.size} with progress, in $pageCount pages")
+            Pair(allAsins, progressMap)
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to fetch watchlist ASINs", e)
-            emptySet()
+            Log.w(TAG, "Failed to fetch watchlist data", e)
+            Pair(emptySet(), emptyMap())
         }
     }
 

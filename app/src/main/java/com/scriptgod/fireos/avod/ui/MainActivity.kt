@@ -15,10 +15,12 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.scriptgod.fireos.avod.R
 import android.widget.LinearLayout
 import com.scriptgod.fireos.avod.api.AmazonApiService
+import com.scriptgod.fireos.avod.model.ContentRail
 import com.scriptgod.fireos.avod.api.AmazonApiService.LibraryFilter
 import com.scriptgod.fireos.avod.api.AmazonApiService.LibrarySort
 import com.scriptgod.fireos.avod.auth.AmazonAuthService
@@ -46,6 +48,7 @@ class MainActivity : AppCompatActivity() {
 
     // Category buttons — two independent groups
     private lateinit var categoryFilterRow: LinearLayout
+    private lateinit var sourceFilterGroup: LinearLayout
     private lateinit var btnCatAll: Button
     private lateinit var btnCatPrime: Button
     private lateinit var btnTypeAll: Button
@@ -62,12 +65,20 @@ class MainActivity : AppCompatActivity() {
     private lateinit var authService: AmazonAuthService
     private lateinit var apiService: AmazonApiService
     private lateinit var adapter: ContentAdapter
+    private lateinit var railsAdapter: RailsAdapter
+
+    // Rails mode state
+    private var isRailsMode: Boolean = false
+    private var homeNextPageParams: String = ""
+    private var homePageLoading: Boolean = false
+    private var unfilteredRails: List<ContentRail> = emptyList()
 
     // Two independent filter dimensions
     private var sourceFilter: String = "all"   // "all" or "prime"
     private var typeFilter: String = "all"     // "all", "movies", or "series"
     private var currentNavPage: String = "home"
     private var watchlistAsins: MutableSet<String> = mutableSetOf()
+    private var watchlistProgress: Map<String, Pair<Long, Long>> = emptyMap()
 
     // Phase 10: Library state
     private var libraryFilter: LibraryFilter = LibraryFilter.ALL
@@ -90,6 +101,7 @@ class MainActivity : AppCompatActivity() {
         btnLibrary = findViewById(R.id.btn_library)
 
         categoryFilterRow = findViewById(R.id.category_filter_row)
+        sourceFilterGroup = findViewById(R.id.source_filter_group)
         btnCatAll = findViewById(R.id.btn_cat_all)
         btnCatPrime = findViewById(R.id.btn_cat_prime)
         btnTypeAll = findViewById(R.id.btn_type_all)
@@ -112,6 +124,10 @@ class MainActivity : AppCompatActivity() {
         apiService = AmazonApiService(authService)
 
         adapter = ContentAdapter(
+            onItemClick = { item -> onItemSelected(item) },
+            onItemLongClick = { item -> toggleWatchlist(item) }
+        )
+        railsAdapter = RailsAdapter(
             onItemClick = { item -> onItemSelected(item) },
             onItemLongClick = { item -> toggleWatchlist(item) }
         )
@@ -178,15 +194,23 @@ class MainActivity : AppCompatActivity() {
         btnLibShows.setOnClickListener { setLibraryFilter(LibraryFilter.TV_SHOWS) }
         btnLibSort.setOnClickListener { cycleLibrarySort() }
 
-        // Infinite scroll for library and watchlist pagination
+        // Infinite scroll for library, watchlist, and rails pagination
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
-                val lm = rv.layoutManager as GridLayoutManager
+                val lm = rv.layoutManager ?: return
                 val totalItems = lm.itemCount
-                val lastVisible = lm.findLastVisibleItemPosition()
-                if (lastVisible < totalItems - 10) return
-                when (currentNavPage) {
-                    "library" -> if (!libraryLoading && libraryNextIndex > 0) loadLibraryNextPage()
+                val lastVisible = when (lm) {
+                    is LinearLayoutManager -> lm.findLastVisibleItemPosition()
+                    is GridLayoutManager -> lm.findLastVisibleItemPosition()
+                    else -> return
+                }
+                when {
+                    currentNavPage == "library" && lastVisible >= totalItems - 10 -> {
+                        if (!libraryLoading && libraryNextIndex > 0) loadLibraryNextPage()
+                    }
+                    isRailsMode && lastVisible >= totalItems - 3 -> {
+                        if (!homePageLoading && homeNextPageParams.isNotEmpty()) loadHomeRailsNextPage()
+                    }
                 }
             }
         })
@@ -195,15 +219,20 @@ class MainActivity : AppCompatActivity() {
         etSearch.clearFocus()
         recyclerView.requestFocus()
 
-        // Detect territory, fetch watchlist ASINs, then load home
+        // Hide filter rows on initial home load (rails are server-curated)
+        updateFilterRowVisibility()
+
+        // Detect territory, fetch watchlist ASINs, then load home rails
         showLoading()
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 apiService.detectTerritory()
-                watchlistAsins = apiService.getWatchlistAsins().toMutableSet()
-                Log.i(TAG, "Watchlist loaded: ${watchlistAsins.size} items")
+                val (asins, progress) = apiService.getWatchlistData()
+                watchlistAsins = asins.toMutableSet()
+                watchlistProgress = progress
+                Log.i(TAG, "Watchlist loaded: ${watchlistAsins.size} items, ${watchlistProgress.size} with progress")
             }
-            loadFilteredContent()
+            loadHomeRails()
         }
     }
 
@@ -226,7 +255,11 @@ class MainActivity : AppCompatActivity() {
     private fun setTypeFilter(type: String) {
         typeFilter = type
         updateFilterHighlights()
-        reloadFiltered()
+        if (isRailsMode) {
+            applyRailsTypeFilter()
+        } else {
+            reloadFiltered()
+        }
     }
 
     private fun updateFilterHighlights() {
@@ -291,7 +324,13 @@ class MainActivity : AppCompatActivity() {
     private fun performSearch() {
         val query = etSearch.text.toString().trim()
         Log.i(TAG, "performSearch query='$query'")
-        loadFilteredContent(query)
+        if (query.isEmpty() && currentNavPage == "home") {
+            // Search cleared — reload rails
+            loadHomeRails()
+        } else {
+            if (query.isNotEmpty()) switchToGridMode()
+            loadFilteredContent(query)
+        }
     }
 
     // --- Nav pages (Home / Watchlist / Library) ---
@@ -305,6 +344,7 @@ class MainActivity : AppCompatActivity() {
         updateFilterRowVisibility()
 
         if (page == "library") {
+            switchToGridMode()
             libraryFilter = LibraryFilter.ALL
             librarySort = LibrarySort.DATE_ADDED
             updateLibraryFilterHighlight()
@@ -314,14 +354,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (page == "watchlist") {
+            switchToGridMode()
             loadWatchlistInitial()
             return
         }
 
         if (page == "home") {
-            loadFilteredContent()
+            loadHomeRails()
             return
         }
+
+        switchToGridMode()
 
         // Freevee — no filters
         showLoading()
@@ -363,16 +406,36 @@ class MainActivity : AppCompatActivity() {
             "library" -> {
                 categoryFilterRow.visibility = View.GONE
                 libraryFilterRow.visibility = View.VISIBLE
+                setNavFocusTarget(R.id.btn_lib_all)
             }
-            "home", "watchlist" -> {
+            "home" -> {
+                // Show type filters (Movies/Series) but hide source group (All/Prime)
                 categoryFilterRow.visibility = View.VISIBLE
+                sourceFilterGroup.visibility = View.GONE
                 libraryFilterRow.visibility = View.GONE
+                setNavFocusTarget(R.id.btn_type_all)
+            }
+            "watchlist" -> {
+                categoryFilterRow.visibility = View.VISIBLE
+                sourceFilterGroup.visibility = View.VISIBLE
+                libraryFilterRow.visibility = View.GONE
+                setNavFocusTarget(R.id.btn_cat_all)
             }
             else -> {
                 categoryFilterRow.visibility = View.GONE
                 libraryFilterRow.visibility = View.GONE
+                setNavFocusTarget(R.id.recycler_view)
             }
         }
+    }
+
+    private fun setNavFocusTarget(targetId: Int) {
+        btnHome.nextFocusDownId = targetId
+        btnFreevee.nextFocusDownId = targetId
+        btnWatchlist.nextFocusDownId = targetId
+        btnLibrary.nextFocusDownId = targetId
+        // Also update recyclerView's upward focus target
+        recyclerView.nextFocusUpId = targetId
     }
 
     // --- Watchlist pagination ---
@@ -546,12 +609,155 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // --- Rails mode ---
+
+    private fun switchToRailsMode() {
+        if (isRailsMode) return
+        isRailsMode = true
+        recyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+        recyclerView.adapter = railsAdapter
+    }
+
+    private fun switchToGridMode() {
+        if (!isRailsMode) return
+        isRailsMode = false
+        recyclerView.layoutManager = GridLayoutManager(this, 5)
+        recyclerView.adapter = adapter
+    }
+
+    private fun loadHomeRails() {
+        switchToRailsMode()
+        showLoading()
+        homeNextPageParams = ""
+        lifecycleScope.launch {
+            try {
+                val (rails, nextParams) = withContext(Dispatchers.IO) {
+                    apiService.getHomePageRails()
+                }
+                homeNextPageParams = nextParams
+                showRails(rails)
+            } catch (e: Exception) {
+                Log.w(TAG, "Error loading home rails", e)
+                showError("Error: ${e.message}")
+            }
+        }
+    }
+
+    private fun loadHomeRailsNextPage() {
+        if (homePageLoading || homeNextPageParams.isEmpty()) return
+        homePageLoading = true
+        Log.i(TAG, "Loading next page of rails")
+        lifecycleScope.launch {
+            try {
+                val (newRails, nextParams) = withContext(Dispatchers.IO) {
+                    apiService.getHomePageRails(homeNextPageParams)
+                }
+                homeNextPageParams = nextParams
+                if (newRails.isNotEmpty()) {
+                    val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
+                    val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
+                    val markedRails = newRails.map { rail ->
+                        rail.copy(items = rail.items.map { item ->
+                            val localProgress = resumeMap[item.asin]
+                            val serverProgress = watchlistProgress[item.asin]
+                            val progressMs = localProgress
+                                ?: serverProgress?.first
+                                ?: item.watchProgressMs
+                            val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
+                                serverProgress.second else item.runtimeMs
+                            item.copy(
+                                isInWatchlist = watchlistAsins.contains(item.asin),
+                                watchProgressMs = progressMs,
+                                runtimeMs = runtimeMs
+                            )
+                        })
+                    }
+                    unfilteredRails = unfilteredRails + markedRails
+                    val filtered = applyTypeFilterToRails(unfilteredRails)
+                    railsAdapter.submitList(filtered)
+                    Log.i(TAG, "Appended ${newRails.size} rails, total unfiltered=${unfilteredRails.size}")
+                } else {
+                    homeNextPageParams = ""
+                    Log.i(TAG, "Rails pagination complete — no more rails")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error loading next rails page", e)
+            } finally {
+                homePageLoading = false
+            }
+        }
+    }
+
+    private fun showRails(rails: List<ContentRail>) {
+        progressBar.visibility = View.GONE
+        if (rails.isEmpty()) {
+            tvError.text = "No content found"
+            tvError.visibility = View.VISIBLE
+        } else {
+            tvError.visibility = View.GONE
+            val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
+            val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
+            // Merge watchlist flags, server-side watch progress, and local resume into rail items
+            val markedRails = rails.map { rail ->
+                rail.copy(items = rail.items.map { item ->
+                    val localProgress = resumeMap[item.asin]
+                    val serverProgress = watchlistProgress[item.asin]
+                    val progressMs = localProgress
+                        ?: serverProgress?.first
+                        ?: item.watchProgressMs
+                    val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
+                        serverProgress.second else item.runtimeMs
+                    item.copy(
+                        isInWatchlist = watchlistAsins.contains(item.asin),
+                        watchProgressMs = progressMs,
+                        runtimeMs = runtimeMs
+                    )
+                })
+            }
+            unfilteredRails = markedRails
+            val filtered = applyTypeFilterToRails(markedRails)
+            railsAdapter.submitList(filtered)
+            recyclerView.post {
+                val firstChild = recyclerView.getChildAt(0)
+                if (firstChild != null) firstChild.requestFocus()
+                else recyclerView.requestFocus()
+            }
+        }
+    }
+
+    private fun applyRailsTypeFilter() {
+        val filtered = applyTypeFilterToRails(unfilteredRails)
+        if (filtered.isEmpty()) {
+            tvError.text = "No content found"
+            tvError.visibility = View.VISIBLE
+        } else {
+            tvError.visibility = View.GONE
+        }
+        railsAdapter.submitList(filtered)
+    }
+
+    private fun applyTypeFilterToRails(rails: List<ContentRail>): List<ContentRail> {
+        if (typeFilter == "all") return rails
+        return rails.mapNotNull { rail ->
+            val filteredItems = rail.items.filter { item ->
+                when (typeFilter) {
+                    "movies" -> AmazonApiService.isMovieContentType(item.contentType)
+                    "series" -> AmazonApiService.isSeriesContentType(item.contentType)
+                    else -> true
+                }
+            }
+            if (filteredItems.isEmpty()) null
+            else rail.copy(items = filteredItems)
+        }
+    }
+
     // --- View state helpers ---
 
     private fun showLoading() {
         progressBar.visibility = View.VISIBLE
         tvError.visibility = View.GONE
-        adapter.submitList(emptyList())
+        if (isRailsMode) railsAdapter.submitList(emptyList())
+        else adapter.submitList(emptyList())
     }
 
     private fun showItems(items: List<ContentItem>) {
@@ -591,15 +797,30 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Refresh watch progress on cards when returning from player
-        val currentList = adapter.currentList
-        if (currentList.isNotEmpty()) {
-            val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
-            val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
-            val updated = currentList.map { it.copy(watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs) }
-            adapter.submitList(updated)
+        val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
+        val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
+
+        if (isRailsMode) {
+            // Refresh watch progress within unfiltered cache and re-filter
+            if (unfilteredRails.isNotEmpty()) {
+                unfilteredRails = unfilteredRails.map { rail ->
+                    rail.copy(items = rail.items.map { it.copy(
+                        watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs
+                    ) })
+                }
+                val filtered = applyTypeFilterToRails(unfilteredRails)
+                railsAdapter.submitList(filtered)
+            }
+        } else {
+            // Refresh watch progress on flat grid cards
+            val currentList = adapter.currentList
+            if (currentList.isNotEmpty()) {
+                val updated = currentList.map { it.copy(watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs) }
+                adapter.submitList(updated)
+            }
         }
-        // Re-focus grid when returning from another activity
+
+        // Re-focus when returning from another activity
         recyclerView.post {
             val firstChild = recyclerView.getChildAt(0)
             if (firstChild != null) firstChild.requestFocus()

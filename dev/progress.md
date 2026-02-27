@@ -439,6 +439,58 @@ Implemented full watch progress tracking per `dev/analysis/watch-progress-api.md
 - **Fix**: `showItems()` now sorts all items by `title.lowercase()` before submitting to adapter
 - Applies to home, search, watchlist, and freevee pages
 
+## Phase 19: COMPLETE — Home Page Rails UI (Horizontal Carousels)
+
+Replaced the flat alphabetical content grid on the Home tab with categorized horizontal carousels
+matching the structure returned by the Amazon v2 landing API.
+
+### New files
+- `model/ContentRail.kt` — `data class ContentRail(headerText, items, collectionId, paginationParams)`
+- `ui/RailsAdapter.kt` — outer vertical `ListAdapter<ContentRail>` with shared `RecycledViewPool`; each row inflates `item_rail.xml` and wires an inner `ContentAdapter` with `LinearLayoutManager(HORIZONTAL)`
+- `res/layout/item_rail.xml` — `LinearLayout(vertical)` containing `TextView` header + horizontal `RecyclerView`
+
+### API changes (`AmazonApiService.kt`)
+- **`PRIME_SERVICE_TOKEN`** constant — `eyJ0eXBlIjoibGliIiwibmF2IjpmYWxzZSwiZmlsdGVyIjp7Ik9GRkVSX0ZJTFRFUiI6WyJQUklNRSJdfX0=`
+- **`getHomePageRails(paginationParams)`** — hits `dv-android/landing/initial/v2.kt` (first call) or `dv-android/landing/next/v2.kt` (pagination); returns `Pair<List<ContentRail>, String>` (rails + nextPageParams); falls back to v1 flat list if v2 fails
+- **`parseRails(json)`** — iterates `collections[]`, extracts `headerText` per collection, calls `parseItemsFromArray()` per `collectionItemList`; extracts `paginationModel` for page-level pagination
+- **`parseItemsFromArray(JsonArray)`** — extracted from `parseContentItems()` as shared helper; used by both the flat list and rails parsers
+- **`getWatchlistData()`** — returns `Pair<Set<String>, Map<String, Pair<Long,Long>>>` (ASINs + progress map); used to merge watch progress from watchlist data (which has `remainingTimeInSeconds`) into rail items (which do not)
+- **Watch progress parsing** — `remainingTimeInSeconds` semantics:
+  - `remainSec > 0 && remainSec < runtimeSec` → PARTIAL → `watchProgressMs = runtimeMs - remainSec*1000`
+  - `remainSec >= runtimeSec` → not started → `watchProgressMs = 0`
+  - `remainSec == 0` → ambiguous ("no data") → `watchProgressMs = 0`
+  - timecode fallback: `timecodeSeconds` used if available (detail API format)
+
+### UI changes (`MainActivity.kt`)
+- **`isRailsMode`** flag + **`switchToRailsMode()` / `switchToGridMode()`** — swaps `layoutManager` between `LinearLayoutManager(VERTICAL)` and `GridLayoutManager(5)` and swaps adapter
+- **`loadHomeRails()`** — fetches v2 rails on IO dispatcher, then calls `showRails()`
+- **`loadHomeRailsNextPage()`** — infinite scroll: triggers when last visible rail is within 3 of total, appends new rails; `homePageLoading` guard prevents duplicate requests
+- **`showRails(rails)`** — merges watchlist membership, `watchlistProgress` (server-side progress from watchlist data), and local resume positions into each rail's items before submitting to `railsAdapter`
+- **`loadNav("home")`** — now calls `loadHomeRails()` instead of `loadFilteredContent()`; all other tabs call `switchToGridMode()` first
+- **Filter row** — hidden on Home (server curates carousels); visible on Watchlist; Movies/Series filter chips apply to rails via `applyTypeFilterToRails()`
+- **Search** — switching to search on Home calls `switchToGridMode()`; clearing search returns to rails
+- **`onResume()`** — refreshes watch progress within rails when returning from player (rails mode)
+- **`watchlistProgress`** field — `Map<String, Pair<Long, Long>>` loaded alongside `watchlistAsins` at startup via `getWatchlistData()`
+
+### ContentAdapter changes
+- **Progress bar rendering** — switched from custom `@drawable/watch_progress_bar` (didn't render in nested RecyclerView) to `@android:style/Widget.ProgressBar.Horizontal` with `progressTintList`/`progressBackgroundTintList` set programmatically
+- Progress bar height increased from 5dp to 8dp for visibility
+
+### Key technical findings
+- v2 rails API does **not** include `remainingTimeInSeconds` in its item data — watch progress only available from watchlist API
+- v1 home landing returns `remainingTimeInSeconds=0` for items that have real progress in the watchlist API (ambiguous — treat as "no data")
+- `remainingTimeInSeconds` reflects time **remaining**, not time **watched** — `watchProgressMs = runtimeMs - remainingSec*1000`
+- Custom XML `progressDrawable` does not render in nested RecyclerView-in-RecyclerView context; must use default style + `progressTintList`
+
+### Verified
+- Build: `assembleRelease` SUCCESS
+- Home tab: vertically stacked horizontal-scrolling carousels with section headers (Featured, Derzeit beliebt, Täglich neue Filme, etc.)
+- D-pad: left/right scrolls within a rail, up/down moves between rails
+- Scroll down: more rails load via page-level pagination (4 initial + 19 + 6 = 29 total rails)
+- Amber progress bars on "Der Tiger" (~27%) and "The Life of Chuck" (~26%) confirmed visible in "Täglich neue Filme" rail
+- Movies/Series filter chips apply to rails (filter items by contentType within each rail)
+- Watchlist/Library/Freevee/Search tabs use flat grid (unchanged)
+
 ## Phase 17: PENDING — AI Code Review
 
 Full codebase review performed by an AI agent using `dev/REVIEW.md` as the checklist.

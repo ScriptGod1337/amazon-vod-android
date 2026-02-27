@@ -58,18 +58,25 @@ class ContentAdapter(
             item.watchProgressMs == -1L -> {
                 // Fully watched — green bar at 100%
                 holder.watchProgress.visibility = View.VISIBLE
+                holder.watchProgress.max = 100
                 holder.watchProgress.progress = 100
                 holder.watchProgress.progressTintList = ColorStateList.valueOf(0xFF4CAF50.toInt())
+                holder.watchProgress.progressBackgroundTintList = ColorStateList.valueOf(0x44FFFFFF)
+                holder.title.setTextColor(0xFFFFFFFF.toInt())
             }
             item.watchProgressMs > 0 && item.runtimeMs > 0 -> {
                 // Partially watched — amber bar
                 holder.watchProgress.visibility = View.VISIBLE
+                holder.watchProgress.max = 100
                 holder.watchProgress.progress = (item.watchProgressMs * 100 / item.runtimeMs).toInt().coerceIn(1, 99)
                 holder.watchProgress.progressTintList = ColorStateList.valueOf(0xFFFFAB00.toInt())
+                holder.watchProgress.progressBackgroundTintList = ColorStateList.valueOf(0x44FFFFFF)
+                holder.title.setTextColor(0xFFFFFFFF.toInt())
             }
             else -> {
                 holder.watchProgress.visibility = View.GONE
                 holder.watchProgress.progress = 0
+                holder.title.setTextColor(0xFFFFFFFF.toInt())
             }
         }
 

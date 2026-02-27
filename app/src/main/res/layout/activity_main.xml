@@ -146,33 +146,41 @@
         android:orientation="horizontal"
         android:layout_marginBottom="16dp">
 
-        <Button
-            android:id="@+id/btn_cat_all"
+        <LinearLayout
+            android:id="@+id/source_filter_group"
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="All"
-            android:textColor="@android:color/black"
-            android:textSize="12sp"
-            android:backgroundTint="#00A8E0"
-            android:layout_marginEnd="6dp"
-            android:nextFocusDown="@id/recycler_view"/>
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/btn_cat_prime"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="Prime"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:backgroundTint="#555"
-            android:layout_marginEnd="20dp"
-            android:nextFocusDown="@id/recycler_view"/>
+            <Button
+                android:id="@+id/btn_cat_all"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="All"
+                android:textColor="@android:color/black"
+                android:textSize="12sp"
+                android:backgroundTint="#00A8E0"
+                android:layout_marginEnd="6dp"
+                android:nextFocusDown="@id/recycler_view"/>
 
-        <View
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:background="#555"
-            android:layout_marginEnd="20dp"/>
+            <Button
+                android:id="@+id/btn_cat_prime"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Prime"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:backgroundTint="#555"
+                android:layout_marginEnd="20dp"
+                android:nextFocusDown="@id/recycler_view"/>
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="#555"
+                android:layout_marginEnd="20dp"/>
+
+        </LinearLayout>
 
         <Button
             android:id="@+id/btn_type_all"
@@ -230,6 +238,6 @@
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:descendantFocusability="afterDescendants"
-        android:nextFocusUp="@id/btn_cat_all"/>
+        android:nextFocusUp="@id/btn_type_all"/>
 
 </LinearLayout>

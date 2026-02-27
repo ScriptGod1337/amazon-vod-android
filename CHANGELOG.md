@@ -4,6 +4,27 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.27.5] - 2026-02-27
+
+### Added
+- Home page horizontal carousels — vertically stacked rails per content category (Featured, Trending, Top 10, etc.) matching the real Prime Video home layout
+- `ContentRail` model, `RailsAdapter` outer adapter, `item_rail.xml` row layout — outer vertical RecyclerView contains inner horizontal RecyclerVIew per rail
+- v2 landing API integration (`dv-android/landing/initial/v2.kt` + `landing/next/v2.kt`) with `PRIME_SERVICE_TOKEN` — structured rails with section headers
+- Rail-level pagination: more rails load automatically as user scrolls to the bottom of the home page
+- Movies/Series type filter chips now work on rails view (filters items within each rail)
+- Watch progress bars on home screen rails — amber bar for partially watched movies (progress data sourced from watchlist API and merged into rails)
+- `getWatchlistData()` API method returns both ASIN set and watch progress map in a single pass; used to merge `remainingTimeInSeconds` data into home rails
+
+### Changed
+- Home tab now shows horizontal carousels instead of flat alphabetical grid; all other tabs (Watchlist, Library, Freevee, Search) retain flat grid
+- `parseItemsFromArray()` extracted as shared helper used by both flat-list and rails parsers
+- Progress bar renderer changed from custom XML drawable (failed in nested RecyclerView) to default `Widget.ProgressBar.Horizontal` style with `progressTintList` (8dp height)
+- `remainingTimeInSeconds` treated as "remaining" not "watched" — `watchProgressMs = runtimeMs - remainingSec*1000`; value of 0 treated as ambiguous (no data), not fully watched
+
+### Fixed
+- Home page watch progress bars were always green/100% — caused by `remainingTimeInSeconds=0` being incorrectly treated as "fully watched" (v1 API returns 0 for items with real progress in v2/watchlist API)
+- Watch progress not showing on home screen — v2 rails API omits `remainingTimeInSeconds`; now sourced from watchlist data and merged at display time
+
 ## [2026.02.27.4] - 2026-02-27
 
 ### Added

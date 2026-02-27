@@ -106,15 +106,17 @@ The `.device-token` `device_id` is used as the `deviceID` parameter and as `devi
 
 ---
 
-## Decision 8: Content browsing — simplified for v1
+## Decision 8: Content browsing — switchblade JVM transforms
 
-For the initial build, implement a minimal catalog flow:
-1. **Home/Landing** → list categories from `dv-android/landing/initial/v1.kt`
-2. **Browse** → list items from `dv-android/browse/v2/browseInitial.js`
+Catalog flow uses `getDataByJvmTransform` (Kotlin switchblade), not JS transforms:
+1. **Home/Landing** → `dv-android/landing/initial/v2.kt` (structured rails) / `v1.kt` (flat fallback)
+2. **Watchlist** → `dv-android/watchlist/initial/v1.kt` + `dv-android/watchlist/next/v1.kt`
 3. **Search** → `dv-android/search/searchInitial/v3.js` with `phrase=` param
-4. **Detail** → `android/atf/v3.jstl` with `itemId=` param (returns ASIN for playback)
+4. **Detail** → `android/atf/v3.jstl` with `itemId=` param
 
-The response JSON contains `collections` with `collectionItemList` items, each having a `model` with content metadata and link actions.
+Response JSON: `collections[]` with `collectionItemList` items per collection; `paginationModel` for page pagination.
+
+**Note**: JS transforms (`getDataByTransform`) only support initial page; `watchlistNext/v3.js` returns HTTP 500. JVM transforms support full pagination via `serviceToken` in `paginationModel.parameters`.
 
 **File references**: `android_api.py:108-300` (getPage routing and parsing)
 
@@ -143,6 +145,33 @@ Events:
 - `STOP` — when playback ends
 
 **File references**: `playback.py:740-751` (updateStream), `playback.py:664` (default interval=60)
+
+---
+
+---
+
+## Decision 11: Home page rails — v2 landing API with watchlist progress merge
+
+The v2 landing API (`landing/initial/v2.kt`) returns structured rails with `collections[]` per category. However, it does **not** include `remainingTimeInSeconds` in item data — watch progress is only available from the watchlist API.
+
+**Watch progress data flow**:
+1. At startup, `getWatchlistData()` loads all watchlist pages and builds both:
+   - `Set<String>` of ASINs (for watchlist star indicators)
+   - `Map<String, Pair<Long, Long>>` of ASIN → `(watchProgressMs, runtimeMs)` from `remainingTimeInSeconds`
+2. In `showRails()` and `loadHomeRailsNextPage()`, watchlist progress is merged into rail items by ASIN lookup
+
+**`remainingTimeInSeconds` semantics**:
+- This is time **remaining**, not time **watched**: `watchProgressMs = runtimeMs - remainingSec * 1000`
+- `remainSec == 0` is ambiguous — treat as "no data" (not "fully watched")
+- `remainSec >= runtimeSec` → not started (includes credits buffer, e.g. Road House: 7428s remaining > 6985s runtime)
+- `remainSec > 0 && remainSec < runtimeSec` → partial progress → show amber bar
+
+**v1 vs v2 landing**:
+- v1 (`landing/initial/v1.kt`): returns `remainingTimeInSeconds=0` for all items regardless of real progress
+- v2 (`landing/initial/v2.kt`): returns structured rails with section headers; omits `remainingTimeInSeconds`
+- Watchlist API: returns accurate `remainingTimeInSeconds` values
+
+**Key pitfall**: Nested `RecyclerView` (rails within rails) does not render custom XML `progressDrawable` — must use `@android:style/Widget.ProgressBar.Horizontal` + `progressTintList` set programmatically.
 
 ---
 
