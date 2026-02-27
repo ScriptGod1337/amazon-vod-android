@@ -4,6 +4,16 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.27_2] - 2026-02-27
+
+### Fixed
+- Subtitles always showing "no tracks available": external subtitle tracks now loaded via `MergingMediaSource` instead of `SubtitleConfiguration` (which `DashMediaSource` ignores)
+- Watchlist only showing first page: added pagination with `watchlistNext` transform and infinite scroll
+- Watchlist ASIN indicators incomplete: startup fetch now loads all watchlist pages
+
+### Changed
+- All content pages (home, search, watchlist) now sorted alphabetically by title
+
 ## [2026.02.27_1] - 2026-02-27
 
 ### Fixed

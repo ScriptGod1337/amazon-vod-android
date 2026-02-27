@@ -300,7 +300,7 @@ Implemented full watch progress tracking per `dev/analysis/watch-progress-api.md
 
 #### Player changes (`PlayerActivity.kt`)
 - `DefaultTrackSelector` — replaces ExoPlayer's implicit selector; enables programmatic track overrides
-- External subtitle tracks added as `MediaItem.SubtitleConfiguration` (TTML format) on the `MediaItem`
+- External subtitle tracks loaded via `SingleSampleMediaSource` + `MergingMediaSource` (TTML format) — `SubtitleConfiguration` on `MediaItem` is ignored by `DashMediaSource`
 - Audio tracks automatically available from DASH manifest (ExoPlayer parses MPD Adaptation Sets)
 - `showTrackSelectionDialog(trackType)` — builds AlertDialog listing available audio or text tracks
   - Audio: shows language + channel layout (5.1, Stereo, etc.)
@@ -410,6 +410,24 @@ Implemented full watch progress tracking per `dev/analysis/watch-progress-api.md
 - Territory: `atvUrl=https://atv-ps-eu.amazon.de marketplace=A1PA6795UKMFR9 sidomain=amazon.de lang=de_DE`
 - Catalog: 20 watchlist + 74 home items loaded from DE endpoint with `de_DE` locale
 - No errors in logcat
+
+## Subtitle, Watchlist & Sorting Fixes (post-Phase 16)
+
+### Subtitle fix
+- **Problem**: `DashMediaSource` ignores `MediaItem.SubtitleConfiguration` — external subtitles were added to the `MediaItem` but never loaded by the player
+- **Fix**: Use `SingleSampleMediaSource` for each subtitle track, merged with DASH source via `MergingMediaSource`
+- **Verified**: 2 TTML subtitle tracks extracted and loaded, `TtmlParser` confirming parsing in logcat
+
+### Watchlist pagination
+- **Problem**: `getWatchlistPage()` only loaded `watchlistInitial` (first ~20 items)
+- **Fix**: Added `getWatchlistPage(startIndex)` with `watchlistNext` transform (matching library pagination pattern)
+- Added `loadWatchlistInitial()` / `loadWatchlistNextPage()` in `MainActivity` with infinite scroll
+- `getWatchlistAsins()` now loads all pages for complete watchlist indicators on startup
+
+### Title sorting
+- **Problem**: All content pages displayed in API return order (unsorted)
+- **Fix**: `showItems()` now sorts all items by `title.lowercase()` before submitting to adapter
+- Applies to home, search, watchlist, and freevee pages
 
 ## Phase 17: PENDING — AI Code Review
 

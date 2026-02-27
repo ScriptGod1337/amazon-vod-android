@@ -69,6 +69,10 @@ class MainActivity : AppCompatActivity() {
     private var currentNavPage: String = "home"
     private var watchlistAsins: MutableSet<String> = mutableSetOf()
 
+    // Watchlist pagination state
+    private var watchlistNextIndex: Int = 0
+    private var watchlistLoading: Boolean = false
+
     // Phase 10: Library state
     private var libraryFilter: LibraryFilter = LibraryFilter.ALL
     private var librarySort: LibrarySort = LibrarySort.DATE_ADDED
@@ -178,15 +182,16 @@ class MainActivity : AppCompatActivity() {
         btnLibShows.setOnClickListener { setLibraryFilter(LibraryFilter.TV_SHOWS) }
         btnLibSort.setOnClickListener { cycleLibrarySort() }
 
-        // Infinite scroll for library pagination
+        // Infinite scroll for library and watchlist pagination
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
-                if (currentNavPage != "library" || libraryLoading || libraryNextIndex <= 0) return
                 val lm = rv.layoutManager as GridLayoutManager
                 val totalItems = lm.itemCount
                 val lastVisible = lm.findLastVisibleItemPosition()
-                if (lastVisible >= totalItems - 10) {
-                    loadLibraryNextPage()
+                if (lastVisible < totalItems - 10) return
+                when (currentNavPage) {
+                    "library" -> if (!libraryLoading && libraryNextIndex > 0) loadLibraryNextPage()
+                    "watchlist" -> if (!watchlistLoading && watchlistNextIndex > 0) loadWatchlistNextPage()
                 }
             }
         })
@@ -313,8 +318,12 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        if (page == "home" || page == "watchlist") {
-            // These pages support the combined source+type filters
+        if (page == "watchlist") {
+            loadWatchlistInitial()
+            return
+        }
+
+        if (page == "home") {
             loadFilteredContent()
             return
         }
@@ -367,6 +376,56 @@ class MainActivity : AppCompatActivity() {
             else -> {
                 categoryFilterRow.visibility = View.GONE
                 libraryFilterRow.visibility = View.GONE
+            }
+        }
+    }
+
+    // --- Watchlist pagination ---
+
+    private fun loadWatchlistInitial() {
+        watchlistNextIndex = 0
+        showLoading()
+        lifecycleScope.launch {
+            try {
+                val items = withContext(Dispatchers.IO) {
+                    apiService.getWatchlistPage(0)
+                }
+                watchlistNextIndex = if (items.size >= 20) items.size else 0
+                val sorted = items.sortedBy { it.title.lowercase() }
+                showItems(sorted)
+                if (items.isEmpty()) {
+                    showError("Your watchlist is empty.")
+                }
+            } catch (e: Exception) {
+                Log.i(TAG, "Error loading watchlist", e)
+                showError("Error: ${e.message}")
+            }
+        }
+    }
+
+    private fun loadWatchlistNextPage() {
+        if (watchlistLoading || watchlistNextIndex <= 0) return
+        watchlistLoading = true
+        Log.i(TAG, "Loading watchlist next page at index $watchlistNextIndex")
+        lifecycleScope.launch {
+            try {
+                val newItems = withContext(Dispatchers.IO) {
+                    apiService.getWatchlistPage(watchlistNextIndex)
+                }
+                if (newItems.isNotEmpty()) {
+                    watchlistNextIndex += newItems.size
+                    val markedItems = newItems.map { it.copy(isInWatchlist = watchlistAsins.contains(it.asin)) }
+                    val combined = (adapter.currentList + markedItems).sortedBy { it.title.lowercase() }
+                    adapter.submitList(combined)
+                    Log.i(TAG, "Watchlist appended ${newItems.size} items, total=${combined.size}")
+                } else {
+                    watchlistNextIndex = 0
+                    Log.i(TAG, "Watchlist pagination complete — no more items")
+                }
+            } catch (e: Exception) {
+                Log.i(TAG, "Error loading watchlist next page", e)
+            } finally {
+                watchlistLoading = false
             }
         }
     }
@@ -532,8 +591,10 @@ class MainActivity : AppCompatActivity() {
             tvError.visibility = View.VISIBLE
         } else {
             tvError.visibility = View.GONE
-            // Mark items that are in the user's watchlist
-            val markedItems = items.map { it.copy(isInWatchlist = watchlistAsins.contains(it.asin)) }
+            // Mark items that are in the user's watchlist, sort by title
+            val markedItems = items
+                .map { it.copy(isInWatchlist = watchlistAsins.contains(it.asin)) }
+                .sortedBy { it.title.lowercase() }
             adapter.submitList(markedItems)
             // After items are submitted, request focus on first grid item for D-pad navigation
             recyclerView.post {

@@ -23,6 +23,8 @@ import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
 import androidx.media3.exoplayer.drm.DrmSessionManagerProvider
 import androidx.media3.exoplayer.drm.FrameworkMediaDrm
+import androidx.media3.exoplayer.source.MergingMediaSource
+import androidx.media3.exoplayer.source.SingleSampleMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
 import com.scriptgod.fireos.avod.R
@@ -161,24 +163,32 @@ class PlayerActivity : AppCompatActivity() {
             authService.buildAuthenticatedClient()
         )
 
-        // Build MediaItem with external subtitle tracks from API
-        val subtitleConfigs = info.subtitleTracks.map { sub ->
-            MediaItem.SubtitleConfiguration.Builder(android.net.Uri.parse(sub.url))
+        val mediaItem = MediaItem.Builder()
+            .setUri(info.manifestUrl)
+            .build()
+
+        val dashSource = DashMediaSource.Factory(dataSourceFactory)
+            .setDrmSessionManagerProvider(drmSessionManager.asDrmSessionManagerProvider())
+            .createMediaSource(mediaItem)
+
+        // External subtitle tracks via SingleSampleMediaSource (DashMediaSource ignores SubtitleConfiguration)
+        Log.w(TAG, "Subtitle tracks from API: ${info.subtitleTracks.size}")
+        val subtitleSources = info.subtitleTracks.map { sub ->
+            val subConfig = MediaItem.SubtitleConfiguration.Builder(android.net.Uri.parse(sub.url))
                 .setMimeType(MimeTypes.APPLICATION_TTML)
                 .setLanguage(sub.languageCode)
                 .setLabel(buildSubtitleLabel(sub.languageCode, sub.type))
                 .setSelectionFlags(if (sub.type == "forced") C.SELECTION_FLAG_FORCED else 0)
                 .build()
+            SingleSampleMediaSource.Factory(dataSourceFactory)
+                .createMediaSource(subConfig, C.TIME_UNSET)
         }
 
-        val mediaItem = MediaItem.Builder()
-            .setUri(info.manifestUrl)
-            .setSubtitleConfigurations(subtitleConfigs)
-            .build()
-
-        val mediaSource = DashMediaSource.Factory(dataSourceFactory)
-            .setDrmSessionManagerProvider(drmSessionManager.asDrmSessionManagerProvider())
-            .createMediaSource(mediaItem)
+        val mediaSource = if (subtitleSources.isNotEmpty()) {
+            MergingMediaSource(dashSource, *subtitleSources.toTypedArray())
+        } else {
+            dashSource
+        }
 
         val selector = DefaultTrackSelector(this)
         trackSelector = selector

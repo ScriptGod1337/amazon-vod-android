@@ -363,7 +363,21 @@ class AmazonApiService(private val authService: AmazonAuthService) {
     }
 
     fun getWatchlistPage(): List<ContentItem> {
-        return getMobilePage("dv-android/watchlist/watchlistInitial/v3.js", baseParams() + "&appendTapsData=true")
+        return getWatchlistPage(0)
+    }
+
+    /**
+     * Paginated watchlist fetch.
+     * startIndex=0 → watchlistInitial, startIndex>0 → watchlistNext.
+     */
+    fun getWatchlistPage(startIndex: Int): List<ContentItem> {
+        val transform = if (startIndex > 0)
+            "dv-android/watchlist/watchlistNext/v3.js"
+        else
+            "dv-android/watchlist/watchlistInitial/v3.js"
+        val params = baseParams() + "&appendTapsData=true" +
+            (if (startIndex > 0) "&startIndex=$startIndex" else "")
+        return getMobilePage(transform, params)
     }
 
     fun getLibraryPage(): List<ContentItem> {
@@ -832,14 +846,24 @@ class AmazonApiService(private val authService: AmazonAuthService) {
     }
 
     /**
-     * Fetches the set of ASINs currently in the user's watchlist.
+     * Fetches all ASINs in the user's watchlist (paginated).
      * Used to mark items with isInWatchlist when displaying other pages.
      */
     fun getWatchlistAsins(): Set<String> {
         return try {
-            getWatchlistPage().map { it.asin }.toSet()
+            val allAsins = mutableSetOf<String>()
+            var startIndex = 0
+            while (true) {
+                val page = getWatchlistPage(startIndex)
+                if (page.isEmpty()) break
+                allAsins.addAll(page.map { it.asin })
+                if (page.size < 20) break
+                startIndex += page.size
+            }
+            Log.w(TAG, "Watchlist ASINs loaded: ${allAsins.size} total")
+            allAsins
         } catch (e: Exception) {
-            Log.i(TAG, "Failed to fetch watchlist ASINs", e)
+            Log.w(TAG, "Failed to fetch watchlist ASINs", e)
             emptySet()
         }
     }
