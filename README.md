@@ -66,6 +66,7 @@ See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history
 
 **Recently completed:**
 - **Phase 19** — Home page horizontal carousels (v2 landing API rails, watch progress bars)
+- **Fix** — Watch progress bars now show correctly in search results, Freevee, and Library (grid views were missing the server-side progress merge that home rails already had)
 
 **Next up:**
 - **Phase 17** — AI Code Review (security audit, code quality, best practices)
