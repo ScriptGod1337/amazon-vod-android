@@ -268,7 +268,8 @@ class PlayerActivity : AppCompatActivity() {
         val selector = DefaultTrackSelector(this)
         trackSelector = selector
 
-        val resumeMs = resumePrefs.getLong(currentAsin, 0L)
+        // Trailers always start from the beginning — don't restore the movie's resume position
+        val resumeMs = if (currentMaterialType == "Trailer") 0L else resumePrefs.getLong(currentAsin, 0L)
 
         player = ExoPlayer.Builder(this, renderersFactory)
             .setTrackSelector(selector)
