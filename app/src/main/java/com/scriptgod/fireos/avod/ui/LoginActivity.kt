@@ -115,6 +115,15 @@ class LoginActivity : AppCompatActivity() {
         .followRedirects(true)
         .followSslRedirects(true)
         .cookieJar(cookieJar)
+        // Identify all requests as coming from the Amazon app — matches what register_device.py sends.
+        // Without these headers Amazon serves a browser-mode login page that requires JS cookies.
+        .addInterceptor { chain ->
+            val req = chain.request().newBuilder()
+                .header("X-Requested-With", AmazonAuthService.APP_NAME)
+                .header("x-gasc-enabled", "true")
+                .build()
+            chain.proceed(req)
+        }
         .build()
 
     // Non-following client shares the same connection pool and cookie jar
@@ -444,15 +453,16 @@ class LoginActivity : AppCompatActivity() {
 
         val postUrl = if (formAction.startsWith("http")) formAction
             else "https://${uri.host}$formAction"
-        Log.w(TAG, "Step 4: Submitting credentials to: ${postUrl.take(100)}")
+        val origin = "https://${uri.host}"
+        Log.w(TAG, "Step 4: Submitting credentials to: ${postUrl.take(100)}, appAction=${fields["appAction"]}, cookies=${cookieStore.size}")
 
         val credResp = noRedirectClient.newCall(
             Request.Builder().url(postUrl)
                 .post(formBuilder.build())
                 .header("User-Agent", AmazonAuthService.USER_AGENT)
                 .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                .header("Accept-Language", "en-US,en;q=0.5")
-                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept-Language", "en-US,en;q=0.9")
+                .header("Origin", origin)
                 .header("Referer", signinUrl)
                 .build()
         ).execute()
