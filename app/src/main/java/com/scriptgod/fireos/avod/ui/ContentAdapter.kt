@@ -84,6 +84,12 @@ class ContentAdapter(
         // Tag the item so Activity.onKeyDown can retrieve it from the focused view
         holder.itemView.tag = item
         holder.itemView.setOnClickListener { onItemClick(item) }
+        // Long-press SELECT (standard Fire TV context-menu gesture on remotes without a Menu button)
+        holder.itemView.setOnLongClickListener {
+            onMenuKey?.invoke(item)
+            true
+        }
+        // KEYCODE_MENU for remotes that have a physical Menu button
         holder.itemView.setOnKeyListener { _, keyCode, event ->
             if (keyCode == KeyEvent.KEYCODE_MENU && event.action == KeyEvent.ACTION_DOWN) {
                 onMenuKey?.invoke(item)
