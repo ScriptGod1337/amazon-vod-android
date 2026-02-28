@@ -803,6 +803,15 @@ BrowseActivity (episodes list) → episode card → PlayerActivity (unchanged, d
 - `isTrailerAvailable: true` is reliable — confirmed by actual trailer manifest fetch
 - Sub-genre strings like `"Thriller > Mystery"` must be filtered from `genres[]`
 
+### Post-Phase 23 fixes
+
+#### Detail page layout — buttons always visible (v2026.02.28.16)
+**Bug**: Action buttons (Play, Trailer, Browse, Watchlist) could be cut off when synopsis text was long — they were in a plain `wrap_content` LinearLayout below the scrollable metadata.
+**Fix**: Restructured `activity_detail.xml` — hero image (200dp) at top, info row (poster | NestedScrollView) in the middle with `layout_weight=1`, and a **fixed bottom bar** (`wrap_content`) containing all action buttons. The bottom bar is always rendered regardless of how much text appears above it.
+
+#### "All Seasons" button on season detail pages (v2026.02.28.17)
+**Feature**: Season detail pages now show two action buttons: "Browse Episodes" (opens episode list for the current season) and "All Seasons" (opens the season picker for the parent show). Uses `resource.show.titleId` (stored as `DetailInfo.showAsin`) which the API already returns for season ASINs. The button only appears when `showAsin` is non-empty.
+
 ---
 
 ## Phase 22: PENDING — UI Redesign

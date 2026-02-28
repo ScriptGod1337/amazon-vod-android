@@ -7,11 +7,16 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 - **In-app login** with Amazon email/password + MFA support (PKCE OAuth device registration)
 - **Sign Out** via About screen (⚙ gear button) — clears tokens and returns to login
 - **Home page horizontal carousels** — categorised rails (Featured, Trending, Top 10, etc.) matching the real Prime Video home layout, with page-level infinite scroll for more rails
+- **Content overview / detail page** — selecting any movie or series opens a full detail screen before playback: hero backdrop image, poster, year/runtime/age rating, quality badges (4K/HDR/5.1), IMDb rating, genres, synopsis, director credit
+  - **▶ Play** button for movies
+  - **▶ Trailer** button (shown only when `isTrailerAvailable: true`)
+  - **Browse Episodes** + **All Seasons** buttons for series/seasons — All Seasons lets you jump to any other season without navigating back
+  - **☆ / ★ Watchlist** toggle on every detail page
 - **Watch progress bars** on content cards — amber for in-progress, synced with server-side `remainingTimeInSeconds` so progress from the official app shows up here too
 - Browse home catalog, watchlist, and personal library
 - Search with instant results
 - Filter by source (All / Prime) and type (Movies / Series) — filters combine independently
-- Series drill-down: show → seasons → episodes → play
+- Series drill-down: show → detail page → seasons → detail page → episodes → play
 - Widevine L1 hardware-secure playback (DASH/MPD)
 - **Audio & subtitle track selection** during playback — one entry per language/codec combination (e.g. `German (5.1)`, `German (5.1) · Dolby`, `English (Stereo)`); bitrate selected adaptively by ExoPlayer; MENU key or pause shows controls; player controls and track buttons always appear/hide together
 - **Seekbar seeking** — D-pad left/right seeks ±10 seconds per press (hold to repeat), matching standard Fire TV remote behaviour
@@ -37,11 +42,13 @@ com.scriptgod.fireos.avod
  +-- model/
  |   +-- ContentItem.kt            Content data model (asin, title, imageUrl, contentType, watchProgressMs, ...)
  |   +-- ContentRail.kt            Named row of ContentItems (headerText, items, collectionId)
+ |   +-- DetailInfo.kt             Detail page data model (synopsis, heroImageUrl, imdbRating, genres, ...)
  |   +-- TokenData.kt              Token JSON model (access_token, refresh_token, device_id, expires_at)
  +-- ui/
      +-- LoginActivity.kt          Amazon login: email/password + MFA, PKCE OAuth, device registration
      +-- MainActivity.kt           Home screen: rails or grid, search, nav, filters, pagination
      +-- AboutActivity.kt          App info (version, device ID) and Sign Out
+     +-- DetailActivity.kt         Content overview: hero image, metadata, IMDb, trailer, play/browse buttons
      +-- BrowseActivity.kt         Series detail: seasons / episodes grid
      +-- PlayerActivity.kt         ExoPlayer with DASH + Widevine DRM, track selection, resume
      +-- RailsAdapter.kt           Outer vertical adapter (one row per ContentRail)
@@ -59,6 +66,10 @@ com.scriptgod.fireos.avod
 |:---:|:---:|:---:|
 | ![Login](screenshots/01_login.png) | ![Search](screenshots/03_search.png) | ![Watchlist](screenshots/04_watchlist.png) |
 
+| Movie Detail Page | Series / Season Detail Page |
+|:---:|:---:|
+| ![Movie Detail](screenshots/09_detail_movie.png) | ![Series Detail](screenshots/10_detail_series.png) |
+
 | My Library | Season Selection | Episode List |
 |:---:|:---:|:---:|
 | ![Library](screenshots/05_library.png) | ![Seasons](screenshots/07_series_drilldown.png) | ![Episodes](screenshots/08_episodes.png) |
@@ -68,6 +79,7 @@ com.scriptgod.fireos.avod
 See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history and upcoming work.
 
 **Recently completed:**
+- **Phase 23** — Content overview / detail page (`DetailActivity`) — hero image, poster, IMDb rating, genres, synopsis, Play/Trailer/Browse/Watchlist buttons; All Seasons button for quick season switching; trailer playback via `videoMaterialType=Trailer`
 - **Fix** — Audio track menu: one entry per language/codec, no bitrate duplicates; codec qualifier shown only when needed; adaptive bitrate within chosen group; seekbar D-pad seeks ±10 s per press
 - **Phase 21** — AI code review (10 warnings, 0 critical); all warnings fixed — lifecycle leaks, password hygiene, header scoping, CI keystore cleanup, monotonic versionCode, server-order preservation
 - **Fix** — Player AUDIO/SUBTITLES and player controls unified: MENU key shows/hides both together; track buttons D-pad focusable when visible; auto-hide during playback
