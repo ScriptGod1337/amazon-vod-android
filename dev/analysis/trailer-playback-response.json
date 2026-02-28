@@ -1,0 +1,234 @@
+{
+  "playbackUrls": {
+    "audioTracks": [
+      {
+        "audioSubtype": "dialog",
+        "displayName": "Deutsch",
+        "index": "0",
+        "languageCode": "de-de"
+      }
+    ],
+    "cacheKey": "5eafdab5-5134-3263-8a63-fc0505623602$0ChcIAiAZMAFSA4DAAnoDgLgXggEBAYgBBBgB",
+    "defaultUrlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-2",
+    "urlSets": {
+      "20512-601e3ad8-c491-4887-80c7-b99e8e839189-1": {
+        "failover": {
+          "default": {
+            "mode": "seamless",
+            "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-2"
+          }
+        },
+        "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-1",
+        "urls": {
+          "manifest": {
+            "audioFormat": "Stereo",
+            "bitrateAdaption": "CVBR",
+            "cdn": "Akamai",
+            "cdnOrigin": "S3_INTERNAL",
+            "compressionStandard": "H264",
+            "contiguityType": "Contiguous",
+            "drm": "CENC",
+            "duration": 143000,
+            "dynamicRange": "None",
+            "encodingVersion": "4",
+            "fragmentRepresentation": "ByteOffsetRange",
+            "frameRate": "Standard",
+            "isFmmCompatible": false,
+            "origin": "s3_iad_2",
+            "streamingTechnology": "DASH",
+            "subtitleRepresentation": "NotInManifestNorStream",
+            "url": "https://a168avoddashs3ww-a.akamaihd.net/3$0ChcIAiAZMAFSA4DAAnoDgLgXggEBAYgBBBgB/ondemand/iad_2/b69b/7944/d36d/4f6e-bf4d-b1b44d58608f/e6de01e8-c768-4698-b83a-d73acb14bcb1_corrected.mpd",
+            "videoQuality": "HD"
+          }
+        }
+      },
+      "20512-601e3ad8-c491-4887-80c7-b99e8e839189-2": {
+        "failover": {
+          "cdn": {
+            "mode": "seamless",
+            "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-6"
+          },
+          "default": {
+            "mode": "seamless",
+            "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-6"
+          }
+        },
+        "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-2",
+        "urls": {
+          "manifest": {
+            "audioFormat": "Stereo",
+            "bitrateAdaption": "CVBR",
+            "cdn": "Cloudfront",
+            "cdnOrigin": "S3_INTERNAL",
+            "compressionStandard": "H264",
+            "contiguityType": "Contiguous",
+            "drm": "CENC",
+            "duration": 143000,
+            "dynamicRange": "None",
+            "encodingVersion": "4",
+            "fragmentRepresentation": "ByteOffsetRange",
+            "frameRate": "Standard",
+            "isFmmCompatible": false,
+            "origin": "popular_s3_ww_dub_de",
+            "streamingTechnology": "DASH",
+            "subtitleRepresentation": "NotInManifestNorStream",
+            "url": "https://ABC5X6IAAAAAAAAMBINRAMUM3MZOJ.pop-de-cf.dash.pv-cdn.net/dm/3$0ChcIAiAZMAFSA4DAAnoDgLgXggEBAYgBBBgB/b69b/7944/d36d/4f6e-bf4d-b1b44d58608f/e6de01e8-c768-4698-b83a-d73acb14bcb1_corrected.mpd",
+            "videoQuality": "HD"
+          }
+        }
+      },
+      "20512-601e3ad8-c491-4887-80c7-b99e8e839189-3": {
+        "failover": {
+          "cdn": {
+            "mode": "seamless",
+            "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-6"
+          },
+          "default": {
+            "mode": "seamless",
+            "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-6"
+          }
+        },
+        "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-3",
+        "urls": {
+          "manifest": {
+            "audioFormat": "Stereo",
+            "bitrateAdaption": "CVBR",
+            "cdn": "Cloudfront",
+            "cdnOrigin": "S3_INTERNAL",
+            "compressionStandard": "H264",
+            "contiguityType": "Contiguous",
+            "drm": "CENC",
+            "duration": 143000,
+            "dynamicRange": "None",
+            "encodingVersion": "4",
+            "fragmentRepresentation": "ByteOffsetRange",
+            "frameRate": "Standard",
+            "isFmmCompatible": false,
+            "origin": "s3_ww_dub",
+            "streamingTechnology": "DASH",
+            "subtitleRepresentation": "NotInManifestNorStream",
+            "url": "https://s3-dub-ww.cf.dash.row.aiv-cdn.net/dm/3$0ChcIAiAZMAFSA4DAAnoDgLgXggEBAYgBBBgB/b69b/7944/d36d/4f6e-bf4d-b1b44d58608f/e6de01e8-c768-4698-b83a-d73acb14bcb1_corrected.mpd",
+            "videoQuality": "HD"
+          }
+        }
+      },
+      "20512-601e3ad8-c491-4887-80c7-b99e8e839189-4": {
+        "failover": {
+          "cdn": {
+            "mode": "seamless",
+            "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-6"
+          },
+          "default": {
+            "mode": "seamless",
+            "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-6"
+          }
+        },
+        "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-4",
+        "urls": {
+          "manifest": {
+            "audioFormat": "Stereo",
+            "bitrateAdaption": "CVBR",
+            "cdn": "Cloudfront",
+            "cdnOrigin": "S3_INTERNAL",
+            "compressionStandard": "H264",
+            "contiguityType": "Contiguous",
+            "drm": "CENC",
+            "duration": 143000,
+            "dynamicRange": "None",
+            "encodingVersion": "4",
+            "fragmentRepresentation": "ByteOffsetRange",
+            "frameRate": "Standard",
+            "isFmmCompatible": false,
+            "origin": "s3_dub_2",
+            "streamingTechnology": "DASH",
+            "subtitleRepresentation": "NotInManifestNorStream",
+            "url": "https://ABC5X6IAAAAAAAAMBINRAMUM3MZOJ.s3-dub-2.cf.dash.row.aiv-cdn.net/dm/3$0ChcIAiAZMAFSA4DAAnoDgLgXggEBAYgBBBgB/b69b/7944/d36d/4f6e-bf4d-b1b44d58608f/e6de01e8-c768-4698-b83a-d73acb14bcb1_corrected.mpd",
+            "videoQuality": "HD"
+          }
+        }
+      },
+      "20512-601e3ad8-c491-4887-80c7-b99e8e839189-5": {
+        "failover": {
+          "cdn": {
+            "mode": "seamless",
+            "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-6"
+          },
+          "default": {
+            "mode": "seamless",
+            "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-6"
+          }
+        },
+        "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-5",
+        "urls": {
+          "manifest": {
+            "audioFormat": "Stereo",
+            "bitrateAdaption": "CVBR",
+            "cdn": "Cloudfront",
+            "cdnOrigin": "S3_INTERNAL",
+            "compressionStandard": "H264",
+            "contiguityType": "Contiguous",
+            "drm": "CENC",
+            "duration": 143000,
+            "dynamicRange": "None",
+            "encodingVersion": "4",
+            "fragmentRepresentation": "ByteOffsetRange",
+            "frameRate": "Standard",
+            "isFmmCompatible": false,
+            "origin": "s3_iad_2",
+            "streamingTechnology": "DASH",
+            "subtitleRepresentation": "NotInManifestNorStream",
+            "url": "https://ABC5X6IAAAAAAAAMBINRAMUM3MZOJ.s3-iad-2.cf.dash.row.aiv-cdn.net/dm/3$0ChcIAiAZMAFSA4DAAnoDgLgXggEBAYgBBBgB/b69b/7944/d36d/4f6e-bf4d-b1b44d58608f/e6de01e8-c768-4698-b83a-d73acb14bcb1_corrected.mpd",
+            "videoQuality": "HD"
+          }
+        }
+      },
+      "20512-601e3ad8-c491-4887-80c7-b99e8e839189-6": {
+        "failover": {
+          "default": {
+            "mode": "seamless",
+            "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-2"
+          }
+        },
+        "urlSetId": "20512-601e3ad8-c491-4887-80c7-b99e8e839189-6",
+        "urls": {
+          "manifest": {
+            "audioFormat": "Stereo",
+            "bitrateAdaption": "CVBR",
+            "cdn": "Akamai",
+            "cdnOrigin": "S3_INTERNAL",
+            "compressionStandard": "H264",
+            "contiguityType": "Contiguous",
+            "drm": "CENC",
+            "duration": 143000,
+            "dynamicRange": "None",
+            "encodingVersion": "4",
+            "fragmentRepresentation": "ByteOffsetRange",
+            "frameRate": "Standard",
+            "isFmmCompatible": false,
+            "origin": "s3_ww_dub",
+            "streamingTechnology": "DASH",
+            "subtitleRepresentation": "NotInManifestNorStream",
+            "url": "https://a249avoddashs3ww-a.akamaihd.net/3$0ChcIAiAZMAFSA4DAAnoDgLgXggEBAYgBBBgB/ondemand/ww_dub/b69b/7944/d36d/4f6e-bf4d-b1b44d58608f/e6de01e8-c768-4698-b83a-d73acb14bcb1_corrected.mpd",
+            "videoQuality": "HD"
+          }
+        }
+      }
+    }
+  },
+  "returnedTitleRendition": {
+    "asin": "amzn1.dv.gti.e7cf295a-b49d-404b-9e73-4af95b9886ce",
+    "assetBundleVideoQuality": "HD",
+    "audioQuality": "Stereo",
+    "audioTrackId": "all",
+    "contentId": "amzn1.dv.vcid.ce196e80-8508-4169-99d6-ea3311b70aa0",
+    "selectedEntitlement": {
+      "entitlementType": "FREE",
+      "grantedByCustomerId": "A2KXWBSQY0NEYX"
+    },
+    "titleId": "amzn1.dv.gti.e7cf295a-b49d-404b-9e73-4af95b9886ce",
+    "videoMaterialType": "Trailer",
+    "videoQuality": "HD",
+    "videoResolution": "1080p"
+  },
+  "subtitleUrls": []
+}

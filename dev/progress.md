@@ -741,57 +741,67 @@ The Alexa Voice Remote shipped with Fire TV Stick 4K (AFTR/raven) has **no physi
 
 ---
 
-## Phase 23: PENDING — Content Overview / Detail Page
+## Phase 23: COMPLETE — Content Overview / Detail Page
 
-A dedicated overview screen shown whenever the user selects a movie or a series (replaces the current direct-play and direct-BrowseActivity flows).
+A dedicated overview screen (`DetailActivity`) inserted before playback for every content item.
 
-### What to show
+### API Analysis (conducted 2026-02-28)
 
-#### Movie overview
-- Hero / backdrop image (wide)
-- Title, year, runtime, content rating (FSK / PG-13), genre tags
-- IMDB rating (star + number)
-- Description / synopsis (scrollable)
-- **PLAY button** (or "Resume from X:XX" if partially watched)
-- Trailer auto-play in background (muted, looping) or "Play Trailer" button
-- Add / Remove Watchlist button
+**Endpoint used**: `android/atf/v3.jstl` via `getDataByTransform/v1` — the same endpoint already used by `getDetailPage()`. No new endpoint needed.
 
-#### Series overview
-- Same header (hero, title, metadata, description, IMDB, trailer)
-- Season selector (horizontal row of season cards or chip row)
-- Episode list for the selected season (scrollable vertical list with thumbnail, episode title, synopsis, duration)
-- **PLAY button** on each episode
+**Key fields discovered**:
+- `resource.synopsis` — full description text ✓
+- `resource.detailPageHeroImageUrl` — 16:9 backdrop image ✓
+- `resource.imdbRating` (float) + `resource.imdbRatingCount` (int) ✓
+- `resource.genres[]` — array (filter entries containing `>` which are sub-genres) ✓
+- `resource.releaseDate` — Unix ms timestamp → extract year ✓
+- `resource.runtimeSeconds` ✓
+- `resource.amazonMaturityRating` (e.g. "13+") ✓
+- `resource.directors[]` ✓
+- `resource.isTrailerAvailable` (boolean) ✓
+- `resource.badges.{uhd, hdr, dolby51, prime}` ✓
+- `resource.isInWatchlist` ✓
+- For SEASON ASINs: data lives in `resource.selectedSeason.*`, not `resource.*` directly
 
-### API analysis status
-**PENDING** — raw JSON dumps required before implementation.
+**Trailer**: `GetPlaybackResources?asin={GTI_ASIN}&videoMaterialType=Trailer` works with the same content ASIN — confirmed returning a valid DASH manifest.
 
-Analysis prompt provided to user (see conversation). Script must call:
-1. `android/atf/v3.jstl` (current detail endpoint) with itemId
-2. `dv-android/detail/v2/user/v2.5.js` (richer detail endpoint, not yet implemented)
-3. `GetPlaybackResources?videoMaterialType=Trailer` (trailer manifest)
+**`dv-android/detail/v2/user/v2.5.js`**: returns HTTP 500 for our account/territory — not used.
 
-Fields to confirm: `description`, `imdbRating`, `contentRating`, `genres`, `releaseYear`,
-`trailerAsin` / trailer items, `backdropImageUrl`, cast.
+**Cast**: Not available in `android/atf/v3.jstl`. Future work if needed.
 
-### Planned architecture
+See `dev/analysis/detail-page-api.md` for full documentation.
+
+### What was implemented
 
 #### New files
-- `ui/DetailActivity.kt` — overview screen; replaces current click routing for movies and top-level series
-- `res/layout/activity_detail.xml` — hero image + metadata + play button + episode list
-- `model/DetailInfo.kt` — rich detail model (synopsis, rating, genres, trailer ASIN, cast, etc.)
+- `ui/DetailActivity.kt` — overview screen with: hero image, poster, title, year/runtime/age rating, IMDb rating, genres, synopsis, directors, action buttons
+- `res/layout/activity_detail.xml` — FrameLayout root with hero (220dp) + info row (poster + text panel)
+- `res/drawable/hero_gradient.xml` — bottom-to-top gradient overlay for hero section
+- `model/DetailInfo.kt` — data class for all detail fields
+- `dev/analysis/detail-page-api.md` — full API documentation
 
 #### Modified files
-- `api/AmazonApiService.kt` — `getDetailInfo(asin): DetailInfo` (new method using richer endpoint)
-- `model/ContentItem.kt` — add `description`, `year`, `genres`, `imdbRating`, `trailerAsin`, `backdropImageUrl` fields (or keep separate DetailInfo model)
-- `ui/MainActivity.kt` — `onItemSelected()` routes all clicks → `DetailActivity` (movies + series top-level)
-- `ui/BrowseActivity.kt` — episode row click → `DetailActivity` (episode detail) or direct play
+- `api/AmazonApiService.kt` — added `getDetailInfo(asin)` + `parseDetailInfo()` using `android/atf/v3.jstl`
+- `ui/PlayerActivity.kt` — added `EXTRA_MATERIAL_TYPE` (default `"Feature"`); caller can pass `"Trailer"` for trailer playback
+- `ui/MainActivity.kt` — `onItemSelected()` now routes ALL items (movies + series) to `DetailActivity`
+- `ui/BrowseActivity.kt` — season selection now routes to `DetailActivity` instead of nested `BrowseActivity`
+- `AndroidManifest.xml` — `DetailActivity` registered
 
-### Navigation flow (new)
+### Navigation flow (implemented)
 ```
-Home / Watchlist card (movie)  → DetailActivity → PlayerActivity
-Home / Watchlist card (series) → DetailActivity (series overview, season+episode list) → PlayerActivity
-BrowseActivity (season)        → DetailActivity (season overview) → PlayerActivity (episode)
+Home / Watchlist card (movie)  → DetailActivity → [▶ Play] → PlayerActivity
+                                                → [▶ Trailer] → PlayerActivity (Trailer)
+Home / Watchlist card (series) → DetailActivity → [Browse Seasons] → BrowseActivity → episodes → play
+BrowseActivity (seasons list)  → season card → DetailActivity → [Browse Episodes] → BrowseActivity (episodes)
+BrowseActivity (episodes list) → episode card → PlayerActivity (unchanged, direct play)
 ```
+
+### Key technical findings
+- `android/atf/v3.jstl` for MOVIE: all metadata directly in `resource.*`
+- `android/atf/v3.jstl` for SEASON: metadata in `resource.selectedSeason.*`; `resource.show` has series titleId/title
+- GTI-format ASINs work with `videoMaterialType=Feature` AND `videoMaterialType=Trailer`
+- `isTrailerAvailable: true` is reliable — confirmed by actual trailer manifest fetch
+- Sub-genre strings like `"Thriller > Mystery"` must be filtered from `genres[]`
 
 ---
 

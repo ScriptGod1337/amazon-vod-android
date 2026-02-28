@@ -1,0 +1,3074 @@
+{
+  "resource": {
+    "selectedSeason": {
+      "titleId": "amzn1.dv.gti.d2cb99d9-4e55-4ed9-b34f-f8f20a7895d4",
+      "audioTracks": [],
+      "parentalRestrictions": [
+        {
+          "action": "purchase",
+          "type": "pinRequired",
+          "reason": "purchasePinEnabled",
+          "pinLength": 4
+        }
+      ],
+      "imdbRating": null,
+      "imdbRatingCount": null,
+      "overallCustomerRating": 0.0,
+      "totalReviewCount": 0,
+      "primeAcquisitionActions": [],
+      "3pSubAcquisitionActions": [],
+      "transactionalAcquisitionActions": [],
+      "tvodFrom": null,
+      "notifications": [],
+      "title": "Steal - Staffel 1",
+      "displayText": "Staffel 1",
+      "contentType": "SEASON",
+      "releaseDate": 1768953600000,
+      "synopsis": "Ein actiongeladener, atemberaubender Thriller \u00fcber den Raub des Jahrhunderts. Bei Lochmill Capital bedrohen bewaffnete Diebe Zara (Sophie Turner) und ihren besten Freund Luke (Archie Madekwe). Der sich in einem Dilemma befindliche Detective Rhys (Jacob Fortune-Lloyd) k\u00e4mpft gegen die Zeit, um herauszufinden, wer vier Milliarden Pfund an Rentengeldern gestohlen hat und warum.",
+      "detailPageHeroImageUrl": "https://m.media-amazon.com/images/S/pv-target-images/c56f41483fe77cb348c36f181ca33fec6e9c5fa4d93b9a2721e2b8284fa20a28._RI_V0_TTW_.jpg",
+      "titleImageUrl": "https://images-na.ssl-images-amazon.com/images/S/pv-target-images/9bb11d71e8b76fab71d97a1b2b4460d540a56b2f67b01710b5f419d2e4fc931c._UY500_UX667_RI_TTW_.png",
+      "titleImageUrl169": "https://m.media-amazon.com/images/S/pv-target-images/f88b16af7f15bd874f1801187b6abfabf31d81c6b39a8ffd8c59e1e7cf38288b._UY500_UX667_PJUHD-Sash-Extra-Large-2017,TopLeft,0,0_UY200_RI_V0_TTW_.png",
+      "subtitles": [],
+      "seasonNumber": 1,
+      "genres": [
+        "Action und Abenteuer",
+        "Drama",
+        "Drama > Crime",
+        "Thriller"
+      ],
+      "studios": [
+        "Amazon Studios"
+      ],
+      "amazonMaturityRating": "16+",
+      "regulatoryRating": "16",
+      "badges": {
+        "xray": true,
+        "hdr": true,
+        "uhd": true,
+        "dolby51": true,
+        "adult": false,
+        "prime": true,
+        "captions": true,
+        "vam": false
+      },
+      "isInWatchlist": true,
+      "directors": [
+        "Sam Miller",
+        "Hettie MacDonald"
+      ],
+      "aliases": [
+        "amzn1.dv.gti.d2cb99d9-4e55-4ed9-b34f-f8f20a7895d4",
+        "B0FNWNPSB7",
+        "B0FNWNYMD8",
+        "B0FNWP3C8V",
+        "B0FNWP8DTN",
+        "B0FNWPRSYC",
+        "B0FNWQ6MN2"
+      ]
+    },
+    "episodes": [
+      {
+        "season": {
+          "titleId": "amzn1.dv.gti.d2cb99d9-4e55-4ed9-b34f-f8f20a7895d4",
+          "title": "Steal - Staffel 1"
+        },
+        "selectedEpisode": true,
+        "parentalRestrictions": [
+          {
+            "action": "purchase",
+            "type": "pinRequired",
+            "reason": "purchasePinEnabled",
+            "pinLength": 4
+          }
+        ],
+        "timecodeSeconds": null,
+        "playbackLabels": {
+          "watchNow": "Folge 1{lineBreak}Jetzt ansehen",
+          "resume": "Folge 1 fortsetzen"
+        },
+        "playbackActions": [
+          {
+            "heading": "Staffel 1 ist in Prime enthalten.",
+            "identifier": "42304656335656335644",
+            "label": "Folge 1{lineBreak}Jetzt ansehen",
+            "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "position": "FEATURE",
+            "startPositionEpochUtc": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "STREAM",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 2500,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.07c798fd-b5fa-41c6-a5a3-4e9a8867dfd9",
+              "offerAsin": "B0FV3VV3VD",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "PRIME_SUBSCRIPTION",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 1772300581840,
+              "windowEnd": 1772559781876,
+              "benefitId": "PRIME",
+              "benefitTierId": null,
+              "benefitName": "Prime"
+            },
+            "videoMaterialType": "Feature",
+            "refMarker": "stream_prime_sd_ep",
+            "blackout": null,
+            "intent": null,
+            "playbackId": "B0FV3VV3VD"
+          }
+        ],
+        "primeAcquisitionActions": [],
+        "3pSubAcquisitionActions": [],
+        "transactionalAcquisitionActions": [],
+        "tvodFrom": null,
+        "notifications": [],
+        "downloadAction": [
+          {
+            "@type": "DownloadActionMetadata",
+            "canDownload": true,
+            "heading": "Staffel 1 ist in Prime enthalten.",
+            "downloadId": "42304656335656335644",
+            "downloadLabel": "Folge 1{lineBreak}Jetzt ansehen",
+            "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "entitlementType": "PRIME_SUBSCRIPTION",
+            "failure": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "DOWNLOAD",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 2500,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.07c798fd-b5fa-41c6-a5a3-4e9a8867dfd9",
+              "offerAsin": "B0FV3VV3VD",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "PRIME_SUBSCRIPTION",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 1772300581840,
+              "windowEnd": 1774892581876,
+              "benefitId": "PRIME",
+              "benefitTierId": null,
+              "benefitName": null
+            },
+            "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "imageUrl": null,
+            "label": "Folge 1{lineBreak}Jetzt ansehen",
+            "messages": null,
+            "refMarker": null
+          }
+        ],
+        "itemDownloadAction": {
+          "@type": "DownloadActionMetadata",
+          "canDownload": true,
+          "heading": "Staffel 1 ist in Prime enthalten.",
+          "downloadId": "42304656335656335644",
+          "downloadLabel": "Folge 1{lineBreak}Jetzt ansehen",
+          "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+          "entitlementType": "PRIME_SUBSCRIPTION",
+          "failure": null,
+          "userPlaybackMetadata": {
+            "consumptionType": "DOWNLOAD",
+            "playbackResolution": "RES_576P",
+            "runtimeSeconds": 2500,
+            "timecodeSeconds": null,
+            "videoQuality": "SD",
+            "videoSourceId": "amzn1.dv.vcid.07c798fd-b5fa-41c6-a5a3-4e9a8867dfd9",
+            "offerAsin": "B0FV3VV3VD",
+            "timecodeUpdateTime": 1772300581899,
+            "consumable": true
+          },
+          "userEntitlementMetadata": {
+            "entitlementType": "PRIME_SUBSCRIPTION",
+            "isRentalClockStarted": null,
+            "rentalTermHoursToPlayback": null,
+            "rentalTermHoursToStart": null,
+            "windowStart": 1772300581840,
+            "windowEnd": 1774892581876,
+            "benefitId": "PRIME",
+            "benefitTierId": null,
+            "benefitName": null
+          },
+          "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+          "imageUrl": null,
+          "label": "Folge 1{lineBreak}Jetzt ansehen",
+          "messages": null,
+          "refMarker": null
+        },
+        "titleId": "amzn1.dv.gti.be797d0e-a91d-4ad0-a688-22a47e1f7a31",
+        "title": "Vier Milliarden",
+        "displayText": "1. Vier Milliarden",
+        "accessibilityText": "Folge 1. Vier Milliarden.",
+        "contentType": "EPISODE",
+        "releaseDate": 1768953600000,
+        "synopsis": "Eine Gruppe von Meisterdieben bricht bei Lochmill Capital ein und h\u00e4lt Zara (Sophie Turner) und ihre Kollegen mit vorgehaltener Waffe in Schach, um den Raub des Jahrhunderts zu begehen.",
+        "detailPageHeroImageUrl": "https://m.media-amazon.com/images/S/pv-target-images/c56f41483fe77cb348c36f181ca33fec6e9c5fa4d93b9a2721e2b8284fa20a28._RI_V0_TTW_.jpg",
+        "titleImageUrl": "https://images-na.ssl-images-amazon.com/images/S/pv-target-images/33e8102c38799ffee384745b15486cbd75d1380d942c5f952a3b5332a8925ad4._UY500_UX667_RI_TTW_.jpg",
+        "titleImageUrl169": "https://m.media-amazon.com/images/S/pv-target-images/f88b16af7f15bd874f1801187b6abfabf31d81c6b39a8ffd8c59e1e7cf38288b._UY500_UX667_PJUHD-Sash-Extra-Large-2017,TopLeft,0,0_UY200_RI_V0_TTW_.png",
+        "audioTracks": [
+          {
+            "id": "de-de_dialog_0",
+            "displayName": "Deutsch",
+            "language": "de_DE",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "en-gb_dialog_0",
+            "displayName": "English",
+            "language": "en_GB",
+            "type": "dialog",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_descriptive_0",
+            "displayName": "English [Audio Description]",
+            "language": "en_GB",
+            "type": "descriptive",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_boosteddialogmedium_0",
+            "displayName": "English Dialogue Boost: Medium",
+            "language": "en_GB",
+            "type": "Unknown",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_boosteddialoghigh_0",
+            "displayName": "English Dialogue Boost: High",
+            "language": "en_GB",
+            "type": "Unknown",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "es-es_dialog_0",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)",
+            "language": "es_ES",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "es-419_dialog_0",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)",
+            "language": "es_419",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-ca_dialog_0",
+            "displayName": "Fran\u00e7ais (Canada)",
+            "language": "fr_CA",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-fr_dialog_0",
+            "displayName": "Fran\u00e7ais (France)",
+            "language": "fr_FR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "it-it_dialog_0",
+            "displayName": "Italiano",
+            "language": "it_IT",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pl-pl_dialog_0",
+            "displayName": "Polski",
+            "language": "pl_PL",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pt-br_dialog_0",
+            "displayName": "Portugu\u00eas (Brasil)",
+            "language": "pt_BR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "tr-tr_dialog_0",
+            "displayName": "T\u00fcrk\u00e7e",
+            "language": "tr_TR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "hi-in_dialog_0",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940",
+            "language": "hi_IN",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "th-th_dialog_0",
+            "displayName": "\u0e44\u0e17\u0e22",
+            "language": "th_TH",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "ja-jp_dialog_0",
+            "displayName": "\u65e5\u672c\u8a9e",
+            "language": "ja_JP",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          }
+        ],
+        "subtitles": [
+          {
+            "language": "ar_001",
+            "displayName": "\u0627\u0644\u0639\u0631\u0628\u064a\u0629"
+          },
+          {
+            "language": "cs_CZ",
+            "displayName": "\u010ce\u0161tina"
+          },
+          {
+            "language": "da_DK",
+            "displayName": "Dansk"
+          },
+          {
+            "language": "de_DE",
+            "displayName": "Deutsch"
+          },
+          {
+            "language": "el_GR",
+            "displayName": "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac"
+          },
+          {
+            "language": "en_GB",
+            "displayName": "English [CC]"
+          },
+          {
+            "language": "es_419",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)"
+          },
+          {
+            "language": "es_ES",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)"
+          },
+          {
+            "language": "fi_FI",
+            "displayName": "Suomi"
+          },
+          {
+            "language": "fr_CA",
+            "displayName": "Fran\u00e7ais (Canada)"
+          },
+          {
+            "language": "fr_FR",
+            "displayName": "Fran\u00e7ais (France)"
+          },
+          {
+            "language": "he_IL",
+            "displayName": "\u05e2\u05d1\u05e8\u05d9\u05ea"
+          },
+          {
+            "language": "hi_IN",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940"
+          },
+          {
+            "language": "hu_HU",
+            "displayName": "Magyar"
+          },
+          {
+            "language": "id_ID",
+            "displayName": "Indonesia"
+          },
+          {
+            "language": "it_IT",
+            "displayName": "Italiano"
+          },
+          {
+            "language": "ja_JP",
+            "displayName": "\u65e5\u672c\u8a9e"
+          },
+          {
+            "language": "ko_KR",
+            "displayName": "\ud55c\uad6d\uc5b4"
+          },
+          {
+            "language": "ms_MY",
+            "displayName": "Melayu"
+          },
+          {
+            "language": "nb_NO",
+            "displayName": "Norsk Bokm\u00e5l"
+          },
+          {
+            "language": "nl_NL",
+            "displayName": "Nederlands"
+          },
+          {
+            "language": "pl_PL",
+            "displayName": "Polski"
+          },
+          {
+            "language": "pt_BR",
+            "displayName": "Portugu\u00eas (Brasil)"
+          },
+          {
+            "language": "pt_PT",
+            "displayName": "Portugu\u00eas (Portugal)"
+          },
+          {
+            "language": "ro_RO",
+            "displayName": "Rom\u00e2n\u0103"
+          },
+          {
+            "language": "sv_SE",
+            "displayName": "Svenska"
+          },
+          {
+            "language": "th_TH",
+            "displayName": "\u0e44\u0e17\u0e22"
+          },
+          {
+            "language": "tr_TR",
+            "displayName": "T\u00fcrk\u00e7e"
+          },
+          {
+            "language": "zh_HANS",
+            "displayName": "\u4e2d\u6587\uff08\u7b80\u4f53\uff09"
+          },
+          {
+            "language": "zh_HANT",
+            "displayName": "\u4e2d\u6587\uff08\u7e41\u9ad4\uff09"
+          }
+        ],
+        "runtimeSeconds": 2500,
+        "completedAfterSeconds": 2300,
+        "episodeNumber": 1,
+        "genres": [
+          "Action und Abenteuer",
+          "Drama",
+          "Drama > Crime",
+          "Thriller"
+        ],
+        "studios": [
+          "Amazon Studios"
+        ],
+        "amazonMaturityRating": "16+",
+        "regulatoryRating": "16",
+        "badges": {
+          "xray": true,
+          "hdr": true,
+          "uhd": true,
+          "dolby51": true,
+          "adult": false,
+          "prime": true,
+          "captions": true,
+          "vam": false
+        },
+        "isInWatchlist": true,
+        "aliases": [
+          "amzn1.dv.gti.be797d0e-a91d-4ad0-a688-22a47e1f7a31",
+          "B0FV3VV3VD",
+          "B0FV3Y5264",
+          "B0FV3YQ2H1",
+          "B0FV48CWT8",
+          "B0FV4PN55P",
+          "B0FV4S2L89"
+        ],
+        "externalCard": {
+          "primaryText": "Steal",
+          "secondaryText": "Staffel 1, Folge 1",
+          "continueWatchingText": "Fortsetzen",
+          "cardStartWatchingText": "Jetzt ansehen",
+          "cardGoToDetailText": "Jetzt ansehen"
+        },
+        "seasonNumber": 1
+      },
+      {
+        "season": {
+          "titleId": "amzn1.dv.gti.d2cb99d9-4e55-4ed9-b34f-f8f20a7895d4",
+          "title": "Steal - Staffel 1"
+        },
+        "selectedEpisode": false,
+        "parentalRestrictions": [
+          {
+            "action": "purchase",
+            "type": "pinRequired",
+            "reason": "purchasePinEnabled",
+            "pinLength": 4
+          }
+        ],
+        "timecodeSeconds": null,
+        "playbackLabels": {
+          "watchNow": "Folge 2{lineBreak}Jetzt ansehen",
+          "resume": "Folge 2 fortsetzen"
+        },
+        "playbackActions": [
+          {
+            "heading": "Staffel 1 ist in Prime enthalten.",
+            "identifier": "42304735354d474c3843",
+            "label": "Folge 2{lineBreak}Jetzt ansehen",
+            "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "position": "FEATURE",
+            "startPositionEpochUtc": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "STREAM",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 2754,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.6cd4a487-e3c8-4f4e-9bbb-4c300c0aba68",
+              "offerAsin": "B0G55MGL8C",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "PRIME_SUBSCRIPTION",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 1772300581840,
+              "windowEnd": 1772559781876,
+              "benefitId": "PRIME",
+              "benefitTierId": null,
+              "benefitName": "Prime"
+            },
+            "videoMaterialType": "Feature",
+            "refMarker": "stream_prime_sd_ep",
+            "blackout": null,
+            "intent": null,
+            "playbackId": "B0G55MGL8C"
+          }
+        ],
+        "primeAcquisitionActions": [],
+        "3pSubAcquisitionActions": [],
+        "transactionalAcquisitionActions": [],
+        "tvodFrom": null,
+        "notifications": [],
+        "downloadAction": [
+          {
+            "@type": "DownloadActionMetadata",
+            "canDownload": true,
+            "heading": "Staffel 1 ist in Prime enthalten.",
+            "downloadId": "42304735354d474c3843",
+            "downloadLabel": "Folge 2{lineBreak}Jetzt ansehen",
+            "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "entitlementType": "PRIME_SUBSCRIPTION",
+            "failure": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "DOWNLOAD",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 2754,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.6cd4a487-e3c8-4f4e-9bbb-4c300c0aba68",
+              "offerAsin": "B0G55MGL8C",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "PRIME_SUBSCRIPTION",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 1772300581840,
+              "windowEnd": 1774892581876,
+              "benefitId": "PRIME",
+              "benefitTierId": null,
+              "benefitName": null
+            },
+            "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "imageUrl": null,
+            "label": "Folge 2{lineBreak}Jetzt ansehen",
+            "messages": null,
+            "refMarker": null
+          }
+        ],
+        "itemDownloadAction": {
+          "@type": "DownloadActionMetadata",
+          "canDownload": true,
+          "heading": "Staffel 1 ist in Prime enthalten.",
+          "downloadId": "42304735354d474c3843",
+          "downloadLabel": "Folge 2{lineBreak}Jetzt ansehen",
+          "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+          "entitlementType": "PRIME_SUBSCRIPTION",
+          "failure": null,
+          "userPlaybackMetadata": {
+            "consumptionType": "DOWNLOAD",
+            "playbackResolution": "RES_576P",
+            "runtimeSeconds": 2754,
+            "timecodeSeconds": null,
+            "videoQuality": "SD",
+            "videoSourceId": "amzn1.dv.vcid.6cd4a487-e3c8-4f4e-9bbb-4c300c0aba68",
+            "offerAsin": "B0G55MGL8C",
+            "timecodeUpdateTime": 1772300581899,
+            "consumable": true
+          },
+          "userEntitlementMetadata": {
+            "entitlementType": "PRIME_SUBSCRIPTION",
+            "isRentalClockStarted": null,
+            "rentalTermHoursToPlayback": null,
+            "rentalTermHoursToStart": null,
+            "windowStart": 1772300581840,
+            "windowEnd": 1774892581876,
+            "benefitId": "PRIME",
+            "benefitTierId": null,
+            "benefitName": null
+          },
+          "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+          "imageUrl": null,
+          "label": "Folge 2{lineBreak}Jetzt ansehen",
+          "messages": null,
+          "refMarker": null
+        },
+        "titleId": "amzn1.dv.gti.57b3ae63-9862-4327-ba9a-bb6a19019410",
+        "title": "Cold Wallet",
+        "displayText": "2. Cold Wallet",
+        "accessibilityText": "Folge 2. Cold Wallet.",
+        "contentType": "EPISODE",
+        "releaseDate": 1768953600000,
+        "synopsis": "Nach dem Raub steht Zara unter enormem Druck, da Luke zusammenbricht. DCI Rhys st\u00f6\u00dft bei den Ermittlungen auf unerwarteten Widerstand.",
+        "detailPageHeroImageUrl": "https://m.media-amazon.com/images/S/pv-target-images/c56f41483fe77cb348c36f181ca33fec6e9c5fa4d93b9a2721e2b8284fa20a28._RI_V0_TTW_.jpg",
+        "titleImageUrl": "https://images-na.ssl-images-amazon.com/images/S/pv-target-images/e9850306920c76260e2e2266fdff11494840ed0e6ae4084619b93353ebb804bd._UY500_UX667_RI_TTW_.jpg",
+        "titleImageUrl169": "https://m.media-amazon.com/images/S/pv-target-images/f88b16af7f15bd874f1801187b6abfabf31d81c6b39a8ffd8c59e1e7cf38288b._UY500_UX667_PJUHD-Sash-Extra-Large-2017,TopLeft,0,0_UY200_RI_V0_TTW_.png",
+        "audioTracks": [
+          {
+            "id": "de-de_dialog_0",
+            "displayName": "Deutsch",
+            "language": "de_DE",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "en-gb_dialog_0",
+            "displayName": "English",
+            "language": "en_GB",
+            "type": "dialog",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_descriptive_0",
+            "displayName": "English [Audio Description]",
+            "language": "en_GB",
+            "type": "descriptive",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_boosteddialogmedium_0",
+            "displayName": "English Dialogue Boost: Medium",
+            "language": "en_GB",
+            "type": "Unknown",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_boosteddialoghigh_0",
+            "displayName": "English Dialogue Boost: High",
+            "language": "en_GB",
+            "type": "Unknown",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "es-es_dialog_0",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)",
+            "language": "es_ES",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "es-419_dialog_0",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)",
+            "language": "es_419",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-ca_dialog_0",
+            "displayName": "Fran\u00e7ais (Canada)",
+            "language": "fr_CA",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-fr_dialog_0",
+            "displayName": "Fran\u00e7ais (France)",
+            "language": "fr_FR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "it-it_dialog_0",
+            "displayName": "Italiano",
+            "language": "it_IT",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pl-pl_dialog_0",
+            "displayName": "Polski",
+            "language": "pl_PL",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pt-br_dialog_0",
+            "displayName": "Portugu\u00eas (Brasil)",
+            "language": "pt_BR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "tr-tr_dialog_0",
+            "displayName": "T\u00fcrk\u00e7e",
+            "language": "tr_TR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "hi-in_dialog_0",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940",
+            "language": "hi_IN",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "th-th_dialog_0",
+            "displayName": "\u0e44\u0e17\u0e22",
+            "language": "th_TH",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "ja-jp_dialog_0",
+            "displayName": "\u65e5\u672c\u8a9e",
+            "language": "ja_JP",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          }
+        ],
+        "subtitles": [
+          {
+            "language": "ar_001",
+            "displayName": "\u0627\u0644\u0639\u0631\u0628\u064a\u0629"
+          },
+          {
+            "language": "cs_CZ",
+            "displayName": "\u010ce\u0161tina"
+          },
+          {
+            "language": "da_DK",
+            "displayName": "Dansk"
+          },
+          {
+            "language": "de_DE",
+            "displayName": "Deutsch"
+          },
+          {
+            "language": "el_GR",
+            "displayName": "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac"
+          },
+          {
+            "language": "en_GB",
+            "displayName": "English [CC]"
+          },
+          {
+            "language": "es_419",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)"
+          },
+          {
+            "language": "es_ES",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)"
+          },
+          {
+            "language": "fi_FI",
+            "displayName": "Suomi"
+          },
+          {
+            "language": "fr_CA",
+            "displayName": "Fran\u00e7ais (Canada)"
+          },
+          {
+            "language": "fr_FR",
+            "displayName": "Fran\u00e7ais (France)"
+          },
+          {
+            "language": "he_IL",
+            "displayName": "\u05e2\u05d1\u05e8\u05d9\u05ea"
+          },
+          {
+            "language": "hi_IN",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940"
+          },
+          {
+            "language": "hu_HU",
+            "displayName": "Magyar"
+          },
+          {
+            "language": "id_ID",
+            "displayName": "Indonesia"
+          },
+          {
+            "language": "it_IT",
+            "displayName": "Italiano"
+          },
+          {
+            "language": "ja_JP",
+            "displayName": "\u65e5\u672c\u8a9e"
+          },
+          {
+            "language": "ko_KR",
+            "displayName": "\ud55c\uad6d\uc5b4"
+          },
+          {
+            "language": "ms_MY",
+            "displayName": "Melayu"
+          },
+          {
+            "language": "nb_NO",
+            "displayName": "Norsk Bokm\u00e5l"
+          },
+          {
+            "language": "nl_NL",
+            "displayName": "Nederlands"
+          },
+          {
+            "language": "pl_PL",
+            "displayName": "Polski"
+          },
+          {
+            "language": "pt_BR",
+            "displayName": "Portugu\u00eas (Brasil)"
+          },
+          {
+            "language": "pt_PT",
+            "displayName": "Portugu\u00eas (Portugal)"
+          },
+          {
+            "language": "ro_RO",
+            "displayName": "Rom\u00e2n\u0103"
+          },
+          {
+            "language": "sv_SE",
+            "displayName": "Svenska"
+          },
+          {
+            "language": "th_TH",
+            "displayName": "\u0e44\u0e17\u0e22"
+          },
+          {
+            "language": "tr_TR",
+            "displayName": "T\u00fcrk\u00e7e"
+          },
+          {
+            "language": "zh_HANS",
+            "displayName": "\u4e2d\u6587\uff08\u7b80\u4f53\uff09"
+          },
+          {
+            "language": "zh_HANT",
+            "displayName": "\u4e2d\u6587\uff08\u7e41\u9ad4\uff09"
+          }
+        ],
+        "runtimeSeconds": 2754,
+        "completedAfterSeconds": 2533,
+        "episodeNumber": 2,
+        "genres": [
+          "Action und Abenteuer",
+          "Drama",
+          "Drama > Crime",
+          "Thriller"
+        ],
+        "studios": [
+          "Amazon Studios"
+        ],
+        "amazonMaturityRating": "16+",
+        "regulatoryRating": "16",
+        "badges": {
+          "xray": true,
+          "hdr": true,
+          "uhd": true,
+          "dolby51": true,
+          "adult": false,
+          "prime": true,
+          "captions": true,
+          "vam": false
+        },
+        "isInWatchlist": true,
+        "aliases": [
+          "amzn1.dv.gti.57b3ae63-9862-4327-ba9a-bb6a19019410",
+          "B0G55MGL8C",
+          "B0G561M22N",
+          "B0G56644WP",
+          "B0G567YHSK",
+          "B0G56D4KX3",
+          "B0G56K6LHS"
+        ],
+        "externalCard": {
+          "primaryText": "Steal",
+          "secondaryText": "Staffel 1, Folge 2",
+          "continueWatchingText": "Fortsetzen",
+          "cardStartWatchingText": "Jetzt ansehen",
+          "cardGoToDetailText": "Jetzt ansehen"
+        },
+        "seasonNumber": 1
+      },
+      {
+        "season": {
+          "titleId": "amzn1.dv.gti.d2cb99d9-4e55-4ed9-b34f-f8f20a7895d4",
+          "title": "Steal - Staffel 1"
+        },
+        "selectedEpisode": false,
+        "parentalRestrictions": [
+          {
+            "action": "purchase",
+            "type": "pinRequired",
+            "reason": "purchasePinEnabled",
+            "pinLength": 4
+          }
+        ],
+        "timecodeSeconds": null,
+        "playbackLabels": {
+          "watchNow": "Folge 3{lineBreak}Jetzt ansehen",
+          "resume": "Folge 3 fortsetzen"
+        },
+        "playbackActions": [
+          {
+            "heading": "Staffel 1 ist in Prime enthalten.",
+            "identifier": "42304736595839355446",
+            "label": "Folge 3{lineBreak}Jetzt ansehen",
+            "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "position": "FEATURE",
+            "startPositionEpochUtc": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "STREAM",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 2918,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.5fbffed6-a42b-455a-9981-1379079d5896",
+              "offerAsin": "B0G6YX95TF",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "PRIME_SUBSCRIPTION",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 1772300581840,
+              "windowEnd": 1772559781876,
+              "benefitId": "PRIME",
+              "benefitTierId": null,
+              "benefitName": "Prime"
+            },
+            "videoMaterialType": "Feature",
+            "refMarker": "stream_prime_sd_ep",
+            "blackout": null,
+            "intent": null,
+            "playbackId": "B0G6YX95TF"
+          }
+        ],
+        "primeAcquisitionActions": [],
+        "3pSubAcquisitionActions": [],
+        "transactionalAcquisitionActions": [],
+        "tvodFrom": null,
+        "notifications": [],
+        "downloadAction": [
+          {
+            "@type": "DownloadActionMetadata",
+            "canDownload": true,
+            "heading": "Staffel 1 ist in Prime enthalten.",
+            "downloadId": "42304736595839355446",
+            "downloadLabel": "Folge 3{lineBreak}Jetzt ansehen",
+            "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "entitlementType": "PRIME_SUBSCRIPTION",
+            "failure": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "DOWNLOAD",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 2918,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.5fbffed6-a42b-455a-9981-1379079d5896",
+              "offerAsin": "B0G6YX95TF",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "PRIME_SUBSCRIPTION",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 1772300581840,
+              "windowEnd": 1774892581876,
+              "benefitId": "PRIME",
+              "benefitTierId": null,
+              "benefitName": null
+            },
+            "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "imageUrl": null,
+            "label": "Folge 3{lineBreak}Jetzt ansehen",
+            "messages": null,
+            "refMarker": null
+          }
+        ],
+        "itemDownloadAction": {
+          "@type": "DownloadActionMetadata",
+          "canDownload": true,
+          "heading": "Staffel 1 ist in Prime enthalten.",
+          "downloadId": "42304736595839355446",
+          "downloadLabel": "Folge 3{lineBreak}Jetzt ansehen",
+          "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+          "entitlementType": "PRIME_SUBSCRIPTION",
+          "failure": null,
+          "userPlaybackMetadata": {
+            "consumptionType": "DOWNLOAD",
+            "playbackResolution": "RES_576P",
+            "runtimeSeconds": 2918,
+            "timecodeSeconds": null,
+            "videoQuality": "SD",
+            "videoSourceId": "amzn1.dv.vcid.5fbffed6-a42b-455a-9981-1379079d5896",
+            "offerAsin": "B0G6YX95TF",
+            "timecodeUpdateTime": 1772300581899,
+            "consumable": true
+          },
+          "userEntitlementMetadata": {
+            "entitlementType": "PRIME_SUBSCRIPTION",
+            "isRentalClockStarted": null,
+            "rentalTermHoursToPlayback": null,
+            "rentalTermHoursToStart": null,
+            "windowStart": 1772300581840,
+            "windowEnd": 1774892581876,
+            "benefitId": "PRIME",
+            "benefitTierId": null,
+            "benefitName": null
+          },
+          "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+          "imageUrl": null,
+          "label": "Folge 3{lineBreak}Jetzt ansehen",
+          "messages": null,
+          "refMarker": null
+        },
+        "titleId": "amzn1.dv.gti.9bc79c2f-86c3-4526-9873-2c7c12a5f73e",
+        "title": "MI5",
+        "displayText": "3. MI5",
+        "accessibilityText": "Folge 3. MI5.",
+        "contentType": "EPISODE",
+        "releaseDate": 1768953600000,
+        "synopsis": "Eine R\u00fcckblende zeigt das Leben von Zara und Luke vor dem Raub\u00fcberfall. In der Gegenwart befindet sich Zara in einer hochriskanten Situation. Da ihr keine Optionen mehr bleiben, trifft sie eine riskante Entscheidung.",
+        "detailPageHeroImageUrl": "https://m.media-amazon.com/images/S/pv-target-images/c56f41483fe77cb348c36f181ca33fec6e9c5fa4d93b9a2721e2b8284fa20a28._RI_V0_TTW_.jpg",
+        "titleImageUrl": "https://images-na.ssl-images-amazon.com/images/S/pv-target-images/3c7e278d680c5f2089c92dfc47d4d46fba4052b3bee8f39d52bb1f039dfd29ff._UY500_UX667_RI_TTW_.jpg",
+        "titleImageUrl169": "https://m.media-amazon.com/images/S/pv-target-images/f88b16af7f15bd874f1801187b6abfabf31d81c6b39a8ffd8c59e1e7cf38288b._UY500_UX667_PJUHD-Sash-Extra-Large-2017,TopLeft,0,0_UY200_RI_V0_TTW_.png",
+        "audioTracks": [
+          {
+            "id": "de-de_dialog_0",
+            "displayName": "Deutsch",
+            "language": "de_DE",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "en-gb_dialog_0",
+            "displayName": "English",
+            "language": "en_GB",
+            "type": "dialog",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_descriptive_0",
+            "displayName": "English [Audio Description]",
+            "language": "en_GB",
+            "type": "descriptive",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_boosteddialogmedium_0",
+            "displayName": "English Dialogue Boost: Medium",
+            "language": "en_GB",
+            "type": "Unknown",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_boosteddialoghigh_0",
+            "displayName": "English Dialogue Boost: High",
+            "language": "en_GB",
+            "type": "Unknown",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "es-es_dialog_0",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)",
+            "language": "es_ES",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "es-419_dialog_0",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)",
+            "language": "es_419",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-ca_dialog_0",
+            "displayName": "Fran\u00e7ais (Canada)",
+            "language": "fr_CA",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-fr_dialog_0",
+            "displayName": "Fran\u00e7ais (France)",
+            "language": "fr_FR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "it-it_dialog_0",
+            "displayName": "Italiano",
+            "language": "it_IT",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pl-pl_dialog_0",
+            "displayName": "Polski",
+            "language": "pl_PL",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pt-br_dialog_0",
+            "displayName": "Portugu\u00eas (Brasil)",
+            "language": "pt_BR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "tr-tr_dialog_0",
+            "displayName": "T\u00fcrk\u00e7e",
+            "language": "tr_TR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "hi-in_dialog_0",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940",
+            "language": "hi_IN",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "th-th_dialog_0",
+            "displayName": "\u0e44\u0e17\u0e22",
+            "language": "th_TH",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "ja-jp_dialog_0",
+            "displayName": "\u65e5\u672c\u8a9e",
+            "language": "ja_JP",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          }
+        ],
+        "subtitles": [
+          {
+            "language": "ar_001",
+            "displayName": "\u0627\u0644\u0639\u0631\u0628\u064a\u0629"
+          },
+          {
+            "language": "cs_CZ",
+            "displayName": "\u010ce\u0161tina"
+          },
+          {
+            "language": "da_DK",
+            "displayName": "Dansk"
+          },
+          {
+            "language": "de_DE",
+            "displayName": "Deutsch"
+          },
+          {
+            "language": "el_GR",
+            "displayName": "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac"
+          },
+          {
+            "language": "en_GB",
+            "displayName": "English [CC]"
+          },
+          {
+            "language": "es_419",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)"
+          },
+          {
+            "language": "es_ES",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)"
+          },
+          {
+            "language": "fi_FI",
+            "displayName": "Suomi"
+          },
+          {
+            "language": "fr_CA",
+            "displayName": "Fran\u00e7ais (Canada)"
+          },
+          {
+            "language": "fr_FR",
+            "displayName": "Fran\u00e7ais (France)"
+          },
+          {
+            "language": "he_IL",
+            "displayName": "\u05e2\u05d1\u05e8\u05d9\u05ea"
+          },
+          {
+            "language": "hi_IN",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940"
+          },
+          {
+            "language": "hu_HU",
+            "displayName": "Magyar"
+          },
+          {
+            "language": "id_ID",
+            "displayName": "Indonesia"
+          },
+          {
+            "language": "it_IT",
+            "displayName": "Italiano"
+          },
+          {
+            "language": "ja_JP",
+            "displayName": "\u65e5\u672c\u8a9e"
+          },
+          {
+            "language": "ko_KR",
+            "displayName": "\ud55c\uad6d\uc5b4"
+          },
+          {
+            "language": "ms_MY",
+            "displayName": "Melayu"
+          },
+          {
+            "language": "nb_NO",
+            "displayName": "Norsk Bokm\u00e5l"
+          },
+          {
+            "language": "nl_NL",
+            "displayName": "Nederlands"
+          },
+          {
+            "language": "pl_PL",
+            "displayName": "Polski"
+          },
+          {
+            "language": "pt_BR",
+            "displayName": "Portugu\u00eas (Brasil)"
+          },
+          {
+            "language": "pt_PT",
+            "displayName": "Portugu\u00eas (Portugal)"
+          },
+          {
+            "language": "ro_RO",
+            "displayName": "Rom\u00e2n\u0103"
+          },
+          {
+            "language": "sv_SE",
+            "displayName": "Svenska"
+          },
+          {
+            "language": "th_TH",
+            "displayName": "\u0e44\u0e17\u0e22"
+          },
+          {
+            "language": "tr_TR",
+            "displayName": "T\u00fcrk\u00e7e"
+          },
+          {
+            "language": "zh_HANS",
+            "displayName": "\u4e2d\u6587\uff08\u7b80\u4f53\uff09"
+          },
+          {
+            "language": "zh_HANT",
+            "displayName": "\u4e2d\u6587\uff08\u7e41\u9ad4\uff09"
+          }
+        ],
+        "runtimeSeconds": 2918,
+        "completedAfterSeconds": 2684,
+        "episodeNumber": 3,
+        "genres": [
+          "Action und Abenteuer",
+          "Drama",
+          "Drama > Crime",
+          "Thriller"
+        ],
+        "studios": [
+          "Amazon Studios"
+        ],
+        "amazonMaturityRating": "16+",
+        "regulatoryRating": "16",
+        "badges": {
+          "xray": true,
+          "hdr": true,
+          "uhd": true,
+          "dolby51": true,
+          "adult": false,
+          "prime": true,
+          "captions": true,
+          "vam": false
+        },
+        "isInWatchlist": true,
+        "aliases": [
+          "amzn1.dv.gti.9bc79c2f-86c3-4526-9873-2c7c12a5f73e",
+          "B0G6YX95TF",
+          "B0G6YXGDSC",
+          "B0G6Z4HQQT",
+          "B0G6Z574SF",
+          "B0G6Z785D5",
+          "B0G6ZCSHN9"
+        ],
+        "externalCard": {
+          "primaryText": "Steal",
+          "secondaryText": "Staffel 1, Folge 3",
+          "continueWatchingText": "Fortsetzen",
+          "cardStartWatchingText": "Jetzt ansehen",
+          "cardGoToDetailText": "Jetzt ansehen"
+        },
+        "seasonNumber": 1
+      },
+      {
+        "season": {
+          "titleId": "amzn1.dv.gti.d2cb99d9-4e55-4ed9-b34f-f8f20a7895d4",
+          "title": "Steal - Staffel 1"
+        },
+        "selectedEpisode": false,
+        "parentalRestrictions": [
+          {
+            "action": "purchase",
+            "type": "pinRequired",
+            "reason": "purchasePinEnabled",
+            "pinLength": 4
+          }
+        ],
+        "timecodeSeconds": null,
+        "playbackLabels": {
+          "watchNow": "Folge 4{lineBreak}Jetzt ansehen",
+          "resume": "Folge 4 fortsetzen"
+        },
+        "playbackActions": [
+          {
+            "heading": "Staffel 1 ist in Prime enthalten.",
+            "identifier": "4230473246564e59574d",
+            "label": "Folge 4{lineBreak}Jetzt ansehen",
+            "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "position": "FEATURE",
+            "startPositionEpochUtc": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "STREAM",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 3137,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.b31f12a6-26d3-447d-83db-5029b8022d9f",
+              "offerAsin": "B0G2FVNYWM",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "PRIME_SUBSCRIPTION",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 1772300581840,
+              "windowEnd": 1772559781876,
+              "benefitId": "PRIME",
+              "benefitTierId": null,
+              "benefitName": "Prime"
+            },
+            "videoMaterialType": "Feature",
+            "refMarker": "stream_prime_sd_ep",
+            "blackout": null,
+            "intent": null,
+            "playbackId": "B0G2FVNYWM"
+          }
+        ],
+        "primeAcquisitionActions": [],
+        "3pSubAcquisitionActions": [],
+        "transactionalAcquisitionActions": [],
+        "tvodFrom": null,
+        "notifications": [],
+        "downloadAction": [
+          {
+            "@type": "DownloadActionMetadata",
+            "canDownload": true,
+            "heading": "Staffel 1 ist in Prime enthalten.",
+            "downloadId": "4230473246564e59574d",
+            "downloadLabel": "Folge 4{lineBreak}Jetzt ansehen",
+            "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "entitlementType": "PRIME_SUBSCRIPTION",
+            "failure": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "DOWNLOAD",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 3137,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.b31f12a6-26d3-447d-83db-5029b8022d9f",
+              "offerAsin": "B0G2FVNYWM",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "PRIME_SUBSCRIPTION",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 1772300581840,
+              "windowEnd": 1774892581876,
+              "benefitId": "PRIME",
+              "benefitTierId": null,
+              "benefitName": null
+            },
+            "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "imageUrl": null,
+            "label": "Folge 4{lineBreak}Jetzt ansehen",
+            "messages": null,
+            "refMarker": null
+          }
+        ],
+        "itemDownloadAction": {
+          "@type": "DownloadActionMetadata",
+          "canDownload": true,
+          "heading": "Staffel 1 ist in Prime enthalten.",
+          "downloadId": "4230473246564e59574d",
+          "downloadLabel": "Folge 4{lineBreak}Jetzt ansehen",
+          "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+          "entitlementType": "PRIME_SUBSCRIPTION",
+          "failure": null,
+          "userPlaybackMetadata": {
+            "consumptionType": "DOWNLOAD",
+            "playbackResolution": "RES_576P",
+            "runtimeSeconds": 3137,
+            "timecodeSeconds": null,
+            "videoQuality": "SD",
+            "videoSourceId": "amzn1.dv.vcid.b31f12a6-26d3-447d-83db-5029b8022d9f",
+            "offerAsin": "B0G2FVNYWM",
+            "timecodeUpdateTime": 1772300581899,
+            "consumable": true
+          },
+          "userEntitlementMetadata": {
+            "entitlementType": "PRIME_SUBSCRIPTION",
+            "isRentalClockStarted": null,
+            "rentalTermHoursToPlayback": null,
+            "rentalTermHoursToStart": null,
+            "windowStart": 1772300581840,
+            "windowEnd": 1774892581876,
+            "benefitId": "PRIME",
+            "benefitTierId": null,
+            "benefitName": null
+          },
+          "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+          "imageUrl": null,
+          "label": "Folge 4{lineBreak}Jetzt ansehen",
+          "messages": null,
+          "refMarker": null
+        },
+        "titleId": "amzn1.dv.gti.3f30a457-12f0-4730-95f7-143d7f5d2085",
+        "title": "Gl\u00fccksspiel",
+        "displayText": "4. Gl\u00fccksspiel",
+        "accessibilityText": "Folge 4. Gl\u00fccksspiel.",
+        "contentType": "EPISODE",
+        "releaseDate": 1768953600000,
+        "synopsis": "Zara geht eine gef\u00e4hrliche Allianz ein, um die Wahrheit \u00fcber den Raub\u00fcberfall aufzudecken. Eine Enth\u00fcllung \u00fcber das verschwundene Lochmill-Geld bringt Rhys in Konflikt mit m\u00e4chtigen Leuten.",
+        "detailPageHeroImageUrl": "https://m.media-amazon.com/images/S/pv-target-images/c56f41483fe77cb348c36f181ca33fec6e9c5fa4d93b9a2721e2b8284fa20a28._RI_V0_TTW_.jpg",
+        "titleImageUrl": "https://images-na.ssl-images-amazon.com/images/S/pv-target-images/3cb918ce92931b9c78f5c9f4d898f6e68510c77e268aad7b26c7f6944dd20e9a._UY500_UX667_RI_TTW_.jpg",
+        "titleImageUrl169": "https://m.media-amazon.com/images/S/pv-target-images/f88b16af7f15bd874f1801187b6abfabf31d81c6b39a8ffd8c59e1e7cf38288b._UY500_UX667_PJUHD-Sash-Extra-Large-2017,TopLeft,0,0_UY200_RI_V0_TTW_.png",
+        "audioTracks": [
+          {
+            "id": "de-de_dialog_0",
+            "displayName": "Deutsch",
+            "language": "de_DE",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "en-gb_dialog_0",
+            "displayName": "English",
+            "language": "en_GB",
+            "type": "dialog",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_descriptive_0",
+            "displayName": "English [Audio Description]",
+            "language": "en_GB",
+            "type": "descriptive",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_boosteddialogmedium_0",
+            "displayName": "English Dialogue Boost: Medium",
+            "language": "en_GB",
+            "type": "Unknown",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_boosteddialoghigh_0",
+            "displayName": "English Dialogue Boost: High",
+            "language": "en_GB",
+            "type": "Unknown",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "es-es_dialog_0",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)",
+            "language": "es_ES",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "es-419_dialog_0",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)",
+            "language": "es_419",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-ca_dialog_0",
+            "displayName": "Fran\u00e7ais (Canada)",
+            "language": "fr_CA",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-fr_dialog_0",
+            "displayName": "Fran\u00e7ais (France)",
+            "language": "fr_FR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "it-it_dialog_0",
+            "displayName": "Italiano",
+            "language": "it_IT",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pl-pl_dialog_0",
+            "displayName": "Polski",
+            "language": "pl_PL",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pt-br_dialog_0",
+            "displayName": "Portugu\u00eas (Brasil)",
+            "language": "pt_BR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "tr-tr_dialog_0",
+            "displayName": "T\u00fcrk\u00e7e",
+            "language": "tr_TR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "hi-in_dialog_0",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940",
+            "language": "hi_IN",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "th-th_dialog_0",
+            "displayName": "\u0e44\u0e17\u0e22",
+            "language": "th_TH",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "ja-jp_dialog_0",
+            "displayName": "\u65e5\u672c\u8a9e",
+            "language": "ja_JP",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          }
+        ],
+        "subtitles": [
+          {
+            "language": "ar_001",
+            "displayName": "\u0627\u0644\u0639\u0631\u0628\u064a\u0629"
+          },
+          {
+            "language": "cs_CZ",
+            "displayName": "\u010ce\u0161tina"
+          },
+          {
+            "language": "da_DK",
+            "displayName": "Dansk"
+          },
+          {
+            "language": "de_DE",
+            "displayName": "Deutsch"
+          },
+          {
+            "language": "el_GR",
+            "displayName": "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac"
+          },
+          {
+            "language": "en_GB",
+            "displayName": "English [CC]"
+          },
+          {
+            "language": "es_419",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)"
+          },
+          {
+            "language": "es_ES",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)"
+          },
+          {
+            "language": "fi_FI",
+            "displayName": "Suomi"
+          },
+          {
+            "language": "fr_CA",
+            "displayName": "Fran\u00e7ais (Canada)"
+          },
+          {
+            "language": "fr_FR",
+            "displayName": "Fran\u00e7ais (France)"
+          },
+          {
+            "language": "he_IL",
+            "displayName": "\u05e2\u05d1\u05e8\u05d9\u05ea"
+          },
+          {
+            "language": "hi_IN",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940"
+          },
+          {
+            "language": "hu_HU",
+            "displayName": "Magyar"
+          },
+          {
+            "language": "id_ID",
+            "displayName": "Indonesia"
+          },
+          {
+            "language": "it_IT",
+            "displayName": "Italiano"
+          },
+          {
+            "language": "ja_JP",
+            "displayName": "\u65e5\u672c\u8a9e"
+          },
+          {
+            "language": "ko_KR",
+            "displayName": "\ud55c\uad6d\uc5b4"
+          },
+          {
+            "language": "ms_MY",
+            "displayName": "Melayu"
+          },
+          {
+            "language": "nb_NO",
+            "displayName": "Norsk Bokm\u00e5l"
+          },
+          {
+            "language": "nl_NL",
+            "displayName": "Nederlands"
+          },
+          {
+            "language": "pl_PL",
+            "displayName": "Polski"
+          },
+          {
+            "language": "pt_BR",
+            "displayName": "Portugu\u00eas (Brasil)"
+          },
+          {
+            "language": "pt_PT",
+            "displayName": "Portugu\u00eas (Portugal)"
+          },
+          {
+            "language": "ro_RO",
+            "displayName": "Rom\u00e2n\u0103"
+          },
+          {
+            "language": "sv_SE",
+            "displayName": "Svenska"
+          },
+          {
+            "language": "th_TH",
+            "displayName": "\u0e44\u0e17\u0e22"
+          },
+          {
+            "language": "tr_TR",
+            "displayName": "T\u00fcrk\u00e7e"
+          },
+          {
+            "language": "zh_HANS",
+            "displayName": "\u4e2d\u6587\uff08\u7b80\u4f53\uff09"
+          },
+          {
+            "language": "zh_HANT",
+            "displayName": "\u4e2d\u6587\uff08\u7e41\u9ad4\uff09"
+          }
+        ],
+        "runtimeSeconds": 3137,
+        "completedAfterSeconds": 2886,
+        "episodeNumber": 4,
+        "genres": [
+          "Action und Abenteuer",
+          "Drama",
+          "Drama > Crime",
+          "Thriller"
+        ],
+        "studios": [
+          "Amazon Studios"
+        ],
+        "amazonMaturityRating": "16+",
+        "regulatoryRating": "16",
+        "badges": {
+          "xray": true,
+          "hdr": true,
+          "uhd": true,
+          "dolby51": true,
+          "adult": false,
+          "prime": true,
+          "captions": true,
+          "vam": false
+        },
+        "isInWatchlist": true,
+        "aliases": [
+          "amzn1.dv.gti.3f30a457-12f0-4730-95f7-143d7f5d2085",
+          "B0G2FVNYWM",
+          "B0G2FW3DDD",
+          "B0G2FWB5M1",
+          "B0G2FY4ZQG",
+          "B0G2FYMVFK",
+          "B0G2FYSN1W"
+        ],
+        "externalCard": {
+          "primaryText": "Steal",
+          "secondaryText": "Staffel 1, Folge 4",
+          "continueWatchingText": "Fortsetzen",
+          "cardStartWatchingText": "Jetzt ansehen",
+          "cardGoToDetailText": "Jetzt ansehen"
+        },
+        "seasonNumber": 1
+      },
+      {
+        "season": {
+          "titleId": "amzn1.dv.gti.d2cb99d9-4e55-4ed9-b34f-f8f20a7895d4",
+          "title": "Steal - Staffel 1"
+        },
+        "selectedEpisode": false,
+        "parentalRestrictions": [
+          {
+            "action": "purchase",
+            "type": "pinRequired",
+            "reason": "purchasePinEnabled",
+            "pinLength": 4
+          }
+        ],
+        "timecodeSeconds": null,
+        "playbackLabels": {
+          "watchNow": "Folge 5{lineBreak}Jetzt ansehen",
+          "resume": "Folge 5 fortsetzen"
+        },
+        "playbackActions": [
+          {
+            "heading": "Staffel 1 ist in Prime enthalten.",
+            "identifier": "423047345a5438594d34",
+            "label": "Folge 5{lineBreak}Jetzt ansehen",
+            "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "position": "FEATURE",
+            "startPositionEpochUtc": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "STREAM",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 3008,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.d1411d33-8440-4e45-9dbe-0ff75fb00b57",
+              "offerAsin": "B0G4ZT8YM4",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "PRIME_SUBSCRIPTION",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 1772300581840,
+              "windowEnd": 1772559781876,
+              "benefitId": "PRIME",
+              "benefitTierId": null,
+              "benefitName": "Prime"
+            },
+            "videoMaterialType": "Feature",
+            "refMarker": "stream_prime_sd_ep",
+            "blackout": null,
+            "intent": null,
+            "playbackId": "B0G4ZT8YM4"
+          }
+        ],
+        "primeAcquisitionActions": [],
+        "3pSubAcquisitionActions": [],
+        "transactionalAcquisitionActions": [],
+        "tvodFrom": null,
+        "notifications": [],
+        "downloadAction": [
+          {
+            "@type": "DownloadActionMetadata",
+            "canDownload": true,
+            "heading": "Staffel 1 ist in Prime enthalten.",
+            "downloadId": "423047345a5438594d34",
+            "downloadLabel": "Folge 5{lineBreak}Jetzt ansehen",
+            "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "entitlementType": "PRIME_SUBSCRIPTION",
+            "failure": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "DOWNLOAD",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 3008,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.d1411d33-8440-4e45-9dbe-0ff75fb00b57",
+              "offerAsin": "B0G4ZT8YM4",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "PRIME_SUBSCRIPTION",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 1772300581840,
+              "windowEnd": 1774892581876,
+              "benefitId": "PRIME",
+              "benefitTierId": null,
+              "benefitName": null
+            },
+            "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "imageUrl": null,
+            "label": "Folge 5{lineBreak}Jetzt ansehen",
+            "messages": null,
+            "refMarker": null
+          }
+        ],
+        "itemDownloadAction": {
+          "@type": "DownloadActionMetadata",
+          "canDownload": true,
+          "heading": "Staffel 1 ist in Prime enthalten.",
+          "downloadId": "423047345a5438594d34",
+          "downloadLabel": "Folge 5{lineBreak}Jetzt ansehen",
+          "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+          "entitlementType": "PRIME_SUBSCRIPTION",
+          "failure": null,
+          "userPlaybackMetadata": {
+            "consumptionType": "DOWNLOAD",
+            "playbackResolution": "RES_576P",
+            "runtimeSeconds": 3008,
+            "timecodeSeconds": null,
+            "videoQuality": "SD",
+            "videoSourceId": "amzn1.dv.vcid.d1411d33-8440-4e45-9dbe-0ff75fb00b57",
+            "offerAsin": "B0G4ZT8YM4",
+            "timecodeUpdateTime": 1772300581899,
+            "consumable": true
+          },
+          "userEntitlementMetadata": {
+            "entitlementType": "PRIME_SUBSCRIPTION",
+            "isRentalClockStarted": null,
+            "rentalTermHoursToPlayback": null,
+            "rentalTermHoursToStart": null,
+            "windowStart": 1772300581840,
+            "windowEnd": 1774892581876,
+            "benefitId": "PRIME",
+            "benefitTierId": null,
+            "benefitName": null
+          },
+          "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+          "imageUrl": null,
+          "label": "Folge 5{lineBreak}Jetzt ansehen",
+          "messages": null,
+          "refMarker": null
+        },
+        "titleId": "amzn1.dv.gti.8dfd4f50-28b9-4ff6-bc05-16031d6ab43b",
+        "title": "Abrechnung",
+        "displayText": "5. Abrechnung",
+        "accessibilityText": "Folge 5. Abrechnung.",
+        "contentType": "EPISODE",
+        "releaseDate": 1768953600000,
+        "synopsis": "Zara wird vor ein Ultimatum gestellt, das ihr Leben ver\u00e4ndern wird. Wem kann sie wirklich vertrauen, da ihr \u00dcberleben auf dem Spiel steht?",
+        "detailPageHeroImageUrl": "https://m.media-amazon.com/images/S/pv-target-images/c56f41483fe77cb348c36f181ca33fec6e9c5fa4d93b9a2721e2b8284fa20a28._RI_V0_TTW_.jpg",
+        "titleImageUrl": "https://images-na.ssl-images-amazon.com/images/S/pv-target-images/f6a4991ac5452b4b9eea79c873370d2b3be02c3c647a80308ae8dd06ef26097d._UY500_UX667_RI_TTW_.jpg",
+        "titleImageUrl169": "https://m.media-amazon.com/images/S/pv-target-images/f88b16af7f15bd874f1801187b6abfabf31d81c6b39a8ffd8c59e1e7cf38288b._UY500_UX667_PJUHD-Sash-Extra-Large-2017,TopLeft,0,0_UY200_RI_V0_TTW_.png",
+        "audioTracks": [
+          {
+            "id": "de-de_dialog_0",
+            "displayName": "Deutsch",
+            "language": "de_DE",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "en-gb_dialog_0",
+            "displayName": "English",
+            "language": "en_GB",
+            "type": "dialog",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_descriptive_0",
+            "displayName": "English [Audio Description]",
+            "language": "en_GB",
+            "type": "descriptive",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_boosteddialogmedium_0",
+            "displayName": "English Dialogue Boost: Medium",
+            "language": "en_GB",
+            "type": "Unknown",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_boosteddialoghigh_0",
+            "displayName": "English Dialogue Boost: High",
+            "language": "en_GB",
+            "type": "Unknown",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "es-es_dialog_0",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)",
+            "language": "es_ES",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "es-419_dialog_0",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)",
+            "language": "es_419",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-ca_dialog_0",
+            "displayName": "Fran\u00e7ais (Canada)",
+            "language": "fr_CA",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-fr_dialog_0",
+            "displayName": "Fran\u00e7ais (France)",
+            "language": "fr_FR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "it-it_dialog_0",
+            "displayName": "Italiano",
+            "language": "it_IT",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pl-pl_dialog_0",
+            "displayName": "Polski",
+            "language": "pl_PL",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pt-br_dialog_0",
+            "displayName": "Portugu\u00eas (Brasil)",
+            "language": "pt_BR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "tr-tr_dialog_0",
+            "displayName": "T\u00fcrk\u00e7e",
+            "language": "tr_TR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "hi-in_dialog_0",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940",
+            "language": "hi_IN",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "th-th_dialog_0",
+            "displayName": "\u0e44\u0e17\u0e22",
+            "language": "th_TH",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "ja-jp_dialog_0",
+            "displayName": "\u65e5\u672c\u8a9e",
+            "language": "ja_JP",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          }
+        ],
+        "subtitles": [
+          {
+            "language": "ar_001",
+            "displayName": "\u0627\u0644\u0639\u0631\u0628\u064a\u0629"
+          },
+          {
+            "language": "cs_CZ",
+            "displayName": "\u010ce\u0161tina"
+          },
+          {
+            "language": "da_DK",
+            "displayName": "Dansk"
+          },
+          {
+            "language": "de_DE",
+            "displayName": "Deutsch"
+          },
+          {
+            "language": "el_GR",
+            "displayName": "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac"
+          },
+          {
+            "language": "en_GB",
+            "displayName": "English [CC]"
+          },
+          {
+            "language": "es_419",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)"
+          },
+          {
+            "language": "es_ES",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)"
+          },
+          {
+            "language": "fi_FI",
+            "displayName": "Suomi"
+          },
+          {
+            "language": "fr_CA",
+            "displayName": "Fran\u00e7ais (Canada)"
+          },
+          {
+            "language": "fr_FR",
+            "displayName": "Fran\u00e7ais (France)"
+          },
+          {
+            "language": "he_IL",
+            "displayName": "\u05e2\u05d1\u05e8\u05d9\u05ea"
+          },
+          {
+            "language": "hi_IN",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940"
+          },
+          {
+            "language": "hu_HU",
+            "displayName": "Magyar"
+          },
+          {
+            "language": "id_ID",
+            "displayName": "Indonesia"
+          },
+          {
+            "language": "it_IT",
+            "displayName": "Italiano"
+          },
+          {
+            "language": "ja_JP",
+            "displayName": "\u65e5\u672c\u8a9e"
+          },
+          {
+            "language": "ko_KR",
+            "displayName": "\ud55c\uad6d\uc5b4"
+          },
+          {
+            "language": "ms_MY",
+            "displayName": "Melayu"
+          },
+          {
+            "language": "nb_NO",
+            "displayName": "Norsk Bokm\u00e5l"
+          },
+          {
+            "language": "nl_NL",
+            "displayName": "Nederlands"
+          },
+          {
+            "language": "pl_PL",
+            "displayName": "Polski"
+          },
+          {
+            "language": "pt_BR",
+            "displayName": "Portugu\u00eas (Brasil)"
+          },
+          {
+            "language": "pt_PT",
+            "displayName": "Portugu\u00eas (Portugal)"
+          },
+          {
+            "language": "ro_RO",
+            "displayName": "Rom\u00e2n\u0103"
+          },
+          {
+            "language": "sv_SE",
+            "displayName": "Svenska"
+          },
+          {
+            "language": "th_TH",
+            "displayName": "\u0e44\u0e17\u0e22"
+          },
+          {
+            "language": "tr_TR",
+            "displayName": "T\u00fcrk\u00e7e"
+          },
+          {
+            "language": "zh_HANS",
+            "displayName": "\u4e2d\u6587\uff08\u7b80\u4f53\uff09"
+          },
+          {
+            "language": "zh_HANT",
+            "displayName": "\u4e2d\u6587\uff08\u7e41\u9ad4\uff09"
+          }
+        ],
+        "runtimeSeconds": 3008,
+        "completedAfterSeconds": 2767,
+        "episodeNumber": 5,
+        "genres": [
+          "Action und Abenteuer",
+          "Drama",
+          "Drama > Crime",
+          "Thriller"
+        ],
+        "studios": [
+          "Amazon Studios"
+        ],
+        "amazonMaturityRating": "16+",
+        "regulatoryRating": "16",
+        "badges": {
+          "xray": true,
+          "hdr": true,
+          "uhd": true,
+          "dolby51": true,
+          "adult": false,
+          "prime": true,
+          "captions": true,
+          "vam": false
+        },
+        "isInWatchlist": true,
+        "aliases": [
+          "amzn1.dv.gti.8dfd4f50-28b9-4ff6-bc05-16031d6ab43b",
+          "B0G4ZT8YM4",
+          "B0G4ZVKXZY",
+          "B0G4ZY4D7R",
+          "B0G519ZRMK",
+          "B0G51BVJSQ",
+          "B0G51KZSSQ"
+        ],
+        "externalCard": {
+          "primaryText": "Steal",
+          "secondaryText": "Staffel 1, Folge 5",
+          "continueWatchingText": "Fortsetzen",
+          "cardStartWatchingText": "Jetzt ansehen",
+          "cardGoToDetailText": "Jetzt ansehen"
+        },
+        "seasonNumber": 1
+      },
+      {
+        "season": {
+          "titleId": "amzn1.dv.gti.d2cb99d9-4e55-4ed9-b34f-f8f20a7895d4",
+          "title": "Steal - Staffel 1"
+        },
+        "selectedEpisode": false,
+        "parentalRestrictions": [
+          {
+            "action": "purchase",
+            "type": "pinRequired",
+            "reason": "purchasePinEnabled",
+            "pinLength": 4
+          }
+        ],
+        "timecodeSeconds": null,
+        "playbackLabels": {
+          "watchNow": "Folge 6{lineBreak}Jetzt ansehen",
+          "resume": "Folge 6 fortsetzen"
+        },
+        "playbackActions": [
+          {
+            "heading": "Staffel 1 ist in Prime enthalten.",
+            "identifier": "423046515746425a3457",
+            "label": "Folge 6{lineBreak}Jetzt ansehen",
+            "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "position": "FEATURE",
+            "startPositionEpochUtc": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "STREAM",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 3218,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.e4c47d41-e3ef-44af-8ac6-1cbfb9063b4f",
+              "offerAsin": "B0FQWFBZ4W",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "PRIME_SUBSCRIPTION",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 1772300581840,
+              "windowEnd": 1772559781876,
+              "benefitId": "PRIME",
+              "benefitTierId": null,
+              "benefitName": "Prime"
+            },
+            "videoMaterialType": "Feature",
+            "refMarker": "stream_prime_sd_ep",
+            "blackout": null,
+            "intent": null,
+            "playbackId": "B0FQWFBZ4W"
+          }
+        ],
+        "primeAcquisitionActions": [],
+        "3pSubAcquisitionActions": [],
+        "transactionalAcquisitionActions": [],
+        "tvodFrom": null,
+        "notifications": [],
+        "downloadAction": [
+          {
+            "@type": "DownloadActionMetadata",
+            "canDownload": true,
+            "heading": "Staffel 1 ist in Prime enthalten.",
+            "downloadId": "423046515746425a3457",
+            "downloadLabel": "Folge 6{lineBreak}Jetzt ansehen",
+            "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "entitlementType": "PRIME_SUBSCRIPTION",
+            "failure": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "DOWNLOAD",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 3218,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.e4c47d41-e3ef-44af-8ac6-1cbfb9063b4f",
+              "offerAsin": "B0FQWFBZ4W",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "PRIME_SUBSCRIPTION",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 1772300581840,
+              "windowEnd": 1774892581876,
+              "benefitId": "PRIME",
+              "benefitTierId": null,
+              "benefitName": null
+            },
+            "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+            "imageUrl": null,
+            "label": "Folge 6{lineBreak}Jetzt ansehen",
+            "messages": null,
+            "refMarker": null
+          }
+        ],
+        "itemDownloadAction": {
+          "@type": "DownloadActionMetadata",
+          "canDownload": true,
+          "heading": "Staffel 1 ist in Prime enthalten.",
+          "downloadId": "423046515746425a3457",
+          "downloadLabel": "Folge 6{lineBreak}Jetzt ansehen",
+          "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+          "entitlementType": "PRIME_SUBSCRIPTION",
+          "failure": null,
+          "userPlaybackMetadata": {
+            "consumptionType": "DOWNLOAD",
+            "playbackResolution": "RES_576P",
+            "runtimeSeconds": 3218,
+            "timecodeSeconds": null,
+            "videoQuality": "SD",
+            "videoSourceId": "amzn1.dv.vcid.e4c47d41-e3ef-44af-8ac6-1cbfb9063b4f",
+            "offerAsin": "B0FQWFBZ4W",
+            "timecodeUpdateTime": 1772300581899,
+            "consumable": true
+          },
+          "userEntitlementMetadata": {
+            "entitlementType": "PRIME_SUBSCRIPTION",
+            "isRentalClockStarted": null,
+            "rentalTermHoursToPlayback": null,
+            "rentalTermHoursToStart": null,
+            "windowStart": 1772300581840,
+            "windowEnd": 1774892581876,
+            "benefitId": "PRIME",
+            "benefitTierId": null,
+            "benefitName": null
+          },
+          "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+          "imageUrl": null,
+          "label": "Folge 6{lineBreak}Jetzt ansehen",
+          "messages": null,
+          "refMarker": null
+        },
+        "titleId": "amzn1.dv.gti.9ece78c7-1a50-44d8-b9f8-255600e9e337",
+        "title": "Steueroase",
+        "displayText": "6. Steueroase",
+        "accessibilityText": "Folge 6. Steueroase.",
+        "contentType": "EPISODE",
+        "releaseDate": 1768953600000,
+        "synopsis": "Ein actiongeladener finaler Showdown bei Lochmill Capital hat verheerende Folgen. Schockierende Wahrheiten \u00fcber den Raub kommen ans Licht.",
+        "detailPageHeroImageUrl": "https://m.media-amazon.com/images/S/pv-target-images/c56f41483fe77cb348c36f181ca33fec6e9c5fa4d93b9a2721e2b8284fa20a28._RI_V0_TTW_.jpg",
+        "titleImageUrl": "https://images-na.ssl-images-amazon.com/images/S/pv-target-images/d3003db48f6e4645b60bace495a1babfc69fc5813a3cdb6e1ac78d81dab90130._UY500_UX667_RI_TTW_.jpg",
+        "titleImageUrl169": "https://m.media-amazon.com/images/S/pv-target-images/f88b16af7f15bd874f1801187b6abfabf31d81c6b39a8ffd8c59e1e7cf38288b._UY500_UX667_PJUHD-Sash-Extra-Large-2017,TopLeft,0,0_UY200_RI_V0_TTW_.png",
+        "audioTracks": [
+          {
+            "id": "de-de_dialog_0",
+            "displayName": "Deutsch",
+            "language": "de_DE",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "en-gb_dialog_0",
+            "displayName": "English",
+            "language": "en_GB",
+            "type": "dialog",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_descriptive_0",
+            "displayName": "English [Audio Description]",
+            "language": "en_GB",
+            "type": "descriptive",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_boosteddialogmedium_0",
+            "displayName": "English Dialogue Boost: Medium",
+            "language": "en_GB",
+            "type": "Unknown",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "en-gb_boosteddialoghigh_0",
+            "displayName": "English Dialogue Boost: High",
+            "language": "en_GB",
+            "type": "Unknown",
+            "isOriginalLanguage": true
+          },
+          {
+            "id": "es-es_dialog_0",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)",
+            "language": "es_ES",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "es-419_dialog_0",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)",
+            "language": "es_419",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-ca_dialog_0",
+            "displayName": "Fran\u00e7ais (Canada)",
+            "language": "fr_CA",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-fr_dialog_0",
+            "displayName": "Fran\u00e7ais (France)",
+            "language": "fr_FR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "it-it_dialog_0",
+            "displayName": "Italiano",
+            "language": "it_IT",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pl-pl_dialog_0",
+            "displayName": "Polski",
+            "language": "pl_PL",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pt-br_dialog_0",
+            "displayName": "Portugu\u00eas (Brasil)",
+            "language": "pt_BR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "tr-tr_dialog_0",
+            "displayName": "T\u00fcrk\u00e7e",
+            "language": "tr_TR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "hi-in_dialog_0",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940",
+            "language": "hi_IN",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "th-th_dialog_0",
+            "displayName": "\u0e44\u0e17\u0e22",
+            "language": "th_TH",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "ja-jp_dialog_0",
+            "displayName": "\u65e5\u672c\u8a9e",
+            "language": "ja_JP",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          }
+        ],
+        "subtitles": [
+          {
+            "language": "ar_001",
+            "displayName": "\u0627\u0644\u0639\u0631\u0628\u064a\u0629"
+          },
+          {
+            "language": "cs_CZ",
+            "displayName": "\u010ce\u0161tina"
+          },
+          {
+            "language": "da_DK",
+            "displayName": "Dansk"
+          },
+          {
+            "language": "de_DE",
+            "displayName": "Deutsch"
+          },
+          {
+            "language": "el_GR",
+            "displayName": "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac"
+          },
+          {
+            "language": "en_GB",
+            "displayName": "English [CC]"
+          },
+          {
+            "language": "es_419",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)"
+          },
+          {
+            "language": "es_ES",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)"
+          },
+          {
+            "language": "fi_FI",
+            "displayName": "Suomi"
+          },
+          {
+            "language": "fr_CA",
+            "displayName": "Fran\u00e7ais (Canada)"
+          },
+          {
+            "language": "fr_FR",
+            "displayName": "Fran\u00e7ais (France)"
+          },
+          {
+            "language": "he_IL",
+            "displayName": "\u05e2\u05d1\u05e8\u05d9\u05ea"
+          },
+          {
+            "language": "hi_IN",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940"
+          },
+          {
+            "language": "hu_HU",
+            "displayName": "Magyar"
+          },
+          {
+            "language": "id_ID",
+            "displayName": "Indonesia"
+          },
+          {
+            "language": "it_IT",
+            "displayName": "Italiano"
+          },
+          {
+            "language": "ja_JP",
+            "displayName": "\u65e5\u672c\u8a9e"
+          },
+          {
+            "language": "ko_KR",
+            "displayName": "\ud55c\uad6d\uc5b4"
+          },
+          {
+            "language": "ms_MY",
+            "displayName": "Melayu"
+          },
+          {
+            "language": "nb_NO",
+            "displayName": "Norsk Bokm\u00e5l"
+          },
+          {
+            "language": "nl_NL",
+            "displayName": "Nederlands"
+          },
+          {
+            "language": "pl_PL",
+            "displayName": "Polski"
+          },
+          {
+            "language": "pt_BR",
+            "displayName": "Portugu\u00eas (Brasil)"
+          },
+          {
+            "language": "pt_PT",
+            "displayName": "Portugu\u00eas (Portugal)"
+          },
+          {
+            "language": "ro_RO",
+            "displayName": "Rom\u00e2n\u0103"
+          },
+          {
+            "language": "sv_SE",
+            "displayName": "Svenska"
+          },
+          {
+            "language": "th_TH",
+            "displayName": "\u0e44\u0e17\u0e22"
+          },
+          {
+            "language": "tr_TR",
+            "displayName": "T\u00fcrk\u00e7e"
+          },
+          {
+            "language": "zh_HANS",
+            "displayName": "\u4e2d\u6587\uff08\u7b80\u4f53\uff09"
+          },
+          {
+            "language": "zh_HANT",
+            "displayName": "\u4e2d\u6587\uff08\u7e41\u9ad4\uff09"
+          }
+        ],
+        "runtimeSeconds": 3218,
+        "completedAfterSeconds": 2960,
+        "episodeNumber": 6,
+        "genres": [
+          "Action und Abenteuer",
+          "Drama",
+          "Drama > Crime",
+          "Thriller"
+        ],
+        "studios": [
+          "Amazon Studios"
+        ],
+        "amazonMaturityRating": "16+",
+        "regulatoryRating": "16",
+        "badges": {
+          "xray": true,
+          "hdr": true,
+          "uhd": true,
+          "dolby51": true,
+          "adult": false,
+          "prime": true,
+          "captions": true,
+          "vam": false
+        },
+        "isInWatchlist": true,
+        "aliases": [
+          "amzn1.dv.gti.9ece78c7-1a50-44d8-b9f8-255600e9e337",
+          "B0FQWFBZ4W",
+          "B0FQWYPWDL",
+          "B0FQWZ3YH9",
+          "B0FQX4SGKN",
+          "B0FQX5CV56",
+          "B0FQXG71SF"
+        ],
+        "externalCard": {
+          "primaryText": "Steal",
+          "secondaryText": "Staffel 1, Folge 6",
+          "continueWatchingText": "Fortsetzen",
+          "cardStartWatchingText": "Jetzt ansehen",
+          "cardGoToDetailText": "Jetzt ansehen"
+        },
+        "seasonNumber": 1
+      },
+      {
+        "season": {
+          "titleId": "amzn1.dv.gti.d2cb99d9-4e55-4ed9-b34f-f8f20a7895d4",
+          "title": "Steal - Staffel 1"
+        },
+        "selectedEpisode": false,
+        "parentalRestrictions": [
+          {
+            "action": "purchase",
+            "type": "pinRequired",
+            "reason": "purchasePinEnabled",
+            "pinLength": 4
+          }
+        ],
+        "timecodeSeconds": null,
+        "playbackLabels": {
+          "watchNow": "Bonus{lineBreak}Jetzt kostenlos ansehen",
+          "resume": "Bonusinhalte fortsetzen"
+        },
+        "playbackActions": [
+          {
+            "heading": "Sieh dir Bonusvideos kostenlos an",
+            "identifier": "4230465239394a393747",
+            "label": "Bonus{lineBreak}Jetzt kostenlos ansehen",
+            "logo": null,
+            "position": "FEATURE",
+            "startPositionEpochUtc": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "STREAM",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 129,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.81a54b9a-f9d3-46ef-a770-0318c7b29761",
+              "offerAsin": "B0FR99J97G",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "FREE",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 0,
+              "windowEnd": 1772559781876,
+              "benefitId": null,
+              "benefitTierId": null,
+              "benefitName": null
+            },
+            "videoMaterialType": "Feature",
+            "refMarker": "stream_free_sd_ep",
+            "blackout": null,
+            "intent": null,
+            "playbackId": "B0FR99J97G"
+          }
+        ],
+        "primeAcquisitionActions": [],
+        "3pSubAcquisitionActions": [],
+        "transactionalAcquisitionActions": [],
+        "tvodFrom": null,
+        "notifications": [],
+        "downloadAction": [
+          {
+            "@type": "DownloadActionMetadata",
+            "canDownload": true,
+            "heading": "Sieh dir Bonusvideos kostenlos an",
+            "downloadId": "4230465239394a393747",
+            "downloadLabel": "Bonus{lineBreak}Jetzt kostenlos ansehen",
+            "logoUrl": null,
+            "entitlementType": "FREE",
+            "failure": null,
+            "userPlaybackMetadata": {
+              "consumptionType": "DOWNLOAD",
+              "playbackResolution": "RES_576P",
+              "runtimeSeconds": 129,
+              "timecodeSeconds": null,
+              "videoQuality": "SD",
+              "videoSourceId": "amzn1.dv.vcid.81a54b9a-f9d3-46ef-a770-0318c7b29761",
+              "offerAsin": "B0FR99J97G",
+              "timecodeUpdateTime": 1772300581899,
+              "consumable": true
+            },
+            "userEntitlementMetadata": {
+              "entitlementType": "FREE",
+              "isRentalClockStarted": null,
+              "rentalTermHoursToPlayback": null,
+              "rentalTermHoursToStart": null,
+              "windowStart": 0,
+              "windowEnd": 1774892581876,
+              "benefitId": null,
+              "benefitTierId": null,
+              "benefitName": null
+            },
+            "logo": null,
+            "imageUrl": null,
+            "label": "Bonus{lineBreak}Jetzt kostenlos ansehen",
+            "messages": null,
+            "refMarker": null
+          }
+        ],
+        "itemDownloadAction": {
+          "@type": "DownloadActionMetadata",
+          "canDownload": true,
+          "heading": "Sieh dir Bonusvideos kostenlos an",
+          "downloadId": "4230465239394a393747",
+          "downloadLabel": "Bonus{lineBreak}Jetzt kostenlos ansehen",
+          "logoUrl": null,
+          "entitlementType": "FREE",
+          "failure": null,
+          "userPlaybackMetadata": {
+            "consumptionType": "DOWNLOAD",
+            "playbackResolution": "RES_576P",
+            "runtimeSeconds": 129,
+            "timecodeSeconds": null,
+            "videoQuality": "SD",
+            "videoSourceId": "amzn1.dv.vcid.81a54b9a-f9d3-46ef-a770-0318c7b29761",
+            "offerAsin": "B0FR99J97G",
+            "timecodeUpdateTime": 1772300581899,
+            "consumable": true
+          },
+          "userEntitlementMetadata": {
+            "entitlementType": "FREE",
+            "isRentalClockStarted": null,
+            "rentalTermHoursToPlayback": null,
+            "rentalTermHoursToStart": null,
+            "windowStart": 0,
+            "windowEnd": 1774892581876,
+            "benefitId": null,
+            "benefitTierId": null,
+            "benefitName": null
+          },
+          "logo": null,
+          "imageUrl": null,
+          "label": "Bonus{lineBreak}Jetzt kostenlos ansehen",
+          "messages": null,
+          "refMarker": null
+        },
+        "titleId": "amzn1.dv.gti.97cca0bf-1084-4b97-93b6-629921de68aa",
+        "title": "Steal -Staffel 1: Trailer",
+        "displayText": "Bonusinhalt: Steal -Staffel 1: Trailer",
+        "accessibilityText": "Besondere Funktion. Steal -Staffel 1: Trailer.",
+        "contentType": "EPISODE",
+        "releaseDate": 1767744000000,
+        "synopsis": "Ein fesselnder Thriller \u00fcber den Jahrhundertraub. Ein normaler Tag bei Lochmill Capital steht Kopf, als bewaffnete Gangster auftauchen und Zara (Sophie Turner) und ihren besten Freund Luke (Archie Madekwe) n\u00f6tigen, ihre Forderungen zu erf\u00fcllen. Daraufhin versucht der verunsicherte Detective Rhys (Jacob Fortune-Lloyd) herauszufinden, wer Rentengelder im Wert von 4 Milliarden Pfund stahl und warum.",
+        "detailPageHeroImageUrl": "https://m.media-amazon.com/images/S/pv-target-images/c56f41483fe77cb348c36f181ca33fec6e9c5fa4d93b9a2721e2b8284fa20a28._RI_V0_TTW_.jpg",
+        "titleImageUrl": "https://images-na.ssl-images-amazon.com/images/S/pv-target-images/9bb11d71e8b76fab71d97a1b2b4460d540a56b2f67b01710b5f419d2e4fc931c._UY500_UX667_RI_TTW_.png",
+        "titleImageUrl169": "https://m.media-amazon.com/images/S/pv-target-images/f88b16af7f15bd874f1801187b6abfabf31d81c6b39a8ffd8c59e1e7cf38288b._UY500_UX667_UY200_RI_V0_TTW_.png",
+        "audioTracks": [
+          {
+            "id": "de-de_dialog_0",
+            "displayName": "Deutsch",
+            "language": "de_DE",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "en-us_dialog_0",
+            "displayName": "English",
+            "language": "en_US",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "es-es_dialog_0",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)",
+            "language": "es_ES",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "es-419_dialog_0",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)",
+            "language": "es_419",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-ca_dialog_0",
+            "displayName": "Fran\u00e7ais (Canada)",
+            "language": "fr_CA",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "fr-fr_dialog_0",
+            "displayName": "Fran\u00e7ais (France)",
+            "language": "fr_FR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "it-it_dialog_0",
+            "displayName": "Italiano",
+            "language": "it_IT",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pl-pl_dialog_0",
+            "displayName": "Polski",
+            "language": "pl_PL",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "pt-br_dialog_0",
+            "displayName": "Portugu\u00eas (Brasil)",
+            "language": "pt_BR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "tr-tr_dialog_0",
+            "displayName": "T\u00fcrk\u00e7e",
+            "language": "tr_TR",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "hi-in_dialog_0",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940",
+            "language": "hi_IN",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "th-th_dialog_0",
+            "displayName": "\u0e44\u0e17\u0e22",
+            "language": "th_TH",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          },
+          {
+            "id": "ja-jp_dialog_0",
+            "displayName": "\u65e5\u672c\u8a9e",
+            "language": "ja_JP",
+            "type": "dialog",
+            "isOriginalLanguage": false
+          }
+        ],
+        "subtitles": [
+          {
+            "language": "ar_AE",
+            "displayName": "\u0627\u0644\u0639\u0631\u0628\u064a\u0629"
+          },
+          {
+            "language": "cs_CZ",
+            "displayName": "\u010ce\u0161tina"
+          },
+          {
+            "language": "da_DK",
+            "displayName": "Dansk"
+          },
+          {
+            "language": "de_DE",
+            "displayName": "Deutsch"
+          },
+          {
+            "language": "el_GR",
+            "displayName": "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac"
+          },
+          {
+            "language": "en_US",
+            "displayName": "English"
+          },
+          {
+            "language": "es_419",
+            "displayName": "Espa\u00f1ol (Latinoam\u00e9rica)"
+          },
+          {
+            "language": "es_ES",
+            "displayName": "Espa\u00f1ol (Espa\u00f1a)"
+          },
+          {
+            "language": "fi_FI",
+            "displayName": "Suomi"
+          },
+          {
+            "language": "fr_CA",
+            "displayName": "Fran\u00e7ais (Canada)"
+          },
+          {
+            "language": "fr_FR",
+            "displayName": "Fran\u00e7ais (France)"
+          },
+          {
+            "language": "he_IL",
+            "displayName": "\u05e2\u05d1\u05e8\u05d9\u05ea"
+          },
+          {
+            "language": "hi_IN",
+            "displayName": "\u0939\u093f\u0928\u094d\u0926\u0940"
+          },
+          {
+            "language": "hu_HU",
+            "displayName": "Magyar"
+          },
+          {
+            "language": "id_ID",
+            "displayName": "Indonesia"
+          },
+          {
+            "language": "it_IT",
+            "displayName": "Italiano"
+          },
+          {
+            "language": "ja_JP",
+            "displayName": "\u65e5\u672c\u8a9e"
+          },
+          {
+            "language": "ko_KR",
+            "displayName": "\ud55c\uad6d\uc5b4"
+          },
+          {
+            "language": "ms_MY",
+            "displayName": "Melayu"
+          },
+          {
+            "language": "nb_NO",
+            "displayName": "Norsk Bokm\u00e5l"
+          },
+          {
+            "language": "nl_NL",
+            "displayName": "Nederlands"
+          },
+          {
+            "language": "pl_PL",
+            "displayName": "Polski"
+          },
+          {
+            "language": "pt_BR",
+            "displayName": "Portugu\u00eas (Brasil)"
+          },
+          {
+            "language": "pt_PT",
+            "displayName": "Portugu\u00eas (Portugal)"
+          },
+          {
+            "language": "ro_RO",
+            "displayName": "Rom\u00e2n\u0103"
+          },
+          {
+            "language": "sv_SE",
+            "displayName": "Svenska"
+          },
+          {
+            "language": "th_TH",
+            "displayName": "\u0e44\u0e17\u0e22"
+          },
+          {
+            "language": "tr_TR",
+            "displayName": "T\u00fcrk\u00e7e"
+          },
+          {
+            "language": "zh_HANS",
+            "displayName": "\u4e2d\u6587\uff08\u7b80\u4f53\uff09"
+          },
+          {
+            "language": "zh_HANT",
+            "displayName": "\u4e2d\u6587\uff08\u7e41\u9ad4\uff09"
+          }
+        ],
+        "runtimeSeconds": 129,
+        "completedAfterSeconds": 118,
+        "episodeNumber": 0,
+        "genres": [
+          "Action und Abenteuer",
+          "Action/Adventure > Thriller",
+          "Drama"
+        ],
+        "studios": [
+          "Amazon Studios"
+        ],
+        "amazonMaturityRating": "16+",
+        "regulatoryRating": "16",
+        "badges": {
+          "xray": false,
+          "hdr": false,
+          "uhd": false,
+          "dolby51": true,
+          "adult": false,
+          "prime": false,
+          "captions": false,
+          "vam": true
+        },
+        "isInWatchlist": true,
+        "aliases": [
+          "amzn1.dv.gti.97cca0bf-1084-4b97-93b6-629921de68aa",
+          "B0FR99J97G",
+          "B0FR99KKVB",
+          "B0FR9B2V7H",
+          "B0FR9CSJ9D",
+          "B0FR9DB2YP",
+          "B0FR9DRM3D"
+        ],
+        "externalCard": {
+          "primaryText": "Steal",
+          "secondaryText": "Staffel 1, Folge 0",
+          "continueWatchingText": "Fortsetzen",
+          "cardStartWatchingText": "Jetzt ansehen",
+          "cardGoToDetailText": "Jetzt ansehen"
+        },
+        "seasonNumber": 1
+      }
+    ],
+    "seasons": [
+      {
+        "titleId": "amzn1.dv.gti.d2cb99d9-4e55-4ed9-b34f-f8f20a7895d4",
+        "title": "Steal - Staffel 1",
+        "displayText": "Staffel 1",
+        "seasonNumber": 1,
+        "badges": {
+          "prime": true
+        },
+        "aliases": [
+          "amzn1.dv.gti.d2cb99d9-4e55-4ed9-b34f-f8f20a7895d4",
+          "B0FNWNPSB7",
+          "B0FNWNYMD8",
+          "B0FNWP3C8V",
+          "B0FNWP8DTN",
+          "B0FNWPRSYC",
+          "B0FNWQ6MN2"
+        ]
+      }
+    ],
+    "show": {
+      "titleId": "amzn1.dv.gti.54adc6ff-d05b-4d94-b76e-9b1d6d37e1b9",
+      "title": "Steal",
+      "aliases": [
+        "amzn1.dv.gti.54adc6ff-d05b-4d94-b76e-9b1d6d37e1b9",
+        "B0G2V388HJ",
+        "B0G2V3BVQ9",
+        "B0G2V4922Z",
+        "B0G2V5NBXS",
+        "B0G2V5V266",
+        "B0G2V71KPJ"
+      ]
+    }
+  },
+  "rawdata": null,
+  "metadata": {
+    "requestId": "7laThsw1Y8dCLaDJgL2Z1mt50JQXAxvcTtRlpFeHxeOf6WxUMqvjZQ==",
+    "requestedTransformId": "android/atf/v3.jstl",
+    "domain": "prod",
+    "realm": "USAmazon",
+    "timestamp": "2026-02-28T17:43:01.903090021Z",
+    "schemaValid": "not validated"
+  }
+}

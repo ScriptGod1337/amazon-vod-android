@@ -1,0 +1,351 @@
+{
+  "resource": {
+    "titleId": "amzn1.dv.gti.e7cf295a-b49d-404b-9e73-4af95b9886ce",
+    "title": "Monster Summer",
+    "contentType": "MOVIE",
+    "releaseDate": 1750291200000,
+    "synopsis": "Noah und seine Freunde entdecken in ihrer kleinen Stadt eine d\u00fcstere Macht. Gemeinsam stellen sie sich dieser dunklen Gefahr und bekommen vom pensionierten Polizisten Gene tatkr\u00e4ftige Unterst\u00fctzung. Zusammen erleben sie ein wahrlich monstr\u00f6ses Abenteuer, in dem sie versuchen, ihre Heimat vor dieser mysteri\u00f6sen und zerst\u00f6rerischen Kraft zu retten!",
+    "detailPageHeroImageUrl": "https://m.media-amazon.com/images/S/pv-target-images/832cd693c4469631a0670d172c68d1ae35de087475ff3407191ed866fe460ca6._RI_V0_TTW_.jpg",
+    "titleImageUrl": "https://images-na.ssl-images-amazon.com/images/S/pv-target-images/a408a1eb092f99effe186af6a6e5d7b6425702d39bd14e7cfa60f344967ac388._UY500_UX375_RI_TTW_.jpg",
+    "titleImageUrl169": "https://m.media-amazon.com/images/S/pv-target-images/28daea981208187ac7539e6814c0580c0324d8f0d11f6671cda85d8632c3f349._UY500_UX667_PJUHD-Sash-Extra-Large-2017,TopLeft,0,0_UY200_RI_V0_TTW_.jpg",
+    "audioTracks": [
+      {
+        "id": "de-de_dialog_0",
+        "displayName": "Deutsch",
+        "language": "de_DE",
+        "type": "dialog",
+        "isOriginalLanguage": false
+      },
+      {
+        "id": "de-de_boosteddialogmedium_0",
+        "displayName": "Deutsch Dialogue Boost: Medium",
+        "language": "de_DE",
+        "type": "Unknown",
+        "isOriginalLanguage": false
+      },
+      {
+        "id": "de-de_boosteddialoghigh_0",
+        "displayName": "Deutsch Dialogue Boost: High",
+        "language": "de_DE",
+        "type": "Unknown",
+        "isOriginalLanguage": false
+      },
+      {
+        "id": "en-us_dialog_0",
+        "displayName": "English",
+        "language": "en_US",
+        "type": "dialog",
+        "isOriginalLanguage": true
+      }
+    ],
+    "subtitles": [
+      {
+        "language": "de_DE",
+        "displayName": "Deutsch"
+      }
+    ],
+    "runtimeSeconds": 5918,
+    "completedAfterSeconds": 5444,
+    "genres": [
+      "Adventure",
+      "Fantasy",
+      "Horror",
+      "Thriller",
+      "Thriller > Mystery"
+    ],
+    "studios": [],
+    "amazonMaturityRating": "13+",
+    "regulatoryRating": "12",
+    "badges": {
+      "xray": true,
+      "hdr": true,
+      "uhd": true,
+      "dolby51": true,
+      "adult": false,
+      "prime": true,
+      "captions": false,
+      "vam": false
+    },
+    "directors": [
+      "David Henrie"
+    ],
+    "aliases": [
+      "amzn1.dv.gti.e7cf295a-b49d-404b-9e73-4af95b9886ce",
+      "B0FF5GCGJ3",
+      "B0FF5H5J44",
+      "B0FF5LHLDZ",
+      "B0FF5S9BCZ",
+      "B0FF5ZLN52",
+      "B0FF62KKD5"
+    ],
+    "parentalRestrictions": [
+      {
+        "action": "purchase",
+        "type": "pinRequired",
+        "reason": "purchasePinEnabled",
+        "pinLength": 4
+      }
+    ],
+    "externalCard": {
+      "primaryText": "Monster Summer",
+      "secondaryText": "",
+      "continueWatchingText": "Fortsetzen",
+      "cardStartWatchingText": "Jetzt ansehen",
+      "cardGoToDetailText": "Jetzt ansehen"
+    },
+    "isInWatchlist": true,
+    "isTrailerAvailable": true,
+    "timecodeSeconds": 0,
+    "playbackLabels": {
+      "watchNow": "Jetzt ansehen",
+      "resume": "Fortsetzen",
+      "startOver": "Von vorne ansehen"
+    },
+    "playbackActions": [
+      {
+        "heading": "Enthalten in Prime",
+        "identifier": "42304646354743474a33",
+        "label": "Jetzt ansehen",
+        "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+        "position": "FEATURE",
+        "startPositionEpochUtc": null,
+        "userPlaybackMetadata": {
+          "consumptionType": "STREAM",
+          "playbackResolution": "RES_576P",
+          "runtimeSeconds": 5918,
+          "timecodeSeconds": 0,
+          "videoQuality": "SD",
+          "videoSourceId": "amzn1.dv.vcid.ce196e80-8508-4169-99d6-ea3311b70aa0",
+          "offerAsin": "B0FF5GCGJ3",
+          "timecodeUpdateTime": 1772292363549,
+          "consumable": true
+        },
+        "userEntitlementMetadata": {
+          "entitlementType": "PRIME_SUBSCRIPTION",
+          "isRentalClockStarted": null,
+          "rentalTermHoursToPlayback": null,
+          "rentalTermHoursToStart": null,
+          "windowStart": 1772300484901,
+          "windowEnd": 1772559684918,
+          "benefitId": "PRIME",
+          "benefitTierId": null,
+          "benefitName": "Prime"
+        },
+        "videoMaterialType": "Feature",
+        "refMarker": "stream_prime_sd_mv",
+        "blackout": null,
+        "intent": null,
+        "playbackId": "B0FF5GCGJ3"
+      }
+    ],
+    "primeAcquisitionActions": [],
+    "3pSubAcquisitionActions": [],
+    "transactionalAcquisitionActions": [
+      {
+        "@type": "TVODActionMetadata",
+        "actionType": "TVOD",
+        "contentType": "MOVIE",
+        "offerType": "PURCHASE",
+        "videoQuality": "SD",
+        "price": 7.99,
+        "currencyCode": "EUR",
+        "offerToken": "amzn.dv.offertoken.v1.eyJ2ZXJzaW9uIiA6IDEsICJkYXRhIiA6IHsiQVNJTiIgOiAiQjBGRjVHQ0dKMyIsICJwcmljZSIgOiB7ImN1cnJlbmN5IiA6ICJFVVIiLCAidmFsdWUiIDogIjcuOTkifX19",
+        "rentalDurationFromFirstPlayMillis": null,
+        "rentalDurationFromPurchaseMillis": null,
+        "blackout": null,
+        "intent": null,
+        "logo": null,
+        "imageUrl": null,
+        "label": "Film kaufen in SD f\u00fcr 7,99\u00a0\u20ac",
+        "messages": [],
+        "refMarker": "buy_sd_mv_mw"
+      },
+      {
+        "@type": "TVODActionMetadata",
+        "actionType": "TVOD",
+        "contentType": "MOVIE",
+        "offerType": "RENTAL",
+        "videoQuality": "UHD",
+        "price": 4.99,
+        "currencyCode": "EUR",
+        "offerToken": "amzn.dv.offertoken.v1.eyJ2ZXJzaW9uIiA6IDEsICJkYXRhIiA6IHsiQVNJTiIgOiAiQjBGRjVINUo0NCIsICJwcmljZSIgOiB7ImN1cnJlbmN5IiA6ICJFVVIiLCAidmFsdWUiIDogIjQuOTkifX19",
+        "rentalDurationFromFirstPlayMillis": 172800000,
+        "rentalDurationFromPurchaseMillis": 2592000000,
+        "blackout": null,
+        "intent": null,
+        "logo": null,
+        "imageUrl": null,
+        "label": "Film leihen in UHD f\u00fcr 4,99\u00a0\u20ac",
+        "messages": [],
+        "refMarker": "rent_uhd_mv_mw"
+      },
+      {
+        "@type": "TVODActionMetadata",
+        "actionType": "TVOD",
+        "contentType": "MOVIE",
+        "offerType": "PURCHASE",
+        "videoQuality": "HD",
+        "price": 9.99,
+        "currencyCode": "EUR",
+        "offerToken": "amzn.dv.offertoken.v1.eyJ2ZXJzaW9uIiA6IDEsICJkYXRhIiA6IHsiQVNJTiIgOiAiQjBGRjVMSExEWiIsICJwcmljZSIgOiB7ImN1cnJlbmN5IiA6ICJFVVIiLCAidmFsdWUiIDogIjkuOTkifX19",
+        "rentalDurationFromFirstPlayMillis": null,
+        "rentalDurationFromPurchaseMillis": null,
+        "blackout": null,
+        "intent": null,
+        "logo": null,
+        "imageUrl": null,
+        "label": "Film kaufen in HD f\u00fcr 9,99\u00a0\u20ac",
+        "messages": [],
+        "refMarker": "buy_hd_mv_mw"
+      },
+      {
+        "@type": "TVODActionMetadata",
+        "actionType": "TVOD",
+        "contentType": "MOVIE",
+        "offerType": "PURCHASE",
+        "videoQuality": "UHD",
+        "price": 9.99,
+        "currencyCode": "EUR",
+        "offerToken": "amzn.dv.offertoken.v1.eyJ2ZXJzaW9uIiA6IDEsICJkYXRhIiA6IHsiQVNJTiIgOiAiQjBGRjVTOUJDWiIsICJwcmljZSIgOiB7ImN1cnJlbmN5IiA6ICJFVVIiLCAidmFsdWUiIDogIjkuOTkifX19",
+        "rentalDurationFromFirstPlayMillis": null,
+        "rentalDurationFromPurchaseMillis": null,
+        "blackout": null,
+        "intent": null,
+        "logo": null,
+        "imageUrl": null,
+        "label": "Film kaufen in UHD f\u00fcr 9,99\u00a0\u20ac",
+        "messages": [],
+        "refMarker": "buy_uhd_mv_mw"
+      },
+      {
+        "@type": "TVODActionMetadata",
+        "actionType": "TVOD",
+        "contentType": "MOVIE",
+        "offerType": "RENTAL",
+        "videoQuality": "SD",
+        "price": 4.99,
+        "currencyCode": "EUR",
+        "offerToken": "amzn.dv.offertoken.v1.eyJ2ZXJzaW9uIiA6IDEsICJkYXRhIiA6IHsiQVNJTiIgOiAiQjBGRjVaTE41MiIsICJwcmljZSIgOiB7ImN1cnJlbmN5IiA6ICJFVVIiLCAidmFsdWUiIDogIjQuOTkifX19",
+        "rentalDurationFromFirstPlayMillis": 172800000,
+        "rentalDurationFromPurchaseMillis": 2592000000,
+        "blackout": null,
+        "intent": null,
+        "logo": null,
+        "imageUrl": null,
+        "label": "Film leihen in SD f\u00fcr 4,99\u00a0\u20ac",
+        "messages": [],
+        "refMarker": "rent_sd_mv_mw"
+      },
+      {
+        "@type": "TVODActionMetadata",
+        "actionType": "TVOD",
+        "contentType": "MOVIE",
+        "offerType": "RENTAL",
+        "videoQuality": "HD",
+        "price": 4.99,
+        "currencyCode": "EUR",
+        "offerToken": "amzn.dv.offertoken.v1.eyJ2ZXJzaW9uIiA6IDEsICJkYXRhIiA6IHsiQVNJTiIgOiAiQjBGRjYyS0tENSIsICJwcmljZSIgOiB7ImN1cnJlbmN5IiA6ICJFVVIiLCAidmFsdWUiIDogIjQuOTkifX19",
+        "rentalDurationFromFirstPlayMillis": 172800000,
+        "rentalDurationFromPurchaseMillis": 2592000000,
+        "blackout": null,
+        "intent": null,
+        "logo": null,
+        "imageUrl": null,
+        "label": "Film leihen in HD f\u00fcr 4,99\u00a0\u20ac",
+        "messages": [],
+        "refMarker": "rent_hd_mv_mw"
+      }
+    ],
+    "tvodFrom": null,
+    "downloadAction": [
+      {
+        "@type": "DownloadActionMetadata",
+        "canDownload": true,
+        "heading": "Enthalten in Prime",
+        "downloadId": "42304646354743474a33",
+        "downloadLabel": "Jetzt ansehen",
+        "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+        "entitlementType": "PRIME_SUBSCRIPTION",
+        "failure": null,
+        "userPlaybackMetadata": {
+          "consumptionType": "DOWNLOAD",
+          "playbackResolution": "RES_576P",
+          "runtimeSeconds": 5918,
+          "timecodeSeconds": 0,
+          "videoQuality": "SD",
+          "videoSourceId": "amzn1.dv.vcid.ce196e80-8508-4169-99d6-ea3311b70aa0",
+          "offerAsin": "B0FF5GCGJ3",
+          "timecodeUpdateTime": 1772300484933,
+          "consumable": true
+        },
+        "userEntitlementMetadata": {
+          "entitlementType": "PRIME_SUBSCRIPTION",
+          "isRentalClockStarted": null,
+          "rentalTermHoursToPlayback": null,
+          "rentalTermHoursToStart": null,
+          "windowStart": 1772300484901,
+          "windowEnd": 1774892484918,
+          "benefitId": "PRIME",
+          "benefitTierId": null,
+          "benefitName": null
+        },
+        "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+        "imageUrl": null,
+        "label": "Jetzt ansehen",
+        "messages": null,
+        "refMarker": null
+      }
+    ],
+    "itemDownloadAction": {
+      "@type": "DownloadActionMetadata",
+      "canDownload": true,
+      "heading": "Enthalten in Prime",
+      "downloadId": "42304646354743474a33",
+      "downloadLabel": "Jetzt ansehen",
+      "logoUrl": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+      "entitlementType": "PRIME_SUBSCRIPTION",
+      "failure": null,
+      "userPlaybackMetadata": {
+        "consumptionType": "DOWNLOAD",
+        "playbackResolution": "RES_576P",
+        "runtimeSeconds": 5918,
+        "timecodeSeconds": 0,
+        "videoQuality": "SD",
+        "videoSourceId": "amzn1.dv.vcid.ce196e80-8508-4169-99d6-ea3311b70aa0",
+        "offerAsin": "B0FF5GCGJ3",
+        "timecodeUpdateTime": 1772300484933,
+        "consumable": true
+      },
+      "userEntitlementMetadata": {
+        "entitlementType": "PRIME_SUBSCRIPTION",
+        "isRentalClockStarted": null,
+        "rentalTermHoursToPlayback": null,
+        "rentalTermHoursToStart": null,
+        "windowStart": 1772300484901,
+        "windowEnd": 1774892484918,
+        "benefitId": "PRIME",
+        "benefitTierId": null,
+        "benefitName": null
+      },
+      "logo": "https://m.media-amazon.com/images/G/01/primeLogo/primelogo-330x90-v2._V507659160_UX129_FMpng_.png",
+      "imageUrl": null,
+      "label": "Jetzt ansehen",
+      "messages": null,
+      "refMarker": null
+    },
+    "notifications": [],
+    "overallCustomerRating": 0.0,
+    "totalReviewCount": 0,
+    "imdbRating": 5.7,
+    "imdbRatingCount": 7138
+  },
+  "rawdata": null,
+  "metadata": {
+    "requestId": "jzsYkPkdRKMGCamBXolozgyO2ua6x2Ia4C6RCu4Bw6QZq8KLpBi0Vw==",
+    "requestedTransformId": "android/atf/v3.jstl",
+    "domain": "prod",
+    "realm": "USAmazon",
+    "timestamp": "2026-02-28T17:41:24.952876343Z",
+    "schemaValid": "not validated"
+  }
+}

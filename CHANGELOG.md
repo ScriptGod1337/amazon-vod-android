@@ -4,6 +4,33 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.28.15] - 2026-02-28
+
+### Added
+- **Content Overview / Detail Page** (`DetailActivity`) — selecting any movie or season/series now opens a full detail screen before playback:
+  - **Hero backdrop image** (16:9) loaded from Amazon's `detailPageHeroImageUrl` field
+  - **Poster thumbnail**, title, year, runtime, age rating, quality badges (4K / HDR / 5.1)
+  - **IMDb rating** displayed in gold when available (from `imdbRating` field — e.g. `IMDb  5.7 / 10`)
+  - **Genres** (sub-genre entries containing `>` are suppressed)
+  - **Synopsis** (full description text)
+  - **Director** credit line
+  - **▶ Play** button for movies/features → launches `PlayerActivity`
+  - **▶ Trailer** button (visible only when `isTrailerAvailable: true`) → plays trailer via `GetPlaybackResources?videoMaterialType=Trailer` with the same GTI ASIN
+  - **Browse Episodes / Browse Seasons** button for series/seasons → launches `BrowseActivity`
+  - **☆ / ★ Watchlist** toggle button (updates via Add/RemoveTitleFromList API)
+- `PlayerActivity` now accepts `EXTRA_MATERIAL_TYPE` (default `"Feature"`) so trailer playback can be started without code duplication
+- `model/DetailInfo.kt` — data class holding all detail-page fields
+- `api/AmazonApiService.getDetailInfo(asin)` — fetches `android/atf/v3.jstl` and parses rich metadata; for SEASON ASINs, reads data from `resource.selectedSeason` rather than `resource` directly
+
+### Changed
+- All content item clicks in `MainActivity` now route through `DetailActivity` first (movies, series, seasons) — no more direct jump to `PlayerActivity` or `BrowseActivity` from the home/search/watchlist grids
+- Season selection in `BrowseActivity` now routes through `DetailActivity` (season overview + "Browse Episodes" button) instead of jumping directly to a nested episode `BrowseActivity`
+
+### Technical
+- API analysis for the detail endpoint documented in `dev/analysis/detail-page-api.md`
+- `dev/analysis/detail-atf-v3-movie.json` and `detail-atf-v3-season.json` — raw API response samples
+- Trailer playback confirmed working with `videoMaterialType=Trailer` on the same GTI ASIN as the feature
+
 ## [2026.02.28.14] - 2026-02-28
 
 ### Fixed

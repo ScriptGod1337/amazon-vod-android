@@ -54,6 +54,7 @@ class PlayerActivity : AppCompatActivity() {
         const val EXTRA_ASIN = "extra_asin"
         const val EXTRA_TITLE = "extra_title"
         const val EXTRA_CONTENT_TYPE = "extra_content_type"
+        const val EXTRA_MATERIAL_TYPE = "extra_material_type"
 
         // Widevine UUID
         private val WIDEVINE_UUID = UUID.fromString("edef8ba9-79d6-4ace-a3c8-27dcd51d21ed")
@@ -137,10 +138,11 @@ class PlayerActivity : AppCompatActivity() {
         authService = AmazonAuthService(tokenFile)
         apiService = AmazonApiService(authService)
 
-        // Always use "Feature" as videoMaterialType for GetPlaybackResources.
+        // Default to "Feature"; caller may pass "Trailer" via EXTRA_MATERIAL_TYPE.
         // GTI-format ASINs (amzn1.dv.gti.*) reject "Episode" with PRSInvalidRequest.
         // "Feature" works for both movies and episodes with GTI ASINs.
-        loadAndPlay(asin)
+        val materialType = intent.getStringExtra(EXTRA_MATERIAL_TYPE) ?: "Feature"
+        loadAndPlay(asin, materialType)
     }
 
     private fun loadAndPlay(asin: String, materialType: String = "Feature") {

@@ -235,15 +235,14 @@ class BrowseActivity : AppCompatActivity() {
     private fun onItemSelected(item: ContentItem) {
         Log.i(TAG, "Selected: ${item.asin} — ${item.title} (type=${item.contentType})")
         when {
-            // Season selected → show episodes for this season
+            // Season selected → overview page (description, IMDB, episodes list)
             AmazonApiService.isSeriesContentType(item.contentType) -> {
-                val intent = Intent(this, BrowseActivity::class.java).apply {
-                    putExtra(EXTRA_ASIN, item.asin)
-                    putExtra(EXTRA_TITLE, item.title)
-                    putExtra(EXTRA_CONTENT_TYPE, item.contentType)
-                    putExtra(EXTRA_FILTER, "episodes")
-                    putExtra(EXTRA_IMAGE_URL, item.imageUrl.ifEmpty { parentImageUrl })
-                    putStringArrayListExtra(EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
+                val intent = Intent(this, DetailActivity::class.java).apply {
+                    putExtra(DetailActivity.EXTRA_ASIN, item.asin)
+                    putExtra(DetailActivity.EXTRA_TITLE, item.title)
+                    putExtra(DetailActivity.EXTRA_CONTENT_TYPE, item.contentType)
+                    putExtra(DetailActivity.EXTRA_IMAGE_URL, item.imageUrl.ifEmpty { parentImageUrl })
+                    putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
                 }
                 startActivity(intent)
             }

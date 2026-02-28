@@ -563,25 +563,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun onItemSelected(item: ContentItem) {
         Log.i(TAG, "Selected: ${item.asin} — ${item.title} (type=${item.contentType})")
-        if (AmazonApiService.isSeriesContentType(item.contentType)) {
-            // Series/Season → drill down to seasons/episodes in BrowseActivity
-            val intent = Intent(this, BrowseActivity::class.java).apply {
-                putExtra(BrowseActivity.EXTRA_ASIN, item.asin)
-                putExtra(BrowseActivity.EXTRA_TITLE, item.title)
-                putExtra(BrowseActivity.EXTRA_CONTENT_TYPE, item.contentType)
-                putExtra(BrowseActivity.EXTRA_IMAGE_URL, item.imageUrl)
-                putStringArrayListExtra(BrowseActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
-            }
-            startActivity(intent)
-        } else {
-            // Movie/Episode/Feature → play directly
-            val intent = Intent(this, PlayerActivity::class.java).apply {
-                putExtra(PlayerActivity.EXTRA_ASIN, item.asin)
-                putExtra(PlayerActivity.EXTRA_TITLE, item.title)
-                putExtra(PlayerActivity.EXTRA_CONTENT_TYPE, item.contentType)
-            }
-            startActivity(intent)
+        // All items go to DetailActivity first (overview page with description, trailer, rating)
+        val intent = Intent(this, DetailActivity::class.java).apply {
+            putExtra(DetailActivity.EXTRA_ASIN, item.asin)
+            putExtra(DetailActivity.EXTRA_TITLE, item.title)
+            putExtra(DetailActivity.EXTRA_CONTENT_TYPE, item.contentType)
+            putExtra(DetailActivity.EXTRA_IMAGE_URL, item.imageUrl)
+            putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
         }
+        startActivity(intent)
     }
 
     // --- Watchlist context menu (MENU key) ---

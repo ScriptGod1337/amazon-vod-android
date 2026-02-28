@@ -4,6 +4,7 @@ import android.util.Log
 import com.scriptgod.fireos.avod.auth.AmazonAuthService
 import com.scriptgod.fireos.avod.model.ContentItem
 import com.scriptgod.fireos.avod.model.ContentRail
+import com.scriptgod.fireos.avod.model.DetailInfo
 import com.scriptgod.fireos.avod.model.PlaybackInfo
 import com.scriptgod.fireos.avod.model.SubtitleTrack
 import com.google.gson.JsonArray
@@ -548,6 +549,106 @@ class AmazonApiService(private val authService: AmazonAuthService) {
     fun getDetailPage(asin: String): List<ContentItem> {
         val params = baseParams() + "&itemId=$asin&capabilities="
         return getMobilePage("android/atf/v3.jstl", params)
+    }
+
+    /**
+     * Fetches rich metadata for a content item (synopsis, IMDB rating, genres, hero image, etc.)
+     * using the android/atf/v3.jstl detail endpoint.
+     *
+     * For MOVIE: data is in resource.*
+     * For SEASON: data is in resource.selectedSeason.* (resource itself holds show/seasons/episodes)
+     */
+    fun getDetailInfo(asin: String): DetailInfo? {
+        val params = baseParams() + "&itemId=$asin&capabilities="
+        val url = "$atvUrl/cdp/mobile/getDataByTransform/v1/android/atf/v3.jstl?$params"
+        val request = Request.Builder().url(url).get().build()
+        Log.i(TAG, "Detail GET: $url")
+        return try {
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: return null
+            if (!response.isSuccessful) {
+                Log.w(TAG, "Detail request failed: HTTP ${response.code}")
+                return null
+            }
+            parseDetailInfo(asin, body)
+        } catch (e: Exception) {
+            Log.w(TAG, "getDetailInfo error", e)
+            null
+        }
+    }
+
+    private fun parseDetailInfo(asin: String, json: String): DetailInfo? {
+        return try {
+            val root = gson.fromJson(json, JsonObject::class.java) ?: return null
+            val resource = root.getAsJsonObject("resource") ?: return null
+
+            // For SEASON: rich data lives in selectedSeason; resource itself only has show/seasons/episodes
+            val selectedSeason = resource.getAsJsonObject("selectedSeason")
+            val data = selectedSeason ?: resource
+
+            val title = data.safeString("title") ?: return null
+            val contentType = data.safeString("contentType") ?: ""
+            val synopsis = data.safeString("synopsis") ?: ""
+            val heroImageUrl = data.safeString("detailPageHeroImageUrl") ?: ""
+            val posterImageUrl = data.safeString("titleImageUrl") ?: ""
+
+            val releaseDate = data.get("releaseDate")?.takeIf { !it.isJsonNull }?.asLong ?: 0L
+            val year = if (releaseDate > 0) {
+                java.util.Calendar.getInstance().apply { timeInMillis = releaseDate }
+                    .get(java.util.Calendar.YEAR)
+            } else 0
+
+            val runtimeSeconds = data.get("runtimeSeconds")?.takeIf { !it.isJsonNull }?.asInt ?: 0
+            val imdbRating = data.get("imdbRating")?.takeIf { !it.isJsonNull }?.asFloat ?: 0f
+            val ageRating = data.safeString("amazonMaturityRating") ?: ""
+            val isInWatchlist = data.get("isInWatchlist")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
+            val isTrailerAvailable = data.get("isTrailerAvailable")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
+
+            // Genres — skip sub-genre entries that contain ">"
+            val genres = data.getAsJsonArray("genres")
+                ?.mapNotNull { it?.asString }
+                ?.filter { !it.contains(">") }
+                ?: emptyList()
+
+            val directors = data.getAsJsonArray("directors")
+                ?.mapNotNull { it?.asString }
+                ?: emptyList()
+
+            val badges = data.getAsJsonObject("badges")
+            val isUhd = badges?.get("uhd")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
+            val isHdr = badges?.get("hdr")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
+            val isDolby = badges?.get("dolby51")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
+
+            // Show info (populated for SEASON type)
+            val show = resource.getAsJsonObject("show")
+            val showTitle = show?.safeString("title") ?: ""
+            val showAsin = show?.safeString("titleId") ?: ""
+
+            DetailInfo(
+                asin = asin,
+                title = title,
+                contentType = contentType,
+                synopsis = synopsis,
+                heroImageUrl = heroImageUrl,
+                posterImageUrl = posterImageUrl,
+                year = year,
+                runtimeSeconds = runtimeSeconds,
+                imdbRating = imdbRating,
+                genres = genres,
+                directors = directors,
+                ageRating = ageRating,
+                isInWatchlist = isInWatchlist,
+                isTrailerAvailable = isTrailerAvailable,
+                isUhd = isUhd,
+                isHdr = isHdr,
+                isDolby51 = isDolby,
+                showTitle = showTitle,
+                showAsin = showAsin
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "parseDetailInfo error", e)
+            null
+        }
     }
 
     private fun getSwitchbladePage(transform: String, extraParams: String = ""): List<ContentItem> {
