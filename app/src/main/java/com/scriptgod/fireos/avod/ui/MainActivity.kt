@@ -45,6 +45,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnFreevee: Button
     private lateinit var btnWatchlist: Button
     private lateinit var btnLibrary: Button
+    private lateinit var btnAbout: Button
 
     // Category buttons — two independent groups
     private lateinit var categoryFilterRow: LinearLayout
@@ -99,6 +100,7 @@ class MainActivity : AppCompatActivity() {
         btnFreevee = findViewById(R.id.btn_freevee)
         btnWatchlist = findViewById(R.id.btn_watchlist)
         btnLibrary = findViewById(R.id.btn_library)
+        btnAbout = findViewById(R.id.btn_about)
 
         categoryFilterRow = findViewById(R.id.category_filter_row)
         sourceFilterGroup = findViewById(R.id.source_filter_group)
@@ -179,6 +181,7 @@ class MainActivity : AppCompatActivity() {
         btnFreevee.setOnClickListener { loadNav("freevee") }
         btnWatchlist.setOnClickListener { loadNav("watchlist") }
         btnLibrary.setOnClickListener { loadNav("library") }
+        btnAbout.setOnClickListener { startActivity(Intent(this, AboutActivity::class.java)) }
 
         // Source filter buttons (All vs Prime)
         btnCatAll.setOnClickListener { setSourceFilter("all") }

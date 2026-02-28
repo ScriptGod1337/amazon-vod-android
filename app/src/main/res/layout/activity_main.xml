@@ -85,6 +85,23 @@
             android:text="My Library"
             android:textColor="@android:color/white"
             android:backgroundTint="#333"
+            android:layout_marginEnd="8dp"
+            android:nextFocusDown="@id/btn_cat_all"/>
+
+        <!-- Spacer pushes About to the right -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"/>
+
+        <Button
+            android:id="@+id/btn_about"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚙"
+            android:textSize="18sp"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#333"
             android:nextFocusDown="@id/btn_cat_all"/>
     </LinearLayout>
 

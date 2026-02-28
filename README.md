@@ -69,8 +69,8 @@ See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history
 - **Fix** — Watch progress bars now show correctly in search results, Freevee, and Library (grid views were missing the server-side progress merge that home rails already had)
 
 **Next up:**
-- **Phase 17** — AI Code Review (security audit, code quality, best practices)
-- **Phase 18** — UI Redesign (hero banners, animations, polished streaming UX)
+- **Phase 21** — AI Code Review (security audit, code quality, best practices)
+- **Phase 22** — UI Redesign (hero banners, animations, polished streaming UX)
 
 ## Requirements
 

@@ -523,6 +523,26 @@ legitimately unwatched watchlist bookmarks — this is correct behaviour.
 
 ---
 
+## Phase 20: PENDING — About / App Info + Logout
+
+### Goal
+Add an About screen accessible from the nav bar showing version info and allowing logout.
+
+### Features
+- App version, package name (from `PackageManager`)
+- Device ID (masked, from token file)
+- Token file location (internal `filesDir` vs legacy `/data/local/tmp/`)
+- **Logout button**: deletes token file(s), clears `resume_positions` SharedPreferences, returns to `LoginActivity`
+
+### Files
+- `ui/AboutActivity.kt` — new screen
+- `res/layout/activity_about.xml` — new layout (ScrollView, info rows, Sign Out button)
+- `activity_main.xml` — add `btn_about` at end of nav row (pushed right with spacer)
+- `MainActivity.kt` — bind `btnAbout`, launch `AboutActivity` on click; handle `RESULT_LOGOUT` to finish itself
+- `AndroidManifest.xml` — register `AboutActivity`
+
+---
+
 ## Phase 17: PENDING — AI Code Review
 
 Full codebase review performed by an AI agent using `dev/REVIEW.md` as the checklist.
