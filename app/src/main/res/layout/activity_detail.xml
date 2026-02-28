@@ -170,6 +170,17 @@
                 android:visibility="gone" />
 
             <Button
+                android:id="@+id/btn_seasons"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="All Seasons"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#CC444444"
+                android:layout_marginEnd="12dp"
+                android:focusable="true"
+                android:visibility="gone" />
+
+            <Button
                 android:id="@+id/btn_watchlist"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

@@ -45,6 +45,7 @@ class DetailActivity : AppCompatActivity() {
     private lateinit var btnPlay: Button
     private lateinit var btnTrailer: Button
     private lateinit var btnBrowse: Button
+    private lateinit var btnSeasons: Button
     private lateinit var btnWatchlist: Button
 
     private lateinit var apiService: AmazonApiService
@@ -72,6 +73,7 @@ class DetailActivity : AppCompatActivity() {
         btnPlay = findViewById(R.id.btn_play)
         btnTrailer = findViewById(R.id.btn_trailer)
         btnBrowse = findViewById(R.id.btn_browse)
+        btnSeasons = findViewById(R.id.btn_seasons)
         btnWatchlist = findViewById(R.id.btn_watchlist)
 
         val tokenFile = LoginActivity.findTokenFile(this) ?: run { finish(); return }
@@ -191,13 +193,23 @@ class DetailActivity : AppCompatActivity() {
 
         // Play / Browse buttons based on content type
         val isSeries = AmazonApiService.isSeriesContentType(info.contentType)
+        val isSeason = info.contentType.uppercase().contains("SEASON")
         if (isSeries) {
-            // Series / Season → browse episodes
-            val browseLabel = if (info.contentType.uppercase().contains("SEASON"))
-                "Browse Episodes" else "Browse Seasons"
-            btnBrowse.text = browseLabel
-            btnBrowse.visibility = View.VISIBLE
-            btnBrowse.setOnClickListener { onBrowseClicked(info) }
+            if (isSeason) {
+                // Season detail → Browse Episodes + All Seasons (via parent show ASIN)
+                btnBrowse.text = "Browse Episodes"
+                btnBrowse.visibility = View.VISIBLE
+                btnBrowse.setOnClickListener { onBrowseClicked(info) }
+                if (info.showAsin.isNotEmpty()) {
+                    btnSeasons.visibility = View.VISIBLE
+                    btnSeasons.setOnClickListener { onAllSeasonsClicked(info) }
+                }
+            } else {
+                // Series overview → Browse Seasons
+                btnBrowse.text = "Browse Seasons"
+                btnBrowse.visibility = View.VISIBLE
+                btnBrowse.setOnClickListener { onBrowseClicked(info) }
+            }
         } else {
             // Movie / Feature → play
             btnPlay.visibility = View.VISIBLE
@@ -252,6 +264,18 @@ class DetailActivity : AppCompatActivity() {
             putExtra(BrowseActivity.EXTRA_TITLE, info.title)
             putExtra(BrowseActivity.EXTRA_CONTENT_TYPE, info.contentType)
             putExtra(BrowseActivity.EXTRA_FILTER, filter)
+            putExtra(BrowseActivity.EXTRA_IMAGE_URL, info.posterImageUrl.ifEmpty { fallbackImageUrl })
+            putStringArrayListExtra(BrowseActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
+        }
+        startActivity(intent)
+    }
+
+    private fun onAllSeasonsClicked(info: DetailInfo) {
+        val intent = Intent(this, BrowseActivity::class.java).apply {
+            putExtra(BrowseActivity.EXTRA_ASIN, info.showAsin)
+            putExtra(BrowseActivity.EXTRA_TITLE, info.showTitle.ifEmpty { info.title })
+            putExtra(BrowseActivity.EXTRA_CONTENT_TYPE, "SERIES")
+            putExtra(BrowseActivity.EXTRA_FILTER, "seasons")
             putExtra(BrowseActivity.EXTRA_IMAGE_URL, info.posterImageUrl.ifEmpty { fallbackImageUrl })
             putStringArrayListExtra(BrowseActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
         }

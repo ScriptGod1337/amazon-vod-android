@@ -4,6 +4,11 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.28.17] - 2026-02-28
+
+### Added
+- **"All Seasons" button** on season detail pages — when viewing a season overview, a second button appears next to "Browse Episodes" that navigates back to the full season list for the parent show; uses the `show.titleId` ASIN returned by the detail API
+
 ## [2026.02.28.16] - 2026-02-28
 
 ### Fixed
