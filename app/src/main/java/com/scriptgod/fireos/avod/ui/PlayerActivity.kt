@@ -18,6 +18,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
+import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
@@ -280,13 +281,13 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateVideoFormatLabel(tracks: Tracks) {
-        val group = tracks.groups.firstOrNull { it.type == C.TRACK_TYPE_VIDEO && it.isSelected }
-        if (group == null) { tvVideoFormat.text = ""; return }
-
-        val repIdx = (0 until group.length).firstOrNull { group.isTrackSelected(it) } ?: 0
-        val fmt = group.getTrackFormat(repIdx)
-
+    /**
+     * Reads the format currently being decoded by the video renderer.
+     * player.videoFormat reflects the live ABR tier, not just the initially selected track.
+     * Called from onVideoSizeChanged (ABR switch) and onTracksChanged (track swap / fallback).
+     */
+    private fun updateVideoFormatLabel() {
+        val fmt = player?.videoFormat ?: run { tvVideoFormat.text = ""; return }
         val res = when {
             fmt.height >= 2160 -> "4K"
             fmt.height >= 1080 -> "1080p"
@@ -339,7 +340,12 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         override fun onTracksChanged(tracks: Tracks) {
-            updateVideoFormatLabel(tracks)
+            updateVideoFormatLabel()
+        }
+
+        override fun onVideoSizeChanged(videoSize: VideoSize) {
+            // Fires on every ABR bitrate switch — reflects the renderer's actual live format
+            updateVideoFormatLabel()
         }
 
         override fun onPlayerError(error: PlaybackException) {
@@ -347,22 +353,30 @@ class PlayerActivity : AppCompatActivity() {
             stopStreamReporting()
 
             // Amazon's CDN returns HTTP 400 for H265 segment URLs on some titles.
-            // Auto-retry with H264 before showing an error to the user.
+            // The DASH manifest already contains H264 representations (we request H264,H265).
+            // Instead of re-fetching the manifest, restrict the track selector to H264 and
+            // re-prepare the same source — no extra network calls, instant switch.
             if (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS &&
                 currentQuality.codecOverride.contains("H265") &&
                 !h265FallbackAttempted) {
                 h265FallbackAttempted = true
-                Log.w(TAG, "H265 CDN returned 400 — retrying with H264")
+                val lastPos = player?.currentPosition ?: 0L
+                Log.w(TAG, "H265 CDN returned 400 — forcing H264 via track selector, resume at ${lastPos}ms")
                 android.widget.Toast.makeText(
                     this@PlayerActivity,
                     "H265 not available for this title — switching to H264",
-                    android.widget.Toast.LENGTH_LONG
+                    android.widget.Toast.LENGTH_SHORT
                 ).show()
-                player?.release()
-                player = null
+                trackSelector?.let { ts ->
+                    ts.parameters = ts.parameters.buildUpon()
+                        .setPreferredVideoMimeType(MimeTypes.VIDEO_H264)
+                        .build()
+                }
                 streamReportingStarted = false
                 watchSessionId = UUID.randomUUID().toString()
-                loadAndPlay(currentAsin, currentMaterialType, PlaybackQuality.HD)
+                player?.prepare()
+                if (lastPos > 0) player?.seekTo(lastPos)
+                player?.playWhenReady = true
                 return
             }
 
