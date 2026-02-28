@@ -741,6 +741,60 @@ The Alexa Voice Remote shipped with Fire TV Stick 4K (AFTR/raven) has **no physi
 
 ---
 
+## Phase 23: PENDING — Content Overview / Detail Page
+
+A dedicated overview screen shown whenever the user selects a movie or a series (replaces the current direct-play and direct-BrowseActivity flows).
+
+### What to show
+
+#### Movie overview
+- Hero / backdrop image (wide)
+- Title, year, runtime, content rating (FSK / PG-13), genre tags
+- IMDB rating (star + number)
+- Description / synopsis (scrollable)
+- **PLAY button** (or "Resume from X:XX" if partially watched)
+- Trailer auto-play in background (muted, looping) or "Play Trailer" button
+- Add / Remove Watchlist button
+
+#### Series overview
+- Same header (hero, title, metadata, description, IMDB, trailer)
+- Season selector (horizontal row of season cards or chip row)
+- Episode list for the selected season (scrollable vertical list with thumbnail, episode title, synopsis, duration)
+- **PLAY button** on each episode
+
+### API analysis status
+**PENDING** — raw JSON dumps required before implementation.
+
+Analysis prompt provided to user (see conversation). Script must call:
+1. `android/atf/v3.jstl` (current detail endpoint) with itemId
+2. `dv-android/detail/v2/user/v2.5.js` (richer detail endpoint, not yet implemented)
+3. `GetPlaybackResources?videoMaterialType=Trailer` (trailer manifest)
+
+Fields to confirm: `description`, `imdbRating`, `contentRating`, `genres`, `releaseYear`,
+`trailerAsin` / trailer items, `backdropImageUrl`, cast.
+
+### Planned architecture
+
+#### New files
+- `ui/DetailActivity.kt` — overview screen; replaces current click routing for movies and top-level series
+- `res/layout/activity_detail.xml` — hero image + metadata + play button + episode list
+- `model/DetailInfo.kt` — rich detail model (synopsis, rating, genres, trailer ASIN, cast, etc.)
+
+#### Modified files
+- `api/AmazonApiService.kt` — `getDetailInfo(asin): DetailInfo` (new method using richer endpoint)
+- `model/ContentItem.kt` — add `description`, `year`, `genres`, `imdbRating`, `trailerAsin`, `backdropImageUrl` fields (or keep separate DetailInfo model)
+- `ui/MainActivity.kt` — `onItemSelected()` routes all clicks → `DetailActivity` (movies + series top-level)
+- `ui/BrowseActivity.kt` — episode row click → `DetailActivity` (episode detail) or direct play
+
+### Navigation flow (new)
+```
+Home / Watchlist card (movie)  → DetailActivity → PlayerActivity
+Home / Watchlist card (series) → DetailActivity (series overview, season+episode list) → PlayerActivity
+BrowseActivity (season)        → DetailActivity (season overview) → PlayerActivity (episode)
+```
+
+---
+
 ## Phase 22: PENDING — UI Redesign
 
 Redesign the app UI from functional prototype to a polished, modern streaming experience.
