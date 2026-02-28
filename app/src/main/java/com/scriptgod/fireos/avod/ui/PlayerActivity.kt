@@ -300,9 +300,15 @@ class PlayerActivity : AppCompatActivity() {
             fmt.sampleMimeType?.contains("avc",  ignoreCase = true) == true -> "H264"
             else -> ""
         }
-        val hdr = when (fmt.colorInfo?.colorTransfer) {
-            C.COLOR_TRANSFER_ST2084 -> "HDR10"
-            C.COLOR_TRANSFER_HLG    -> "HLG"
+        // Primary: ExoPlayer colorInfo (populated when MPD has colorimetry attributes).
+        // Fallback: codec string profile — Amazon uses hvc1.2.* / hev1.2.* (HEVC Main 10)
+        // exclusively for HDR10 content; Dolby Vision containers start with dvhe/dvav.
+        val codecs = fmt.codecs ?: ""
+        val hdr = when {
+            fmt.colorInfo?.colorTransfer == C.COLOR_TRANSFER_ST2084 -> "HDR10"
+            fmt.colorInfo?.colorTransfer == C.COLOR_TRANSFER_HLG    -> "HLG"
+            codecs.startsWith("dvhe") || codecs.startsWith("dvav")  -> "DV"
+            codecs.startsWith("hvc1.2") || codecs.startsWith("hev1.2") -> "HDR10"
             else -> ""
         }
         tvVideoFormat.text = listOf(res, codec, hdr).filter { it.isNotEmpty() }.joinToString(" · ")

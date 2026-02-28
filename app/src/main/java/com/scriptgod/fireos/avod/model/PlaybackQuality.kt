@@ -13,8 +13,8 @@ data class PlaybackQuality(
     companion object {
         /** 1080p SDR H264 — safe default, works on all devices */
         val HD     = PlaybackQuality("HD",  "H264",      "None")
-        /** 1080p SDR with H265 streams included in the manifest */
-        val HD_H265 = PlaybackQuality("HD",  "H264,H265", "None")
+        /** 1080p SDR H265 — uses UHD quality tier to unlock 1080p H265 (HD tier caps at 720p H265) */
+        val HD_H265 = PlaybackQuality("UHD", "H264,H265", "None")
         /** 4K HDR — requires H265 hardware decoder and compatible display */
         val UHD_HDR = PlaybackQuality("UHD", "H264,H265", "Hdr10,DolbyVision")
 

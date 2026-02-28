@@ -259,11 +259,11 @@ Access via `playerView.findViewById<DefaultTimeBar>(androidx.media3.ui.R.id.exo_
 
 Three quality presets, stored in SharedPreferences `"settings"` key `"video_quality"`:
 
-| Preset key | `deviceVideoQualityOverride` | `deviceVideoCodecOverride` | `deviceHdrFormatsOverride` |
-|---|---|---|---|
-| `"HD"` (default) | `HD` | `H264` | `None` |
-| `"HD_H265"` | `HD` | `H264,H265` | `None` |
-| `"UHD_HDR"` | `UHD` | `H264,H265` | `Hdr10,DolbyVision` |
+| Preset key | `deviceVideoQualityOverride` | `deviceVideoCodecOverride` | `deviceHdrFormatsOverride` | Notes |
+|---|---|---|---|---|
+| `"HD"` (default) | `HD` | `H264` | `None` | Up to 1080p H264 SDR |
+| `"HD_H265"` | `UHD` | `H264,H265` | `None` | Up to 1080p H265 SDR; `HD` tier caps H265 at 720p — must use `UHD` quality override to unlock 1080p |
+| `"UHD_HDR"` | `UHD` | `H264,H265` | `Hdr10,DolbyVision` | 4K HDR |
 
 **Kodi reference**: `network.py:210-212` and `supported_hdr()` function (`network.py:231-239`).
 
