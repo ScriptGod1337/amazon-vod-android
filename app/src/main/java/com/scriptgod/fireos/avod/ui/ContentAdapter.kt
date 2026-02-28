@@ -6,6 +6,7 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -119,8 +120,15 @@ class ContentAdapter(
             holder.itemView.nextFocusUpId = nextFocusUpId
         }
         holder.itemView.setOnFocusChangeListener { view, hasFocus ->
-            val scale = if (hasFocus) 1.08f else 1.0f
-            view.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
+            val scale = if (hasFocus) 1.06f else 1.0f
+            val duration = view.resources.getInteger(R.integer.focus_motion_duration).toLong()
+            view.animate().cancel()
+            view.animate()
+                .scaleX(scale)
+                .scaleY(scale)
+                .setDuration(duration)
+                .setInterpolator(AccelerateDecelerateInterpolator())
+                .start()
             view.elevation = if (hasFocus) view.resources.displayMetrics.density * 12f else 0f
         }
         holder.itemView.setOnClickListener { onItemClick(item) }

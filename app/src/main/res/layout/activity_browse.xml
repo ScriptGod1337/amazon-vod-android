@@ -2,36 +2,140 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0D0D0D">
+    android:background="@drawable/browse_screen_background">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="@dimen/page_padding">
+        android:paddingStart="48dp"
+        android:paddingTop="88dp"
+        android:paddingEnd="48dp"
+        android:paddingBottom="32dp">
 
-        <TextView
-            android:id="@+id/tv_browse_title"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/browse_header_background"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="28dp"
+            android:paddingTop="22dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="22dp">
 
-        <TextView
-            android:id="@+id/tv_browse_subtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:textColor="#AAAAAA"
-            android:textSize="14sp"
-            android:visibility="gone" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:letterSpacing="0.16"
+                    android:text="BROWSE"
+                    android:textAllCaps="true"
+                    android:textColor="#86A3B0"
+                    android:textSize="@dimen/section_eyebrow_size" />
+
+                <TextView
+                    android:id="@+id/tv_browse_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:textColor="#F5FAFD"
+                    android:textSize="@dimen/page_title_size"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_browse_subtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:textColor="#C7D4DB"
+                    android:textSize="@dimen/page_supporting_size"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/tv_browse_hint"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#8FA5B0"
+                    android:textSize="@dimen/body_text_size" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:orientation="vertical">
+
+                <Button
+                    android:id="@+id/btn_browse_back"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:layout_gravity="end"
+                    android:background="@drawable/button_pill_tertiary"
+                    android:backgroundTint="@null"
+                    android:minWidth="0dp"
+                    android:nextFocusDown="@id/recycler_view"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="24dp"
+                    android:stateListAnimator="@null"
+                    android:text="Back"
+                    android:textAllCaps="false"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/action_text_size" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tv_browse_context_chip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/settings_badge_background"
+                        android:paddingStart="14dp"
+                        android:paddingTop="8dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="8dp"
+                        android:textColor="#E9F6FB"
+                        android:textSize="@dimen/status_chip_text_size"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_browse_count_chip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/settings_badge_background"
+                        android:paddingStart="14dp"
+                        android:paddingTop="8dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="8dp"
+                        android:text="Loading..."
+                        android:textColor="#E9F6FB"
+                        android:textSize="@dimen/status_chip_text_size"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
 
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:background="@drawable/browse_grid_panel_background"
+            android:paddingStart="16dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="8dp">
 
             <ProgressBar
                 android:id="@+id/progress_bar"
@@ -45,7 +149,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:textColor="#FF4444"
+                android:padding="24dp"
+                android:textColor="#F36C67"
+                android:textSize="@dimen/page_supporting_size"
                 android:visibility="gone" />
 
             <androidx.recyclerview.widget.RecyclerView
@@ -54,7 +160,8 @@
                 android:layout_height="wrap_content"
                 android:clipToPadding="false"
                 android:focusable="false"
-                android:paddingTop="12dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
                 android:visibility="gone" />
 
             <androidx.recyclerview.widget.RecyclerView
@@ -62,10 +169,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
+                android:descendantFocusability="afterDescendants"
                 android:focusable="true"
                 android:focusableInTouchMode="true"
-                android:paddingTop="8dp"
-                android:descendantFocusability="afterDescendants" />
+                android:paddingStart="4dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="4dp"
+                android:paddingBottom="16dp" />
         </FrameLayout>
     </LinearLayout>
 </FrameLayout>

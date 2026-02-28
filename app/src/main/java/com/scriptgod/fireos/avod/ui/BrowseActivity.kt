@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
+import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -41,6 +42,10 @@ class BrowseActivity : AppCompatActivity() {
     private lateinit var tvError: TextView
     private lateinit var tvTitle: TextView
     private lateinit var tvSubtitle: TextView
+    private lateinit var tvHint: TextView
+    private lateinit var tvContextChip: TextView
+    private lateinit var tvCountChip: TextView
+    private lateinit var btnBack: Button
     private lateinit var apiService: AmazonApiService
     private lateinit var adapter: ContentAdapter
     private var parentImageUrl: String = ""
@@ -56,6 +61,10 @@ class BrowseActivity : AppCompatActivity() {
         tvError = findViewById(R.id.tv_error)
         tvTitle = findViewById(R.id.tv_browse_title)
         tvSubtitle = findViewById(R.id.tv_browse_subtitle)
+        tvHint = findViewById(R.id.tv_browse_hint)
+        tvContextChip = findViewById(R.id.tv_browse_context_chip)
+        tvCountChip = findViewById(R.id.tv_browse_count_chip)
+        btnBack = findViewById(R.id.btn_browse_back)
 
         val tokenFile = LoginActivity.findTokenFile(this)
             ?: run { finish(); return }
@@ -66,12 +75,15 @@ class BrowseActivity : AppCompatActivity() {
 
         adapter = ContentAdapter(
             onItemClick = { item -> onItemSelected(item) },
-            onMenuKey = { item -> showItemMenu(item) }
+            onMenuKey = { item -> showItemMenu(item) },
+            nextFocusUpId = R.id.btn_browse_back
         )
         recyclerView.layoutManager = GridLayoutManager(this, 4)
         recyclerView.adapter = adapter
+        recyclerView.itemAnimator = null
         shimmerRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         shimmerRecyclerView.adapter = ShimmerAdapter()
+        btnBack.setOnClickListener { UiTransitions.close(this) }
 
         val asin = intent.getStringExtra(EXTRA_ASIN) ?: return
         val title = intent.getStringExtra(EXTRA_TITLE) ?: ""
@@ -84,19 +96,10 @@ class BrowseActivity : AppCompatActivity() {
         val filter = intent.getStringExtra(EXTRA_FILTER)
             ?: if (AmazonApiService.isSeriesContentType(contentType)) "seasons" else null
 
-        when (filter) {
-            "seasons" -> {
-                tvSubtitle.text = "Select a season"
-                tvSubtitle.visibility = View.VISIBLE
-            }
-            "episodes" -> {
-                tvSubtitle.text = "Select an episode"
-                tvSubtitle.visibility = View.VISIBLE
-            }
-        }
+        applyBrowseHeader(filter, contentType)
         loadDetails(asin, filterType = filter, fallbackImage = parentImageUrl)
 
-        recyclerView.requestFocus()
+        btnBack.requestFocus()
     }
 
     private fun loadDetails(asin: String, filterType: String? = null, fallbackImage: String = "") {
@@ -118,12 +121,12 @@ class BrowseActivity : AppCompatActivity() {
                         if (seasons.isNotEmpty()) seasons
                         else {
                             // No seasons — might be episodes directly
-                            val episodes = items.filter { AmazonApiService.isEpisodeContentType(it.contentType) }
-                            if (episodes.isNotEmpty()) {
-                                tvSubtitle.text = "Select an episode"
-                                episodes
-                            } else items // show all
-                        }
+                        val episodes = items.filter { AmazonApiService.isEpisodeContentType(it.contentType) }
+                        if (episodes.isNotEmpty()) {
+                            applyBrowseHeader("episodes", "EPISODE")
+                            episodes
+                        } else items // show all
+                    }
                     }
                     "episodes" -> {
                         val episodes = items.filter { AmazonApiService.isEpisodeContentType(it.contentType) }
@@ -143,6 +146,7 @@ class BrowseActivity : AppCompatActivity() {
                     recyclerView.visibility = View.GONE
                     tvError.text = "No content found"
                     tvError.visibility = View.VISIBLE
+                    tvCountChip.text = "0 Items"
                 } else {
                     recyclerView.visibility = View.VISIBLE
                     val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
@@ -150,6 +154,8 @@ class BrowseActivity : AppCompatActivity() {
                     val withProgress = withImages.map { it.copy(watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs) }
                     val withWatchlist = withProgress.map { it.copy(isInWatchlist = watchlistAsins.contains(it.asin)) }
                     adapter.submitList(withWatchlist)
+                    val itemLabel = if (withWatchlist.size == 1) "1 Item" else "${withWatchlist.size} Items"
+                    tvCountChip.text = itemLabel
                     // Focus first grid item for D-pad navigation
                     recyclerView.post {
                         val firstChild = recyclerView.getChildAt(0)
@@ -163,6 +169,7 @@ class BrowseActivity : AppCompatActivity() {
                 recyclerView.visibility = View.GONE
                 tvError.text = "Error: ${e.message}"
                 tvError.visibility = View.VISIBLE
+                tvCountChip.text = "Unavailable"
             }
         }
     }
@@ -172,11 +179,42 @@ class BrowseActivity : AppCompatActivity() {
         recyclerView.visibility = View.GONE
         shimmerRecyclerView.visibility = View.VISIBLE
         tvError.visibility = View.GONE
+        tvCountChip.text = "Loading..."
     }
 
     private fun hideLoadingState() {
         progressBar.visibility = View.GONE
         shimmerRecyclerView.visibility = View.GONE
+    }
+
+    private fun applyBrowseHeader(filter: String?, contentType: String) {
+        val isSeries = AmazonApiService.isSeriesContentType(contentType)
+        val contextLabel: String
+        val subtitle: String
+        val hint: String
+
+        when (filter) {
+            "seasons" -> {
+                contextLabel = "Seasons"
+                subtitle = "Select a season"
+                hint = "Browse seasons and open a season overview before drilling into episodes."
+            }
+            "episodes" -> {
+                contextLabel = "Episodes"
+                subtitle = "Select an episode"
+                hint = "Choose an episode to start playback directly from this browse screen."
+            }
+            else -> {
+                contextLabel = if (isSeries) "Series" else "Collection"
+                subtitle = if (isSeries) "Browse available titles" else "Select a title"
+                hint = "Use the grid to explore this set of items. MENU still opens the watchlist action."
+            }
+        }
+
+        tvContextChip.text = contextLabel
+        tvSubtitle.text = subtitle
+        tvSubtitle.visibility = View.VISIBLE
+        tvHint.text = hint
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
@@ -264,7 +302,7 @@ class BrowseActivity : AppCompatActivity() {
                     putExtra(DetailActivity.EXTRA_IMAGE_URL, item.imageUrl.ifEmpty { parentImageUrl })
                     putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
                 }
-                startActivity(intent)
+                UiTransitions.open(this, intent)
             }
             // Episode/Movie/Feature → play
             else -> {
@@ -273,7 +311,7 @@ class BrowseActivity : AppCompatActivity() {
                     putExtra(PlayerActivity.EXTRA_TITLE, item.title)
                     putExtra(PlayerActivity.EXTRA_CONTENT_TYPE, item.contentType)
                 }
-                startActivity(intent)
+                UiTransitions.open(this, intent)
             }
         }
     }

@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:textColor="#FF4444"
-        android:textSize="18sp"
+        android:textSize="@dimen/page_supporting_size"
         android:padding="16dp"
         android:background="#80000000"
         android:visibility="gone"/>
@@ -48,7 +48,7 @@
             android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:gravity="center_vertical"
-            android:textSize="11sp"
+            android:textSize="@dimen/compact_control_text_size"
             android:textColor="#C6D0D6"
             android:background="@drawable/player_track_label"
             android:paddingStart="14dp"
@@ -61,7 +61,7 @@
             android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:text="Audio"
-            android:textSize="11sp"
+            android:textSize="@dimen/compact_control_text_size"
             android:textColor="#FFFFFF"
             android:background="@drawable/player_track_button"
             android:backgroundTint="@null"
@@ -77,14 +77,15 @@
             android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:text="Subtitles"
-            android:textSize="11sp"
+            android:textSize="@dimen/compact_control_text_size"
             android:textColor="#FFFFFF"
             android:background="@drawable/player_track_button"
             android:backgroundTint="@null"
             android:paddingStart="14dp"
             android:paddingEnd="14dp"
             android:minWidth="0dp"
-            android:focusable="true"/>
+            android:focusable="true"
+            android:stateListAnimator="@null"/>
 
     </LinearLayout>
 

@@ -21,11 +21,14 @@ class AboutActivity : AppCompatActivity() {
         supportActionBar?.hide()
         setContentView(R.layout.activity_about)
 
+        findViewById<Button>(R.id.btn_about_back).setOnClickListener { UiTransitions.close(this) }
+
         // Version
         val versionName = packageManager.getPackageInfo(packageName, 0).versionName ?: "unknown"
-        findViewById<TextView>(R.id.tv_version).text = "Version $versionName"
+        findViewById<TextView>(R.id.tv_version).text = "Inspect app status, playback capability, and the active device token."
         findViewById<TextView>(R.id.tv_version_value).text = versionName
         findViewById<TextView>(R.id.tv_package).text = packageName
+        findViewById<TextView>(R.id.tv_version_chip).text = "Version $versionName"
 
         // Account info from token file
         val tokenFile = LoginActivity.findTokenFile(this)
@@ -41,9 +44,13 @@ class AboutActivity : AppCompatActivity() {
             }
             val location = if (tokenFile.path.startsWith(filesDir.path)) "internal storage" else "legacy (/data/local/tmp)"
             findViewById<TextView>(R.id.tv_token_location).text = location
+            findViewById<TextView>(R.id.tv_token_chip).text = "Token active"
+            findViewById<TextView>(R.id.tv_token_status).text = "A device token is present and the app can launch directly into the catalog."
         } else {
             findViewById<TextView>(R.id.tv_device_id).text = "no token"
             findViewById<TextView>(R.id.tv_token_location).text = "—"
+            findViewById<TextView>(R.id.tv_token_chip).text = "Token missing"
+            findViewById<TextView>(R.id.tv_token_status).text = "No token file was found. The app will require login before browsing content."
         }
 
         // Video quality setting
@@ -76,36 +83,49 @@ class AboutActivity : AppCompatActivity() {
             hdrTypes.isNotEmpty() -> "Yes"
             else -> "No"
         }
-        findViewById<TextView>(R.id.tv_h265_support).text =
-            "Device H265/HEVC: ${if (supportsH265) "Yes" else "No"}  ·  Display HDR: $hdrLabel"
-
         val prefs = getSharedPreferences("settings", MODE_PRIVATE)
         val btnHd     = findViewById<Button>(R.id.btn_quality_hd)
         val btnHdH265 = findViewById<Button>(R.id.btn_quality_hd_h265)
         val btnUhd    = findViewById<Button>(R.id.btn_quality_uhd)
         val tvNote    = findViewById<TextView>(R.id.tv_quality_note)
+        val tvCodecBadge = findViewById<TextView>(R.id.tv_codec_badge)
+        val tvHdrBadge = findViewById<TextView>(R.id.tv_hdr_badge)
+        val tvQualityChip = findViewById<TextView>(R.id.tv_quality_chip)
 
         val supportsDisplayHdr = hdrTypes.isNotEmpty()
-        if (!supportsH265) {
-            btnHdH265.isEnabled = false
-            btnUhd.isEnabled    = false
-            tvNote.text = "H265 and 4K/DV require H265 decoder — not available on this device"
-        } else if (!supportsDisplayHdr) {
-            // H265 SDR still works without HDR display; only 4K/DV HDR is blocked
-            btnUhd.isEnabled = false
-            tvNote.text = "Amazon HD tier = 720p SDR (both H264 and H265). 1080p+ requires 4K/DV HDR and an HDR-capable display."
+        tvCodecBadge.text = if (supportsH265) "HEVC ready" else "HEVC unavailable"
+        tvHdrBadge.text = if (supportsDisplayHdr) "HDR display" else "SDR display"
+        tvQualityChip.text = when {
+            supportsH265 && supportsDisplayHdr -> "4K HDR capable"
+            supportsH265 -> "H265 available"
+            else -> "HD only"
+        }
+        findViewById<TextView>(R.id.tv_h265_support).text =
+            "Device H265/HEVC: ${if (supportsH265) "Yes" else "No"}  ·  Display HDR: $hdrLabel"
+
+        btnHdH265.isEnabled = supportsH265
+        btnUhd.isEnabled = supportsH265 && supportsDisplayHdr
+        btnHdH265.alpha = if (supportsH265) 1f else 0.45f
+        btnUhd.alpha = if (supportsH265 && supportsDisplayHdr) 1f else 0.45f
+
+        tvNote.text = when {
+            !supportsH265 ->
+                "This device is limited to the HD H264 profile. H265 and 4K / HDR playback are unavailable."
+            !supportsDisplayHdr ->
+                "H265 can be used for HD playback. 4K / HDR stays locked until the display reports HDR support."
+            else ->
+                "All playback tiers are available on this device. Changes take effect on the next playback session."
         }
 
         fun updateButtons(selected: PlaybackQuality) {
-            val activeColor   = 0xFF00A8E0.toInt()
-            val inactiveColor = 0xCC555555.toInt()
-            btnHd.backgroundTintList     = android.content.res.ColorStateList.valueOf(if (selected == PlaybackQuality.HD)      activeColor else inactiveColor)
-            btnHdH265.backgroundTintList = android.content.res.ColorStateList.valueOf(if (selected == PlaybackQuality.HD_H265) activeColor else inactiveColor)
-            btnUhd.backgroundTintList    = android.content.res.ColorStateList.valueOf(if (selected == PlaybackQuality.UHD_HDR) activeColor else inactiveColor)
+            btnHd.isSelected = selected == PlaybackQuality.HD
+            btnHdH265.isSelected = selected == PlaybackQuality.HD_H265
+            btnUhd.isSelected = selected == PlaybackQuality.UHD_HDR
         }
 
         // Apply initial highlight
-        updateButtons(PlaybackQuality.fromPrefValue(prefs.getString(PlaybackQuality.PREF_KEY, null)))
+        val initialQuality = PlaybackQuality.fromPrefValue(prefs.getString(PlaybackQuality.PREF_KEY, null))
+        updateButtons(initialQuality)
 
         fun save(q: PlaybackQuality) {
             prefs.edit().putString(PlaybackQuality.PREF_KEY, PlaybackQuality.toPrefValue(q)).apply()
@@ -116,6 +136,13 @@ class AboutActivity : AppCompatActivity() {
         btnHd.setOnClickListener     { save(PlaybackQuality.HD) }
         btnHdH265.setOnClickListener { save(PlaybackQuality.HD_H265) }
         btnUhd.setOnClickListener    { save(PlaybackQuality.UHD_HDR) }
+
+        val initialFocus = when {
+            initialQuality == PlaybackQuality.UHD_HDR && btnUhd.isEnabled -> btnUhd
+            initialQuality == PlaybackQuality.HD_H265 && btnHdH265.isEnabled -> btnHdH265
+            else -> btnHd
+        }
+        initialFocus.post { initialFocus.requestFocus() }
     }
 
     private fun btnLabel(q: PlaybackQuality) = when (q) {

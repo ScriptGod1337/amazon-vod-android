@@ -194,7 +194,7 @@ class MainActivity : AppCompatActivity() {
         btnFreevee.setOnClickListener { loadNav("freevee") }
         btnWatchlist.setOnClickListener { loadNav("watchlist") }
         btnLibrary.setOnClickListener { loadNav("library") }
-        btnAbout.setOnClickListener { startActivity(Intent(this, AboutActivity::class.java)) }
+        btnAbout.setOnClickListener { UiTransitions.open(this, Intent(this, AboutActivity::class.java)) }
 
         // Source filter buttons (All vs Prime)
         btnCatAll.setOnClickListener { setSourceFilter("all") }
@@ -626,7 +626,7 @@ class MainActivity : AppCompatActivity() {
             putExtra(DetailActivity.EXTRA_IMAGE_URL, item.imageUrl)
             putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
         }
-        startActivity(intent)
+        UiTransitions.open(this, intent)
     }
 
     // --- Watchlist context menu (MENU key) ---

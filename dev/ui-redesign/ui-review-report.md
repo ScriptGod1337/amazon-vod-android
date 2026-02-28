@@ -2,7 +2,7 @@
 
 **Reviewed by**: Codex acting as UI Reviewer
 **Date**: 2026-02-28
-**Screenshots reviewed**: `current.png`, `home_rails.png`, `search.png`, `watchlist.png`, `library.png`, `detail.png`, `player_overlay.png`
+**Screenshots reviewed**: `current.png`, `home_rails.png`, `search.png`, `watchlist.png`, `library.png`, `browse.png`, `about.png`, `detail.png`, `player_overlay.png`
 
 ## Summary
 
@@ -49,12 +49,18 @@
 
 - `current.png` and `home_rails.png` show the current Home treatment without the oversized hero. The compact header and filter stack leave more space for content and remain visually stable during focus changes.
 - `watchlist.png` confirms the grouped `Availability` and `Type` controls make the Watchlist filters more readable than the earlier stacked layout.
-- `search.png` and `library.png` confirm the redesigned header language carries across secondary states without falling back under the emulator banner.
+- `search.png`, `library.png`, and `browse.png` confirm the redesigned header language carries across secondary states without falling back under the emulator banner.
+- `browse.png` specifically confirms Browse now reads as a dedicated destination with its own header panel, contextual chips, and framed grid surface instead of a bare recycler screen.
+- `about.png` confirms the old plain settings page has been replaced with a proper TV status/settings layout, with grouped app, token, playback, and session panels.
 - `detail.png` confirms the detail action buttons now present their intended focus styling instead of default Material tint.
 - `player_overlay.png` confirms the redesigned audio/subtitle controls match the newer control language used elsewhere in the UI.
+- The latest consistency pass keeps the page-title/supporting-text hierarchy aligned between Browse, About, Detail, and Player-adjacent UI, and removes the last obvious timing mismatch in card focus animation.
 
 ## Device Validation Notes
 
 - Emulator validation on `emulator-5554` covered the full visual pass and D-pad behavior checks.
+- Browse-page emulator validation confirmed `UP` from the first grid card lands on `Back`, preserving a clean escape route from the grid to the page header.
+- About-page emulator validation confirmed `Back` takes first focus in non-touch mode, the playback quality row is focusable and stateful, and the lower `Sign Out` action remains reachable through the scroll view.
+- Consistency-pass emulator validation confirmed About still returns cleanly to Home through the new close transition helper, and Home/Browse/About all render with the updated shared type scale.
 - Fire TV validation on `192.168.0.12:5555` confirmed login bypass via `.device-token`, successful entry to `MainActivity`, working detail-screen focus, and successful launch into `PlayerActivity`.
 - Fire TV `uiautomator` output remained too limited to authoritatively inspect the transient player overlay controls there, so emulator screenshots remain the review source for that part of the UI.

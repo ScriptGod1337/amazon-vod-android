@@ -244,7 +244,7 @@ class DetailActivity : AppCompatActivity() {
             putExtra(PlayerActivity.EXTRA_TITLE, info.title)
             putExtra(PlayerActivity.EXTRA_CONTENT_TYPE, info.contentType)
         }
-        startActivity(intent)
+        UiTransitions.open(this, intent)
     }
 
     private fun onTrailerClicked(info: DetailInfo) {
@@ -254,7 +254,7 @@ class DetailActivity : AppCompatActivity() {
             putExtra(PlayerActivity.EXTRA_CONTENT_TYPE, info.contentType)
             putExtra(PlayerActivity.EXTRA_MATERIAL_TYPE, "Trailer")
         }
-        startActivity(intent)
+        UiTransitions.open(this, intent)
     }
 
     private fun onBrowseClicked(info: DetailInfo) {
@@ -267,7 +267,7 @@ class DetailActivity : AppCompatActivity() {
             putExtra(BrowseActivity.EXTRA_IMAGE_URL, info.posterImageUrl.ifEmpty { fallbackImageUrl })
             putStringArrayListExtra(BrowseActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
         }
-        startActivity(intent)
+        UiTransitions.open(this, intent)
     }
 
     private fun onAllSeasonsClicked(info: DetailInfo) {
@@ -279,7 +279,7 @@ class DetailActivity : AppCompatActivity() {
             putExtra(BrowseActivity.EXTRA_IMAGE_URL, info.posterImageUrl.ifEmpty { fallbackImageUrl })
             putStringArrayListExtra(BrowseActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
         }
-        startActivity(intent)
+        UiTransitions.open(this, intent)
     }
 
     private fun onWatchlistClicked() {
