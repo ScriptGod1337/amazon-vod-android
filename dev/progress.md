@@ -491,6 +491,38 @@ matching the structure returned by the Amazon v2 landing API.
 - Movies/Series filter chips apply to rails (filter items by contentType within each rail)
 - Watchlist/Library/Freevee/Search tabs use flat grid (unchanged)
 
+## Watch Progress Bars in Grid Views Fix (post-Phase 19)
+
+### Bug
+`showItems()` — used by search results, Freevee, Library, and all flat grid views — only merged
+local SharedPreferences resume positions into items (`resumeMap[it.asin] ?: it.watchProgressMs`).
+It never consulted `watchlistProgress` (the server-side `remainingTimeInSeconds` map built from the
+watchlist API at startup). Result: items like "The Tank" correctly showed their watchlist star but
+displayed no amber progress bar in search results, even though they had partial watch history.
+
+`showRails()` (home carousels) already had the correct three-way merge; only `showItems()` was missing it.
+
+### Fix (`MainActivity.kt` — `showItems()`)
+Applied the same three-way merge that `showRails()` uses:
+```
+progressMs = localResumePos ?: watchlistProgress[asin]?.first ?: item.watchProgressMs
+runtimeMs  = if (watchlistProgress[asin] != null && item.runtimeMs == 0L)
+                 watchlistProgress[asin]!!.second
+             else item.runtimeMs
+```
+
+### Debug finding
+`watchlistProgress` contains only items where **both** `watchProgressMs > 0` and `runtimeMs > 0`
+after parsing the watchlist API response. Items with a star but no progress bar in the grid are
+legitimately unwatched watchlist bookmarks — this is correct behaviour.
+
+### Verified
+- `showItems()` now shows amber progress bars for partially-watched items in search results
+- `showRails()` was already correct; home rail items with progress continue to show bars
+- Watchlist screenshot updated: `screenshots/04_watchlist.png` shows The Tank with amber bar
+
+---
+
 ## Phase 17: PENDING — AI Code Review
 
 Full codebase review performed by an AI agent using `dev/REVIEW.md` as the checklist.

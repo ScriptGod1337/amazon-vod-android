@@ -173,6 +173,10 @@ The v2 landing API (`landing/initial/v2.kt`) returns structured rails with `coll
 
 **Key pitfall**: Nested `RecyclerView` (rails within rails) does not render custom XML `progressDrawable` — must use `@android:style/Widget.ProgressBar.Horizontal` + `progressTintList` set programmatically.
 
+**Bug fixed post-Phase 19**: `showItems()` (used by search/Freevee/Library/flat grids) was only merging local SharedPreferences resume positions, not `watchlistProgress`. Items could show a watchlist star (ASIN in `watchlistAsins`) but no progress bar (ASIN not checked in `watchlistProgress`). Fixed by applying the same three-way merge (`localResume ?: serverProgress?.first ?: item.watchProgressMs`) in `showItems()` that `showRails()` already used. `runtimeMs` is also populated from `serverProgress.second` when the catalog item has `runtimeMs == 0`.
+
+**Items with star but no bar**: Legitimately unwatched bookmarks (in `watchlistAsins` but not `watchlistProgress` because `watchProgressMs == 0` or `runtimeMs == 0` in watchlist response). This is correct — `watchlistProgress` only stores items where both fields are > 0.
+
 ---
 
 ## Workarounds

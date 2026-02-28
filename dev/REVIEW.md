@@ -44,8 +44,10 @@ Check for:
 | UI | `ui/MainActivity.kt` | Navigation, filters, search, watchlist |
 | UI | `ui/BrowseActivity.kt` | Series → season → episode drill-down |
 | UI | `ui/PlayerActivity.kt` | ExoPlayer lifecycle, DRM setup, track selection, resume |
-| UI | `ui/ContentAdapter.kt` | RecyclerView diffing, image loading, D-pad focus |
+| UI | `ui/RailsAdapter.kt` | Outer vertical ListAdapter for home carousels; inner ContentAdapter per rail |
+| UI | `ui/ContentAdapter.kt` | RecyclerView diffing, image loading, watchlist star, progress bar tinting |
 | UI | `ui/DpadEditText.kt` | Fire TV remote keyboard handling |
+| Model | `model/ContentRail.kt` | Rail data class (headerText, items, collectionId, paginationParams) |
 
 ### Security Review
 
@@ -131,6 +133,13 @@ All activities use `LoginActivity.findTokenFile(context)`:
 | Freevee | Navigate to Freevee tab | Free ad-supported titles (territory-dependent) |
 | Series drill-down | Click a series | BrowseActivity: seasons → episodes |
 | Watchlist toggle | Long-press any item | Toast: "Adding to/Removing from watchlist" |
+| Home rails | Launch app, view Home tab | Horizontal carousels with section headers (Featured, Trending, etc.) |
+| Rail navigation | D-pad left/right within a rail | Focus scrolls horizontally within carousel |
+| Rail scroll | D-pad down past last visible rail | More rails load (page-level pagination) |
+| Progress bar — watchlist | Navigate to Watchlist, find partially-watched movie | Amber progress bar visible at bottom of card |
+| Progress bar — search | Search for a partially-watched title | Amber progress bar visible in search results |
+| Progress bar — home rail | View home rails, find watched title | Amber progress bar visible in rail card |
+| Watchlist star — home | View home rails | Bookmarked items show filled star; unwatched bookmarks have star but no bar |
 
 #### 3. Playback (Fire TV device required for DRM)
 
