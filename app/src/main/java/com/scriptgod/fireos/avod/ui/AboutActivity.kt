@@ -1,6 +1,5 @@
 package com.scriptgod.fireos.avod.ui
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -59,8 +58,10 @@ class AboutActivity : AppCompatActivity() {
     private fun performLogout() {
         // Delete internal token
         File(filesDir, ".device-token").delete()
-        // Delete legacy token if present
+        // Delete legacy token if present (may silently fail — app lacks write permission on /data/local/tmp)
         File("/data/local/tmp/.device-token").delete()
+        // Mark as logged out so findTokenFile() skips the legacy fallback even if delete failed
+        getSharedPreferences("auth", MODE_PRIVATE).edit().putBoolean("logged_out", true).apply()
         // Clear local resume positions
         getSharedPreferences("resume_positions", MODE_PRIVATE).edit().clear().apply()
 

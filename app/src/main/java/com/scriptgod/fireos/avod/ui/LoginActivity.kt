@@ -60,11 +60,14 @@ class LoginActivity : AppCompatActivity() {
         private const val TOKEN_FILENAME = ".device-token"
         private val LEGACY_TOKEN_FILE = File("/data/local/tmp/.device-token")
 
-        /** Find the token file: app-internal first, then legacy /data/local/tmp/ */
+        /** Find the token file: app-internal first, then legacy /data/local/tmp/.
+         *  The legacy fallback is skipped after an explicit logout (logged_out pref set). */
         fun findTokenFile(context: android.content.Context): File? {
             val internal = File(context.filesDir, TOKEN_FILENAME)
             if (internal.exists() && internal.length() > 0) return internal
-            if (LEGACY_TOKEN_FILE.exists() && LEGACY_TOKEN_FILE.length() > 0) return LEGACY_TOKEN_FILE
+            val loggedOut = context.getSharedPreferences("auth", android.content.Context.MODE_PRIVATE)
+                .getBoolean("logged_out", false)
+            if (!loggedOut && LEGACY_TOKEN_FILE.exists() && LEGACY_TOKEN_FILE.length() > 0) return LEGACY_TOKEN_FILE
             return null
         }
     }
@@ -731,6 +734,8 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun launchMain() {
+        // Clear any logout flag so the legacy token is usable again on next login
+        getSharedPreferences("auth", MODE_PRIVATE).edit().remove("logged_out").apply()
         startActivity(Intent(this, MainActivity::class.java))
         finish()
     }
