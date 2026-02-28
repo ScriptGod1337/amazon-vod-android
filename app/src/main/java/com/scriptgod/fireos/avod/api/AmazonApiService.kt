@@ -86,6 +86,7 @@ class AmazonApiService(private val authService: AmazonAuthService) {
      * Must be called before any catalog/playback calls.
      */
     fun detectTerritory() {
+        if (territoryDetected) return          // already resolved — skip network round-trip
         val did = authService.getDeviceId()
         val locales = "da_DK,de_DE,en_US,en_GB,es_ES,fr_FR,it_IT,ja_JP,ko_KR," +
                       "nl_NL,pl_PL,pt_BR,pt_PT,ru_RU,sv_SE,tr_TR,zh_CN,zh_TW"

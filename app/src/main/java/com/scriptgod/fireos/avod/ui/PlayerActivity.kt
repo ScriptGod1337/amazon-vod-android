@@ -17,6 +17,7 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
@@ -67,6 +68,7 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var tvError: TextView
     private lateinit var trackButtons: LinearLayout
+    private lateinit var tvVideoFormat: TextView
     private lateinit var btnAudio: Button
     private lateinit var btnSubtitle: Button
 
@@ -112,6 +114,7 @@ class PlayerActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progress_bar)
         tvError = findViewById(R.id.tv_error)
         trackButtons = findViewById(R.id.track_buttons)
+        tvVideoFormat = findViewById(R.id.tv_video_format)
         btnAudio = findViewById(R.id.btn_audio)
         btnSubtitle = findViewById(R.id.btn_subtitle)
 
@@ -277,6 +280,33 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateVideoFormatLabel(tracks: Tracks) {
+        val group = tracks.groups.firstOrNull { it.type == C.TRACK_TYPE_VIDEO && it.isSelected }
+        if (group == null) { tvVideoFormat.text = ""; return }
+
+        val repIdx = (0 until group.length).firstOrNull { group.isTrackSelected(it) } ?: 0
+        val fmt = group.getTrackFormat(repIdx)
+
+        val res = when {
+            fmt.height >= 2160 -> "4K"
+            fmt.height >= 1080 -> "1080p"
+            fmt.height >= 720  -> "720p"
+            fmt.height > 0     -> "${fmt.height}p"
+            else               -> ""
+        }
+        val codec = when {
+            fmt.sampleMimeType?.contains("hevc", ignoreCase = true) == true -> "H265"
+            fmt.sampleMimeType?.contains("avc",  ignoreCase = true) == true -> "H264"
+            else -> ""
+        }
+        val hdr = when (fmt.colorInfo?.colorTransfer) {
+            C.COLOR_TRANSFER_ST2084 -> "HDR10"
+            C.COLOR_TRANSFER_HLG    -> "HLG"
+            else -> ""
+        }
+        tvVideoFormat.text = listOf(res, codec, hdr).filter { it.isNotEmpty() }.joinToString(" · ")
+    }
+
     private val playerListener = object : Player.Listener {
         override fun onPlaybackStateChanged(state: Int) {
             when (state) {
@@ -306,6 +336,10 @@ class PlayerActivity : AppCompatActivity() {
                 sendProgressEvent("PAUSE")
                 heartbeatJob?.cancel()
             }
+        }
+
+        override fun onTracksChanged(tracks: Tracks) {
+            updateVideoFormatLabel(tracks)
         }
 
         override fun onPlayerError(error: PlaybackException) {

@@ -38,6 +38,19 @@
         android:orientation="horizontal"
         android:visibility="gone">
 
+        <TextView
+            android:id="@+id/tv_video_format"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:gravity="center_vertical"
+            android:textSize="12sp"
+            android:textColor="#BBBBBB"
+            android:background="@drawable/btn_track_selector"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:minWidth="0dp"
+            android:layout_marginEnd="8dp"/>
+
         <Button
             android:id="@+id/btn_audio"
             android:layout_width="wrap_content"
