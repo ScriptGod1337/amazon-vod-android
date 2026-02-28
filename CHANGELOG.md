@@ -4,6 +4,21 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.28.13] - 2026-02-28
+
+### Changed
+- Watchlist toggle replaced long-press with **MENU key context menu** — press the Fire TV remote MENU button on any focused content card to see "Add to Watchlist" / "Remove from Watchlist"; works on home rails, all flat grid tabs (Watchlist, Library, Search, Freevee), and in BrowseActivity (seasons and episodes)
+
+### Added
+- `BrowseActivity` now supports watchlist management — series seasons and episodes can be added/removed from the watchlist via MENU key; `watchlistAsins` state is passed from MainActivity via Intent and propagated through nested BrowseActivity stacks
+- Watchlist star indicator on BrowseActivity items (seasons/episodes show correct filled/empty star based on watchlist membership)
+
+### Technical
+- `ContentAdapter`: item view tagged with `ContentItem` via `view.tag` for Activity-level key handling
+- `MainActivity` / `BrowseActivity`: `onKeyDown(KEYCODE_MENU)` walks the focused view tree upward (via `recyclerView.findFocus()`) looking for a `ContentItem` tag — handles both flat grid (direct RecyclerView child) and nested rails (inner RecyclerView child)
+- `MainActivity.toggleWatchlist()` now updates both the flat grid adapter and the rails adapter when toggling from rails mode
+- `RailsAdapter` / `ContentAdapter`: `onItemLongClick` replaced by `onMenuKey`
+
 ## [2026.02.28.12] - 2026-02-28
 
 ### Fixed

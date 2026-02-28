@@ -3,9 +3,12 @@ package com.scriptgod.fireos.avod.ui
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
@@ -28,6 +31,7 @@ class BrowseActivity : AppCompatActivity() {
         const val EXTRA_CONTENT_TYPE = "extra_content_type"
         const val EXTRA_FILTER = "extra_filter"  // "seasons" or "episodes"
         const val EXTRA_IMAGE_URL = "extra_image_url"  // fallback image for child items
+        const val EXTRA_WATCHLIST_ASINS = "extra_watchlist_asins"
     }
 
     private lateinit var recyclerView: RecyclerView
@@ -38,6 +42,7 @@ class BrowseActivity : AppCompatActivity() {
     private lateinit var apiService: AmazonApiService
     private lateinit var adapter: ContentAdapter
     private var parentImageUrl: String = ""
+    private var watchlistAsins: MutableSet<String> = mutableSetOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,7 +59,12 @@ class BrowseActivity : AppCompatActivity() {
         val authService = AmazonAuthService(tokenFile)
         apiService = AmazonApiService(authService)
 
-        adapter = ContentAdapter(onItemClick = { item -> onItemSelected(item) })
+        watchlistAsins = (intent.getStringArrayListExtra(EXTRA_WATCHLIST_ASINS) ?: ArrayList()).toMutableSet()
+
+        adapter = ContentAdapter(
+            onItemClick = { item -> onItemSelected(item) },
+            onMenuKey = { item -> showItemMenu(item) }
+        )
         recyclerView.layoutManager = GridLayoutManager(this, 5)
         recyclerView.adapter = adapter
 
@@ -131,7 +141,8 @@ class BrowseActivity : AppCompatActivity() {
                     val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
                     val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
                     val withProgress = withImages.map { it.copy(watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs) }
-                    adapter.submitList(withProgress)
+                    val withWatchlist = withProgress.map { it.copy(isInWatchlist = watchlistAsins.contains(it.asin)) }
+                    adapter.submitList(withWatchlist)
                     // Focus first grid item for D-pad navigation
                     recyclerView.post {
                         val firstChild = recyclerView.getChildAt(0)
@@ -146,6 +157,27 @@ class BrowseActivity : AppCompatActivity() {
                 tvError.visibility = View.VISIBLE
             }
         }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_MENU) {
+            val item = focusedContentItem()
+            if (item != null) {
+                showItemMenu(item)
+                return true
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    private fun focusedContentItem(): ContentItem? {
+        var view: View? = recyclerView.findFocus() ?: return null
+        while (view != null && view !== recyclerView) {
+            val item = view.tag as? ContentItem
+            if (item != null) return item
+            view = view.parent as? View
+        }
+        return null
     }
 
     override fun onResume() {
@@ -165,6 +197,41 @@ class BrowseActivity : AppCompatActivity() {
         }
     }
 
+    // --- Watchlist context menu (MENU key) ---
+
+    private fun showItemMenu(item: ContentItem) {
+        val isIn = watchlistAsins.contains(item.asin)
+        val label = if (isIn) "Remove from Watchlist" else "Add to Watchlist"
+        AlertDialog.Builder(this)
+            .setTitle(item.title)
+            .setItems(arrayOf(label)) { _, _ -> toggleWatchlist(item) }
+            .show()
+    }
+
+    private fun toggleWatchlist(item: ContentItem) {
+        val isCurrentlyIn = watchlistAsins.contains(item.asin)
+        lifecycleScope.launch {
+            val success = withContext(Dispatchers.IO) {
+                if (isCurrentlyIn) apiService.removeFromWatchlist(item.asin)
+                else apiService.addToWatchlist(item.asin)
+            }
+            if (success) {
+                if (isCurrentlyIn) watchlistAsins.remove(item.asin)
+                else watchlistAsins.add(item.asin)
+
+                val result = if (isCurrentlyIn) "Removed from" else "Added to"
+                Toast.makeText(this@BrowseActivity, "$result watchlist", Toast.LENGTH_SHORT).show()
+
+                val updated = adapter.currentList.map { ci ->
+                    if (ci.asin == item.asin) ci.copy(isInWatchlist = !isCurrentlyIn) else ci
+                }
+                adapter.submitList(updated)
+            } else {
+                Toast.makeText(this@BrowseActivity, "Watchlist update failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     private fun onItemSelected(item: ContentItem) {
         Log.i(TAG, "Selected: ${item.asin} — ${item.title} (type=${item.contentType})")
         when {
@@ -176,6 +243,7 @@ class BrowseActivity : AppCompatActivity() {
                     putExtra(EXTRA_CONTENT_TYPE, item.contentType)
                     putExtra(EXTRA_FILTER, "episodes")
                     putExtra(EXTRA_IMAGE_URL, item.imageUrl.ifEmpty { parentImageUrl })
+                    putStringArrayListExtra(EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
                 }
                 startActivity(intent)
             }

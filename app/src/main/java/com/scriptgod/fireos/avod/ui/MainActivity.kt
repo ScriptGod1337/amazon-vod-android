@@ -12,6 +12,7 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
@@ -127,11 +128,11 @@ class MainActivity : AppCompatActivity() {
 
         adapter = ContentAdapter(
             onItemClick = { item -> onItemSelected(item) },
-            onItemLongClick = { item -> toggleWatchlist(item) }
+            onMenuKey = { item -> showItemMenu(item) }
         )
         railsAdapter = RailsAdapter(
             onItemClick = { item -> onItemSelected(item) },
-            onItemLongClick = { item -> toggleWatchlist(item) }
+            onMenuKey = { item -> showItemMenu(item) }
         )
         val gridLayoutManager = GridLayoutManager(this, 5)
         recyclerView.layoutManager = gridLayoutManager
@@ -569,6 +570,7 @@ class MainActivity : AppCompatActivity() {
                 putExtra(BrowseActivity.EXTRA_TITLE, item.title)
                 putExtra(BrowseActivity.EXTRA_CONTENT_TYPE, item.contentType)
                 putExtra(BrowseActivity.EXTRA_IMAGE_URL, item.imageUrl)
+                putStringArrayListExtra(BrowseActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
             }
             startActivity(intent)
         } else {
@@ -582,13 +584,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- Watchlist toggle (long-press) ---
+    // --- Watchlist context menu (MENU key) ---
+
+    private fun showItemMenu(item: ContentItem) {
+        val isIn = watchlistAsins.contains(item.asin)
+        val label = if (isIn) "Remove from Watchlist" else "Add to Watchlist"
+        AlertDialog.Builder(this)
+            .setTitle(item.title)
+            .setItems(arrayOf(label)) { _, _ -> toggleWatchlist(item) }
+            .show()
+    }
 
     private fun toggleWatchlist(item: ContentItem) {
         val isCurrentlyIn = watchlistAsins.contains(item.asin)
-        val action = if (isCurrentlyIn) "Removing from" else "Adding to"
-        Toast.makeText(this, "$action watchlist: ${item.title}", Toast.LENGTH_SHORT).show()
-
         lifecycleScope.launch {
             val success = withContext(Dispatchers.IO) {
                 if (isCurrentlyIn) apiService.removeFromWatchlist(item.asin)
@@ -598,14 +606,24 @@ class MainActivity : AppCompatActivity() {
                 if (isCurrentlyIn) watchlistAsins.remove(item.asin)
                 else watchlistAsins.add(item.asin)
 
-                // Update the item in the current list
+                val result = if (isCurrentlyIn) "Removed from" else "Added to"
+                Toast.makeText(this@MainActivity, "$result watchlist", Toast.LENGTH_SHORT).show()
+
+                // Update flat grid adapter
                 val updatedList = adapter.currentList.map { ci ->
                     if (ci.asin == item.asin) ci.copy(isInWatchlist = !isCurrentlyIn) else ci
                 }
                 adapter.submitList(updatedList)
 
-                val result = if (isCurrentlyIn) "Removed from" else "Added to"
-                Toast.makeText(this@MainActivity, "$result watchlist", Toast.LENGTH_SHORT).show()
+                // Update rails adapter
+                if (unfilteredRails.isNotEmpty()) {
+                    unfilteredRails = unfilteredRails.map { rail ->
+                        rail.copy(items = rail.items.map { ci ->
+                            if (ci.asin == item.asin) ci.copy(isInWatchlist = !isCurrentlyIn) else ci
+                        })
+                    }
+                    railsAdapter.submitList(applyTypeFilterToRails(unfilteredRails))
+                }
             } else {
                 Toast.makeText(this@MainActivity, "Watchlist update failed", Toast.LENGTH_SHORT).show()
             }
@@ -805,6 +823,29 @@ class MainActivity : AppCompatActivity() {
         progressBar.visibility = View.GONE
         tvError.text = msg
         tvError.visibility = View.VISIBLE
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_MENU) {
+            val item = focusedContentItem()
+            if (item != null) {
+                showItemMenu(item)
+                return true
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    private fun focusedContentItem(): ContentItem? {
+        // Walk up from the focused descendant, return the first view tagged with a ContentItem.
+        // Works for both flat grid (direct child) and nested rails (inner RecyclerView child).
+        var view: View? = recyclerView.findFocus() ?: return null
+        while (view != null && view !== recyclerView) {
+            val item = view.tag as? ContentItem
+            if (item != null) return item
+            view = view.parent as? View
+        }
+        return null
     }
 
     override fun onResume() {

@@ -698,6 +698,45 @@ playerView.findViewById<DefaultTimeBar>(R.id.exo_progress)
 
 ---
 
+## Watchlist MENU Key Context Menu (post-Phase 21)
+
+### Motivation
+Long-press to toggle watchlist is awkward on a TV remote. Replaced with a MENU key (hamburger button) context menu that appears on any focused content card.
+
+### Implementation
+
+#### ContentAdapter.kt
+- Added `holder.itemView.tag = item` in `onBindViewHolder` so Activity-level code can retrieve the `ContentItem` from any focused view
+- Replaced `onItemLongClick` callback with `onMenuKey` (used both for the item-level key listener and the Activity-level handler)
+- `setOnKeyListener` kept as a secondary path (works in some RecyclerView configurations)
+
+#### RailsAdapter.kt
+- Renamed `onItemLongClick` → `onMenuKey`, threads through to inner `ContentAdapter`
+
+#### MainActivity.kt
+- `showItemMenu(item)`: shows `AlertDialog` titled with the item name; single list item "Add to Watchlist" / "Remove from Watchlist"
+- `toggleWatchlist(item)`: now updates **both** the flat adapter AND `unfilteredRails` + `railsAdapter` (previously only updated the flat adapter, leaving home carousels stale after a toggle)
+- `onKeyDown(KEYCODE_MENU)`: calls `focusedContentItem()` and shows menu — handles cases where `KEYCODE_MENU` is consumed by the Activity before reaching the view's `setOnKeyListener`
+- `focusedContentItem()`: calls `recyclerView.findFocus()` then walks UP the parent chain looking for a view tagged with `ContentItem` — works for both flat grid (direct child) and nested rails (inner RecyclerView child at arbitrary depth)
+- `onItemSelected()`: passes `watchlistAsins` to `BrowseActivity` via `EXTRA_WATCHLIST_ASINS` StringArrayList extra
+
+#### BrowseActivity.kt
+- Added `EXTRA_WATCHLIST_ASINS` constant + `watchlistAsins: MutableSet<String>` field
+- Extracts `watchlistAsins` from Intent in `onCreate`; wires `onMenuKey` callback on the adapter
+- `loadDetails()` applies `isInWatchlist` flag to all displayed items after load
+- `showItemMenu()` / `toggleWatchlist()`: same AlertDialog + API call pattern as MainActivity; updates local adapter and `watchlistAsins`
+- `onItemSelected()` (child BrowseActivity for season → episodes drill-down): passes updated `watchlistAsins` forward via the same extra
+
+### Key technical finding: KEYCODE_MENU dispatch
+`View.setOnKeyListener` for `KEYCODE_MENU` is unreliable — Android's `PhoneWindow` intercepts `KEYCODE_MENU` at the window level before key events reach the focused view in some RecyclerView configurations. The robust fix is `Activity.onKeyDown(KEYCODE_MENU)` combined with `recyclerView.findFocus()` + tag-based item lookup, which always fires regardless of the focused view type.
+
+### Verified on emulator
+- Home tab (rails): MENU on a focused rail card → AlertDialog with item title + "Add/Remove from Watchlist"
+- Watchlist tab (flat grid): MENU on a starred card → "Remove from Watchlist"; star disappears after selection
+- BrowseActivity (seasons view): MENU on a season card (passed `watchlistAsins` from MainActivity) → correct "Add/Remove" label based on season's membership; star updates on the card
+
+---
+
 ## Phase 22: PENDING — UI Redesign
 
 Redesign the app UI from functional prototype to a polished, modern streaming experience.

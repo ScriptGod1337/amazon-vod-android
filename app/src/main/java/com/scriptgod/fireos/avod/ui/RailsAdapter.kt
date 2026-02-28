@@ -14,7 +14,7 @@ import com.scriptgod.fireos.avod.model.ContentRail
 
 class RailsAdapter(
     private val onItemClick: (ContentItem) -> Unit,
-    private val onItemLongClick: ((ContentItem) -> Unit)? = null
+    private val onMenuKey: ((ContentItem) -> Unit)? = null
 ) : ListAdapter<ContentRail, RailsAdapter.RailViewHolder>(DIFF_CALLBACK) {
 
     private val sharedPool = RecyclerView.RecycledViewPool()
@@ -41,7 +41,7 @@ class RailsAdapter(
 
         val innerAdapter = ContentAdapter(
             onItemClick = onItemClick,
-            onItemLongClick = onItemLongClick
+            onMenuKey = onMenuKey
         )
         holder.innerRecycler.adapter = innerAdapter
         innerAdapter.submitList(rail.items)

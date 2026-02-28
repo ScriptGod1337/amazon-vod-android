@@ -1,6 +1,7 @@
 package com.scriptgod.fireos.avod.ui
 
 import android.content.res.ColorStateList
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,7 +17,7 @@ import com.scriptgod.fireos.avod.model.ContentItem
 
 class ContentAdapter(
     private val onItemClick: (ContentItem) -> Unit,
-    private val onItemLongClick: ((ContentItem) -> Unit)? = null
+    private val onMenuKey: ((ContentItem) -> Unit)? = null
 ) : ListAdapter<ContentItem, ContentAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -80,10 +81,14 @@ class ContentAdapter(
             }
         }
 
+        // Tag the item so Activity.onKeyDown can retrieve it from the focused view
+        holder.itemView.tag = item
         holder.itemView.setOnClickListener { onItemClick(item) }
-        holder.itemView.setOnLongClickListener {
-            onItemLongClick?.invoke(item)
-            true
+        holder.itemView.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_MENU && event.action == KeyEvent.ACTION_DOWN) {
+                onMenuKey?.invoke(item)
+                true
+            } else false
         }
     }
 
