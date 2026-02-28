@@ -4,6 +4,49 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.28.8] - 2026-02-28
+
+### Fixed
+- Player controls (seekbar, play/pause) and AUDIO/SUBTITLES buttons now always show and hide together — synced via `PlayerView.ControllerVisibilityListener` so MENU key toggles all controls as a single unit
+- AUDIO/SUBTITLES buttons now properly receive D-pad focus and are selectable when controls are visible (previously buttons appeared but were unreachable because the player controller was hidden independently)
+- Removed separate `showOverlay`/`hideOverlay` helpers and manual auto-hide runnable — `PlayerView` manages auto-hide timing; track buttons follow via the visibility listener
+
+## [2026.02.28.7] - 2026-02-28
+
+### Fixed
+- AUDIO/SUBTITLES overlay buttons no longer permanently visible during playback — they were set to `VISIBLE` in the `STATE_READY` handler and never hidden
+- Overlay now hidden during active playback; shown automatically on pause; shown/hidden on MENU key press with 3 s auto-hide if playing
+
+## [2026.02.28.6] - 2026-02-28
+
+### Fixed
+- `showItems()` now preserves server-provided content ordering — removed forced A-Z sort that was silently overriding search results, watchlist ordering, and library sort preferences (F-009)
+- Player `onStop()` now pauses instead of stopping the player, preventing a "player stopped but not re-prepared" failure on resume (F-010)
+- Password field cleared after successful login so plaintext credential does not linger in UI state (F-002)
+- Password no longer trimmed before being sent to Amazon — passwords are opaque secrets and must not be mutated (F-007)
+
+### Security
+- `x-gasc-enabled` header removed from the authenticated API client (`AmazonAuthService.AndroidHeadersInterceptor`) — it is a login-flow-only header and must not be sent on catalog, playback, watchlist, or DRM requests (F-003)
+
+### Architecture
+- `PlayerActivity` coroutine scope tied to activity lifecycle via named `scopeJob` — cancelled in `onDestroy()`; `setupPlayer()` guarded with `isDestroyed || isFinishing` check (F-004)
+- `LoginActivity` coroutine scope tied to activity lifecycle via named `scopeJob` — added `onDestroy()` to cancel it (F-008)
+
+### CI/CD
+- Release keystore deleted after APK signing completes (`if: always()` step) — decoded key no longer persists in the workspace after the build (F-005)
+- `versionCode` now derived from the full `YYYY.MM.DD.N` version string (e.g. `2026022806`) instead of the date alone, guaranteeing strict monotonicity for multiple same-day builds (F-006)
+
+## [2026.02.28.5] - 2026-02-28
+
+### Added
+- **About screen** (⚙ gear button in top-right of nav bar): shows app version, package name, masked device ID, and token file location
+- **Sign Out** button on About screen (with confirmation dialog): deletes internal token file, records `logged_out_at` timestamp, clears resume positions, and returns to the login screen
+
+### Fixed
+- In-app login "Please Enable Cookies to Continue" after signing out — Amazon requires `X-Requested-With: com.amazon.avod.thirdpartyclient` and `x-gasc-enabled: true` on every login request; these headers are now added by an OkHttp interceptor on the login client
+- Logout now correctly blocks the stale legacy `/data/local/tmp/.device-token` by comparing its `lastModified()` against the `logged_out_at` timestamp — re-pushing a fresh token (plus `adb shell touch`) resumes development without re-logging in
+- `adb push` preserves host file mtime, so a bare push of an old token would still appear stale — documented the required `adb shell touch` step
+
 ## [2026.02.27.5] - 2026-02-27
 
 ### Added

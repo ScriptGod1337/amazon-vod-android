@@ -13,7 +13,7 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 - Filter by source (All / Prime) and type (Movies / Series) — filters combine independently
 - Series drill-down: show → seasons → episodes → play
 - Widevine L1 hardware-secure playback (DASH/MPD)
-- **Audio & subtitle track selection** during playback (5.1/Stereo audio, SDH/Forced/Regular subtitles)
+- **Audio & subtitle track selection** during playback (5.1/Stereo audio, SDH/Forced/Regular subtitles) — MENU key or pause shows controls; MENU hides them; player controls and track buttons always appear together
 - **Watch progress tracking** via UpdateStream API (START/PLAY/PAUSE/STOP)
 - **Resume from last position** — automatically seeks to where you left off
 - Watchlist management (long-press to add/remove, star indicator)
@@ -67,12 +67,11 @@ com.scriptgod.fireos.avod
 See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history and upcoming work.
 
 **Recently completed:**
-- **Phase 20** — About screen with version info and Sign Out (⚙ gear button in nav)
-- **Fix** — In-app login "Session expired" — missing `X-Requested-With` / `x-gasc-enabled` headers caused Amazon to serve browser-mode login page requiring JS cookies
-- **Fix** — Logout correctly blocks stale legacy dev token via `logged_out_at` timestamp; fresh `adb push` + `touch` still works
+- **Phase 21** — AI code review (10 warnings, 0 critical); all warnings fixed — lifecycle leaks, password hygiene, header scoping, CI keystore cleanup, monotonic versionCode, server-order preservation
+- **Fix** — Player AUDIO/SUBTITLES and player controls now unified: MENU key shows/hides both together; track buttons are D-pad focusable when visible; auto-hide during playback
+- **Phase 20** — About screen with version info and Sign Out (⚙ gear button in nav); `logged_out_at` logout mechanism; in-app login `X-Requested-With` / `x-gasc-enabled` fix
 
 **Next up:**
-- **Phase 21** — AI Code Review (security audit, code quality, best practices)
 - **Phase 22** — UI Redesign (hero banners, animations, polished streaming UX)
 
 ## Requirements

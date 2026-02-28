@@ -47,7 +47,7 @@ private fun fetchAndParseContentItems(url: String): List<ContentItem> {
 
 ---
 
-### FINDING-002 — Successful login leaves the password field populated
+### FINDING-002 — Successful login leaves the password field populated ✅ RESOLVED (d1bcc07)
 **Severity**: 🟡 Warning
 **File**: `app/src/main/java/com/scriptgod/fireos/avod/ui/LoginActivity.kt:632`
 **Checklist item**: Security — Password cleared after use
@@ -71,7 +71,7 @@ private fun registerDevice(authCode: String) {
 
 ---
 
-### FINDING-003 — Login-only headers are added to every authenticated API client
+### FINDING-003 — Login-only headers are added to every authenticated API client ✅ RESOLVED (d1bcc07)
 **Severity**: 🟡 Warning
 **File**: `app/src/main/java/com/scriptgod/fireos/avod/auth/AmazonAuthService.kt:145`
 **Checklist item**: Security — `x-gasc-enabled` / `X-Requested-With` scope
@@ -93,7 +93,7 @@ fun buildAuthenticatedClient(): OkHttpClient {
 
 ---
 
-### FINDING-004 — PlayerActivity launches uncancelled work that can outlive the activity
+### FINDING-004 — PlayerActivity launches uncancelled work that can outlive the activity ✅ RESOLVED (d1bcc07)
 **Severity**: 🟡 Warning
 **File**: `app/src/main/java/com/scriptgod/fireos/avod/ui/PlayerActivity.kt:73`
 **Checklist item**: Player — No crash if user navigates back during DRM provisioning or manifest load; Architecture & Code Quality — Coroutine scope is tied to lifecycle
@@ -118,7 +118,7 @@ private fun loadAndPlay(asin: String, materialType: String = "Feature") {
 
 ---
 
-### FINDING-005 — CI workflow never deletes the decoded release keystore
+### FINDING-005 — CI workflow never deletes the decoded release keystore ✅ RESOLVED (d1bcc07)
 **Severity**: 🟡 Warning
 **File**: `.github/workflows/build.yml:73`
 **Checklist item**: CI/CD — Keystore file decoded from base64 and used, then deleted after build
@@ -140,7 +140,7 @@ private fun loadAndPlay(asin: String, materialType: String = "Feature") {
 
 ---
 
-### FINDING-006 — Date-only versionCode is not strictly monotonic
+### FINDING-006 — Date-only versionCode is not strictly monotonic ✅ RESOLVED (d1bcc07)
 **Severity**: 🟡 Warning
 **File**: `.github/workflows/build.yml:87`
 **Checklist item**: CI/CD — Version code is monotonically increasing
@@ -157,7 +157,7 @@ private fun loadAndPlay(asin: String, materialType: String = "Feature") {
 
 ---
 
-### FINDING-007 — LoginActivity trims the password before submitting it
+### FINDING-007 — LoginActivity trims the password before submitting it ✅ RESOLVED (d1bcc07)
 **Severity**: 🟡 Warning
 **File**: `app/src/main/java/com/scriptgod/fireos/avod/ui/LoginActivity.kt:239`
 **Checklist item**: Not covered by checklist
@@ -175,7 +175,7 @@ private fun onLoginClicked() {
 
 ---
 
-### FINDING-008 — Login coroutines are not tied to the activity lifecycle
+### FINDING-008 — Login coroutines are not tied to the activity lifecycle ✅ RESOLVED (d1bcc07)
 **Severity**: 🟡 Warning
 **File**: `app/src/main/java/com/scriptgod/fireos/avod/ui/LoginActivity.kt:96`
 **Checklist item**: Not covered by checklist
@@ -197,7 +197,7 @@ private fun doLogin(email: String, password: String) {
 
 ---
 
-### FINDING-009 — MainActivity re-sorts every flat grid alphabetically and overrides intended ordering
+### FINDING-009 — MainActivity re-sorts every flat grid alphabetically and overrides intended ordering ✅ RESOLVED (d1bcc07)
 **Severity**: 🟡 Warning
 **File**: `app/src/main/java/com/scriptgod/fireos/avod/ui/MainActivity.kt:766`
 **Checklist item**: Not covered by checklist
@@ -225,7 +225,7 @@ private fun showItems(items: List<ContentItem>) {
 
 ---
 
-### FINDING-010 — Player stops itself in `onStop()` but does not re-prepare on resume
+### FINDING-010 — Player stops itself in `onStop()` but does not re-prepare on resume ✅ RESOLVED (d1bcc07)
 **Severity**: 🟡 Warning
 **File**: `app/src/main/java/com/scriptgod/fireos/avod/ui/PlayerActivity.kt:428`
 **Checklist item**: Not covered by checklist

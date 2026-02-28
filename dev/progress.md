@@ -609,24 +609,65 @@ Added an OkHttp application interceptor to the login `httpClient` that appends t
 
 ---
 
-## Phase 21: PENDING — AI Code Review
+## Phase 21: COMPLETE — AI Code Review + Fixes
 
-Full codebase review performed by an AI agent using `dev/REVIEW.md` as the checklist.
+Full codebase review performed by an AI agent using `dev/REVIEW.md` as the checklist. Findings documented in `dev/review-findings.md`. All actionable warnings fixed.
 
-### Scope
-- **Security audit**: Token handling, no credential logging, HTTPS-only, no hardcoded secrets
-- **Login flow correctness**: PKCE generation, client_id format, cookie handling, CVF/MFA detection, device registration
-- **DRM review**: Challenge wrapping, license unwrapping, provisioning flow
-- **API layer**: Error handling, retry logic, response parsing robustness
-- **Player lifecycle**: ExoPlayer setup/teardown, DRM session management, track selection, resume position
-- **UI/UX**: D-pad navigation, focus handling, RecyclerView diffing, image loading/recycling
-- **CI/CD**: Secret handling, build reproducibility, version monotonicity
-- **Code quality**: Kotlin idioms, coroutine usage, resource leaks, null safety
+### Review results
+- **0 Critical**, **10 Warnings**, **0 Info**, **47 OK** across 53 checklist items
+- Commit: `d1bcc07` — "fix: apply code review findings F-002 through F-010"
 
-### Deliverables
-- List of findings categorized as Critical / Warning / Info
-- Suggested fixes for any issues found
-- Confirmation that security checklist passes
+### Findings resolved
+| Finding | Description | Result |
+|---------|-------------|--------|
+| F-001 | Catalog GET vs POST | FALSE POSITIVE — POST returns 404; GET is correct |
+| F-002 | Password not cleared after login | Fixed — `etPassword.setText("")` before `launchMain()` |
+| F-003 | `x-gasc-enabled` in API client | Fixed — removed from `AndroidHeadersInterceptor` |
+| F-004 | PlayerActivity scope not cancelled | Fixed — named `scopeJob`, cancel in `onDestroy()`, guard in `setupPlayer()` |
+| F-005 | CI keystore not deleted | Fixed — `rm -f release.keystore` with `if: always()` |
+| F-006 | versionCode not monotonic within a day | Fixed — derived from full `YYYY.MM.DD.N` version string |
+| F-007 | Password trimmed before submission | Fixed — removed `.trim()` from password field |
+| F-008 | LoginActivity scope not cancelled | Fixed — named `scopeJob`, added `onDestroy()` |
+| F-009 | `showItems()` forced A-Z sort | Fixed — removed `.sortedBy { it.title.lowercase() }` |
+| F-010 | `onStop()` calls `player?.stop()` | Fixed — changed to `player?.pause()` |
+
+## Player Overlay Fixes (post-Phase 21)
+
+### Bug 1: AUDIO/SUBTITLES always visible during playback
+**Symptom**: The AUDIO and SUBTITLES buttons at top-right were permanently visible once playback started (`STATE_READY` set `View.VISIBLE` and nothing ever hid them again).
+
+**Fix** (`PlayerActivity.kt`):
+- Removed `trackButtons.visibility = View.VISIBLE` from the `STATE_READY` handler
+- Added `showOverlay(autoHide)` / `hideOverlay()` helpers using `View.postDelayed` + `removeCallbacks`
+- `onIsPlayingChanged(true)` → `hideOverlay()` (clean screen during playback)
+- `onIsPlayingChanged(false)` + STATE_READY → `showOverlay(autoHide = false)` (stay visible while paused)
+- `onKeyDown(KEYCODE_MENU)` → toggles overlay; auto-hides after 3 s if currently playing
+- `onDestroy` → `removeCallbacks(hideOverlayRunnable)` to prevent leaks
+
+**Verified on Fire TV**: Overlay hidden during L1 playback (clean black screen); visible after pause (AUDIO + SUBTITLES at top-right, seekbar + play button); hidden again on resume.
+Commit: `9b12f75`
+
+---
+
+### Bug 2: AUDIO/SUBTITLES buttons visible but not focusable/selectable during playback
+**Symptom**: When the overlay appeared (on MENU press during play), the AUDIO/SUBTITLES buttons showed but could not receive D-pad focus because the `PlayerView` controller was hidden — the two overlay regions were out of sync.
+
+**Root cause**: `trackButtons` was managed independently of `PlayerView`'s built-in controller. When `showOverlay()` made `trackButtons` visible during playback, the player controller remained hidden; without a visible focusable anchor in the controller area, D-pad navigation could not reach the track buttons either.
+
+**Fix** (`PlayerActivity.kt`):
+- Added `playerView.setControllerVisibilityListener` → `trackButtons.visibility = visibility` to keep both in sync at all times
+- MENU key now calls `playerView.showController()` / `playerView.hideController()` instead of managing `trackButtons` directly — the listener propagates the change automatically
+- Removed manual `showOverlay` / `hideOverlay` methods and the `hideOverlayRunnable` / `OVERLAY_TIMEOUT_MS` constants — `PlayerView` owns the auto-hide timing
+- `onIsPlayingChanged` stream-reporting logic unchanged; overlay management removed from it entirely
+
+**Behaviour after fix**:
+- Pause → `PlayerView` keeps controller visible → listener sets `trackButtons` VISIBLE → both fully focusable via D-pad
+- Resume → `PlayerView` auto-hides controller after its timeout → listener sets `trackButtons` GONE
+- MENU (during play or pause) → toggles controller → listener toggles track buttons
+
+Verified on Fire TV. Build: 2026.02.28.8
+
+---
 
 ## Phase 22: PENDING — UI Redesign
 
