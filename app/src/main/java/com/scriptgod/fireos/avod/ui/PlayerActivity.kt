@@ -345,8 +345,10 @@ class PlayerActivity : AppCompatActivity() {
                 }
                 Player.STATE_ENDED -> {
                     stopStreamReporting()
-                    // Finished watching — save sentinel so cards show "fully watched"
-                    resumePrefs.edit().putLong(currentAsin, -1L).apply()
+                    // Only mark as fully watched for real content, not trailers
+                    if (currentMaterialType != "Trailer") {
+                        resumePrefs.edit().putLong(currentAsin, -1L).apply()
+                    }
                 }
                 Player.STATE_IDLE -> {}
             }
@@ -469,6 +471,7 @@ class PlayerActivity : AppCompatActivity() {
     private fun currentPositionSecs(): Long = (player?.currentPosition ?: 0) / 1000
 
     private fun saveResumePosition() {
+        if (currentMaterialType == "Trailer") return  // trailers never affect watch progress
         val p = player ?: return
         val posMs = p.currentPosition
         val durMs = p.duration
