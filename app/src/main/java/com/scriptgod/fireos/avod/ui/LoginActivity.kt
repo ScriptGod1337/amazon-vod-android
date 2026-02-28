@@ -61,13 +61,22 @@ class LoginActivity : AppCompatActivity() {
         private val LEGACY_TOKEN_FILE = File("/data/local/tmp/.device-token")
 
         /** Find the token file: app-internal first, then legacy /data/local/tmp/.
-         *  The legacy fallback is skipped after an explicit logout (logged_out pref set). */
+         *  After an explicit logout the legacy fallback is skipped for the token that was
+         *  present at logout time. A freshly-pushed debug token (lastModified > logged_out_at)
+         *  is still accepted, which lets developers push .device-token via adb after signing out. */
         fun findTokenFile(context: android.content.Context): File? {
             val internal = File(context.filesDir, TOKEN_FILENAME)
             if (internal.exists() && internal.length() > 0) return internal
-            val loggedOut = context.getSharedPreferences("auth", android.content.Context.MODE_PRIVATE)
-                .getBoolean("logged_out", false)
-            if (!loggedOut && LEGACY_TOKEN_FILE.exists() && LEGACY_TOKEN_FILE.length() > 0) return LEGACY_TOKEN_FILE
+            if (LEGACY_TOKEN_FILE.exists() && LEGACY_TOKEN_FILE.length() > 0) {
+                val prefs = context.getSharedPreferences("auth", android.content.Context.MODE_PRIVATE)
+                val loggedOutAt = prefs.getLong("logged_out_at", 0L)
+                // Accept the legacy file if we have never logged out, or if the file was
+                // written after the logout (developer pushed a fresh debug token).
+                if (loggedOutAt == 0L || LEGACY_TOKEN_FILE.lastModified() > loggedOutAt) {
+                    if (loggedOutAt != 0L) prefs.edit().remove("logged_out_at").apply()
+                    return LEGACY_TOKEN_FILE
+                }
+            }
             return null
         }
     }
@@ -734,8 +743,8 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun launchMain() {
-        // Clear any logout flag so the legacy token is usable again on next login
-        getSharedPreferences("auth", MODE_PRIVATE).edit().remove("logged_out").apply()
+        // Clear logout timestamp — legacy token is fully usable again after a real login
+        getSharedPreferences("auth", MODE_PRIVATE).edit().remove("logged_out_at").apply()
         startActivity(Intent(this, MainActivity::class.java))
         finish()
     }

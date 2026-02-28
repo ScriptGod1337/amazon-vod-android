@@ -60,8 +60,9 @@ class AboutActivity : AppCompatActivity() {
         File(filesDir, ".device-token").delete()
         // Delete legacy token if present (may silently fail — app lacks write permission on /data/local/tmp)
         File("/data/local/tmp/.device-token").delete()
-        // Mark as logged out so findTokenFile() skips the legacy fallback even if delete failed
-        getSharedPreferences("auth", MODE_PRIVATE).edit().putBoolean("logged_out", true).apply()
+        // Record logout time so findTokenFile() skips the legacy token that was present at
+        // logout, but still accepts a fresh debug token pushed via adb after this timestamp.
+        getSharedPreferences("auth", MODE_PRIVATE).edit().putLong("logged_out_at", System.currentTimeMillis()).apply()
         // Clear local resume positions
         getSharedPreferences("resume_positions", MODE_PRIVATE).edit().clear().apply()
 

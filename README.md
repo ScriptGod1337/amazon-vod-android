@@ -120,6 +120,13 @@ adb shell chmod 644 /data/local/tmp/.device-token
 ```
 The app auto-detects an existing token and skips the login screen. Generate the token with `dev/register_device.py`.
 
+**After signing out:** The app records a `logged_out_at` timestamp and skips the legacy token that was present at sign-out time. To resume development without logging in again, push a fresh token and `touch` it so its mtime is newer than the logout timestamp (`adb push` preserves the host file's mtime, so the touch is required):
+```bash
+adb push .device-token /data/local/tmp/.device-token
+adb shell touch /data/local/tmp/.device-token
+```
+The app compares the file's mtime against `logged_out_at` — if the file is newer it accepts the token and clears the flag automatically.
+
 ## CI/CD
 
 GitHub Actions builds APKs on version tags (`v*`), pull requests to `main`, and manual dispatch. Versioning uses the date format `YYYY.MM.DD.N` (e.g., `2026.02.27.5`).
