@@ -70,7 +70,8 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var authService: AmazonAuthService
     private lateinit var apiService: AmazonApiService
 
-    private val scope = CoroutineScope(Dispatchers.Main + Job())
+    private val scopeJob = Job()
+    private val scope = CoroutineScope(Dispatchers.Main + scopeJob)
     private var heartbeatJob: Job? = null
     private var currentAsin: String = ""
     private var watchSessionId: String = UUID.randomUUID().toString()
@@ -149,6 +150,7 @@ class PlayerActivity : AppCompatActivity() {
      * Mirrors decisions.md Decision 4 and Phase 4 instructions.
      */
     private fun setupPlayer(info: PlaybackInfo) {
+        if (isDestroyed || isFinishing) return
         val licenseCallback = AmazonLicenseService(authService, info.licenseUrl)
 
         val drmSessionManager = DefaultDrmSessionManager.Builder()
@@ -447,11 +449,12 @@ class PlayerActivity : AppCompatActivity() {
             stopStreamReporting()
             streamReportingStarted = false
         }
-        player?.stop()
+        player?.pause()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        scopeJob.cancel()
         player?.release()
         player = null
     }

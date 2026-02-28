@@ -179,7 +179,6 @@ class AmazonAuthService(private val tokenFile: File) {
                 .header("Accept-Charset", "utf-8")
                 .header("User-Agent", USER_AGENT)
                 .header("X-Requested-With", APP_NAME)
-                .header("x-gasc-enabled", "true")
                 .build()
             return chain.proceed(request)
         }

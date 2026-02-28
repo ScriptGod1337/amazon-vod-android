@@ -43,6 +43,8 @@ private fun fetchAndParseContentItems(url: String): List<ContentItem> {
 ```
 **Suggested fix** (do not implement): Change the shared catalog request helpers to send a POST with an empty form body, then re-test home, search, watchlist, library, and detail endpoints against the documented workaround.
 
+**2026-02-28 — FALSE POSITIVE**: Fix was applied and immediately reverted. The live Amazon switchblade/mobile catalog endpoints return HTTP 404 for POST requests; GET is correct for these URLs. The decisions.md Workaround §1 describes Kodi's Python `getURLData` behaviour (which uses `postdata=''` globally), not a requirement imposed by these specific endpoints. GET is the right method. Finding closed as invalid.
+
 ---
 
 ### FINDING-002 — Successful login leaves the password field populated

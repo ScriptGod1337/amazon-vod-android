@@ -788,7 +788,6 @@ class MainActivity : AppCompatActivity() {
                         runtimeMs = runtimeMs
                     )
                 }
-                .sortedBy { it.title.lowercase() }
             adapter.submitList(markedItems)
             // After items are submitted, request focus on first grid item for D-pad navigation
             recyclerView.post {

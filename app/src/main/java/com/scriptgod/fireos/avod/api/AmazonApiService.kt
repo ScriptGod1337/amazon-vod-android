@@ -577,8 +577,7 @@ class AmazonApiService(private val authService: AmazonAuthService) {
 
     /**
      * Fetches a catalog page and parses content items from the JSON response.
-     * Catalog calls use GET (android_api.py:137 has no postdata arg).
-     * Only GetPlaybackResources uses POST with empty body.
+     * These switchblade/mobile endpoints accept GET (POST returns 404).
      */
     private fun fetchAndParseContentItems(url: String): List<ContentItem> {
         val request = Request.Builder()

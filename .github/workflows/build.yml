@@ -86,14 +86,20 @@ jobs:
 
       - name: Build release APK
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          VERSION_CODE=$(echo "$VERSION" | awk -F. '{printf "%04d%02d%02d%02d\n", $1, $2, $3, $4}')
           gradle assembleRelease \
-            -PversionNameOverride=${{ steps.version.outputs.version }} \
-            -PversionCodeOverride=$(date -u +%Y%m%d)
+            -PversionNameOverride=$VERSION \
+            -PversionCodeOverride=$VERSION_CODE
 
       - name: Rename APK with version
         run: |
           mv app/build/outputs/apk/release/app-release.apk \
              app/build/outputs/apk/release/FireOS-AVOD-${{ steps.version.outputs.version }}.apk
+
+      - name: Clean up keystore
+        if: always()
+        run: rm -f release.keystore
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

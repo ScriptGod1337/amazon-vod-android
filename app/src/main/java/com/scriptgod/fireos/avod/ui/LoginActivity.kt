@@ -93,7 +93,8 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var tvStatus: TextView
     private lateinit var progressBar: ProgressBar
 
-    private val scope = CoroutineScope(Dispatchers.Main + Job())
+    private val scopeJob = Job()
+    private val scope = CoroutineScope(Dispatchers.Main + scopeJob)
     private val gson = Gson()
 
     // Cookie jar to maintain session across requests — deduplicates by name+domain
@@ -238,7 +239,7 @@ class LoginActivity : AppCompatActivity() {
 
     private fun onLoginClicked() {
         val email = etEmail.text.toString().trim()
-        val password = etPassword.text.toString().trim()
+        val password = etPassword.text.toString()
 
         if (email.isEmpty() || password.isEmpty()) {
             showStatus("Please enter email and password")
@@ -644,6 +645,7 @@ class LoginActivity : AppCompatActivity() {
                 showStatus("Login successful!")
                 tvStatus.setTextColor(0xFF00CC00.toInt())
                 tvStatus.visibility = View.VISIBLE
+                etPassword.setText("")
                 launchMain()
             } catch (e: Exception) {
                 Log.w(TAG, "Registration failed: ${e.message}", e)
@@ -750,6 +752,11 @@ class LoginActivity : AppCompatActivity() {
             tvStatus.setTextColor(0xFFFF4444.toInt())
             tvStatus.visibility = View.VISIBLE
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        scopeJob.cancel()
     }
 
     private fun launchMain() {
