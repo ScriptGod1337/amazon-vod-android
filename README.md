@@ -19,6 +19,8 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 - Series drill-down: show → detail page → seasons → detail page → episodes → play
 - Widevine L1 hardware-secure playback (DASH/MPD)
 - **Audio & subtitle track selection** during playback — one entry per language/codec combination (e.g. `German (5.1)`, `German (5.1) · Dolby`, `English (Stereo)`); bitrate selected adaptively by ExoPlayer; MENU key or pause shows controls; player controls and track buttons always appear/hide together
+- **Video format label** in player overlay — shows active codec, resolution, and HDR status (e.g. `720p · H265 · SDR`, `4K · H265 · HDR10`), updated live as ABR ramps up
+- **Video quality selection** in About screen — choose between HD H264 (720p), H265 (720p SDR), or 4K/DV HDR; device capability checks disable unavailable options; H265 fallback to H264 on CDN error
 - **Seekbar seeking** — D-pad left/right seeks ±10 seconds per press (hold to repeat), matching standard Fire TV remote behaviour
 - **Watch progress tracking** via UpdateStream API (START/PLAY/PAUSE/STOP)
 - **Resume from last position** — automatically seeks to where you left off
@@ -79,11 +81,12 @@ com.scriptgod.fireos.avod
 See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history and upcoming work.
 
 **Recently completed:**
+- **Fix** — Video quality and codec label in player overlay (`720p · H265 · SDR`); H265 CDN fallback to H264 on HTTP 400; display HDR capability check prevents blank screen on SDR TVs; stale label cleared on new playback
+- **Fix** — Amazon HD quality tier confirmed at 720p SDR cap for both H264 and H265; 1080p+ requires UHD+HDR; quality presets updated: HD H264 (720p), H265 (720p SDR), 4K/DV HDR (requires HDR display)
+- **Fix** — Trailers no longer mark movies as watched or inherit the movie's resume position
 - **Phase 23** — Content overview / detail page (`DetailActivity`) — hero image, poster, IMDb rating, genres, synopsis, Play/Trailer/Browse/Watchlist buttons; All Seasons button for quick season switching; trailer playback via `videoMaterialType=Trailer`
 - **Fix** — Audio track menu: one entry per language/codec, no bitrate duplicates; codec qualifier shown only when needed; adaptive bitrate within chosen group; seekbar D-pad seeks ±10 s per press
 - **Phase 21** — AI code review (10 warnings, 0 critical); all warnings fixed — lifecycle leaks, password hygiene, header scoping, CI keystore cleanup, monotonic versionCode, server-order preservation
-- **Fix** — Player AUDIO/SUBTITLES and player controls unified: MENU key shows/hides both together; track buttons D-pad focusable when visible; auto-hide during playback
-- **Phase 20** — About screen with version info and Sign Out (⚙ gear button in nav); `logged_out_at` logout mechanism; in-app login `X-Requested-With` / `x-gasc-enabled` fix
 
 **Next up:**
 - **Phase 22** — UI Redesign (hero banners, animations, polished streaming UX)
