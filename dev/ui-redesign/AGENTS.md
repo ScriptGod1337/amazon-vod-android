@@ -10,8 +10,8 @@ reviews and requests fixes. They iterate until the reviewer approves all section
 
 | Agent | Instruction file | Model | Role |
 |-------|-----------------|-------|------|
-| UI Implementer | `dev/ui-implementer.md` | Sonnet | Rewrites layouts, adapters, styles; builds + installs on emulator; takes screenshots |
-| UI Reviewer | `dev/ui-reviewer.md` | Sonnet | Reads screenshots + source; checks against design spec; writes structured report |
+| UI Implementer | `dev/ui-redesign/ui-implementer.md` | Sonnet | Rewrites layouts, adapters, styles; builds + installs on emulator; takes screenshots |
+| UI Reviewer | `dev/ui-redesign/ui-reviewer.md` | Sonnet | Reads screenshots + source; checks against design spec; writes structured report |
 
 ---
 
@@ -19,7 +19,7 @@ reviews and requests fixes. They iterate until the reviewer approves all section
 
 | File | What it defines |
 |------|----------------|
-| `dev/ui-design-spec.md` | Color system, dimensions, per-screen visual spec |
+| `dev/ui-redesign/ui-design-spec.md` | Color system, dimensions, per-screen visual spec |
 | `dev/progress.md` | Full build history — read to understand architecture context |
 | `dev/analysis/decisions.md` | API-level decisions — do not break any listed workaround |
 | `app/src/main/java/com/scriptgod/fireos/avod/` | All Kotlin source |
@@ -36,18 +36,18 @@ Implementer
   → ./gradlew assembleRelease
   → adb -s emulator-5554 install -r …apk
   → takes screenshots of every screen
-  → saves to dev/review-screenshots/
-  → writes summary to dev/ui-review-request.md
+  → saves to dev/ui-redesign/review-screenshots/
+  → writes summary to dev/ui-redesign/ui-review-request.md
 
 Reviewer
   → reads design spec
-  → reads dev/ui-review-request.md
-  → reads every screenshot in dev/review-screenshots/
+  → reads dev/ui-redesign/ui-review-request.md
+  → reads every screenshot in dev/ui-redesign/review-screenshots/
   → reads modified source files
-  → writes dev/ui-review-report.md (PASS / FAIL per section)
+  → writes dev/ui-redesign/ui-review-report.md (PASS / FAIL per section)
 
 Implementer (second pass)
-  → reads dev/ui-review-report.md
+  → reads dev/ui-redesign/ui-review-report.md
   → fixes all FAIL items
   → retakes screenshots, repeats cycle
 
@@ -81,7 +81,7 @@ adb -s emulator-5554 shell am start \
 
 # Screenshot
 adb -s emulator-5554 shell screencap -p /sdcard/screen.png
-adb -s emulator-5554 pull /sdcard/screen.png dev/review-screenshots/<name>.png
+adb -s emulator-5554 pull /sdcard/screen.png dev/ui-redesign/review-screenshots/<name>.png
 ```
 
 **DRM note**: The emulator uses Widevine L3 (software). Amazon streams require L1.
@@ -109,8 +109,8 @@ These files must not be modified by either agent:
 
 ```bash
 # Run implementer
-bash dev/start-ui-redesign.sh implementer
+bash dev/ui-redesign/start-ui-redesign.sh implementer
 
 # After implementer finishes, run reviewer
-bash dev/start-ui-redesign.sh reviewer
+bash dev/ui-redesign/start-ui-redesign.sh reviewer
 ```

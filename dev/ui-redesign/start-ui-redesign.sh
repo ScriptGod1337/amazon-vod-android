@@ -4,9 +4,9 @@
 # Launches the UI redesign agents for Phase 22.
 #
 # Usage:
-#   bash dev/start-ui-redesign.sh implementer   # run implementer agent
-#   bash dev/start-ui-redesign.sh reviewer      # run reviewer agent after implementer finishes
-#   bash dev/start-ui-redesign.sh both          # run implementer then reviewer sequentially
+#   bash dev/ui-redesign/start-ui-redesign.sh implementer   # run implementer agent
+#   bash dev/ui-redesign/start-ui-redesign.sh reviewer      # run reviewer agent after implementer finishes
+#   bash dev/ui-redesign/start-ui-redesign.sh both          # run implementer then reviewer sequentially
 
 set -euo pipefail
 
@@ -67,7 +67,7 @@ run_reviewer() {
         -p "$(cat "$SCRIPT_DIR/ui-reviewer.md")" \
         2>&1 | tee "$LOGS/ui-reviewer.log"
     echo ""
-    echo "=== Reviewer finished. See dev/ui-review-report.md ==="
+    echo "=== Reviewer finished. See dev/ui-redesign/ui-review-report.md ==="
 }
 
 case "${1:-both}" in
@@ -76,7 +76,7 @@ case "${1:-both}" in
         ;;
     reviewer)
         if [ ! -f "$SCRIPT_DIR/ui-review-request.md" ]; then
-            echo "ERROR: dev/ui-review-request.md not found."
+            echo "ERROR: dev/ui-redesign/ui-review-request.md not found."
             echo "Run the implementer agent first."
             exit 1
         fi
@@ -90,8 +90,8 @@ case "${1:-both}" in
         run_reviewer
         echo ""
         echo "=== Both agents complete. ==="
-        echo "    Review report: dev/ui-review-report.md"
-        echo "    Screenshots:   dev/review-screenshots/"
+        echo "    Review report: dev/ui-redesign/ui-review-report.md"
+        echo "    Screenshots:   dev/ui-redesign/review-screenshots/"
         ;;
     *)
         echo "Usage: $0 [implementer|reviewer|both]"

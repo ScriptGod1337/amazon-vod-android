@@ -10,8 +10,8 @@ and take screenshots for the reviewer.
 ## Before You Start — Read These
 
 In order:
-1. `dev/AGENTS.md` — multi-agent overview, constraints, emulator commands
-2. `dev/ui-design-spec.md` — the complete visual specification (source of truth)
+1. `dev/ui-redesign/AGENTS.md` — multi-agent overview, constraints, emulator commands
+2. `dev/ui-redesign/ui-design-spec.md` — the complete visual specification (source of truth)
 3. `dev/progress.md` — understand current architecture (Phase 22 section)
 4. `dev/analysis/decisions.md` — API workarounds you must not break
 
@@ -401,7 +401,7 @@ adb -s emulator-5554 shell am start \
     -n com.scriptgod.fireos.avod/.ui.LoginActivity
 
 # Wait ~5 seconds for the app to start, then screenshot each screen:
-mkdir -p dev/review-screenshots
+mkdir -p dev/ui-redesign/review-screenshots
 
 for screen in home_rails hero_banner search watchlist library detail player_overlay; do
     # Navigate to the screen manually via adb input or describe the steps below
@@ -409,7 +409,7 @@ for screen in home_rails hero_banner search watchlist library detail player_over
     read
     adb -s emulator-5554 shell screencap -p /sdcard/screen_${screen}.png
     adb -s emulator-5554 pull /sdcard/screen_${screen}.png \
-        dev/review-screenshots/${screen}.png
+        dev/ui-redesign/review-screenshots/${screen}.png
 done
 ```
 
@@ -427,7 +427,7 @@ Navigate to each screen in this order:
 
 ### Step 9 — Write Review Request
 
-Create/overwrite `dev/ui-review-request.md`:
+Create/overwrite `dev/ui-redesign/ui-review-request.md`:
 
 ```markdown
 # UI Review Request
@@ -449,7 +449,7 @@ Create/overwrite `dev/ui-review-request.md`:
 <list anything that didn't work as expected>
 
 ## Screenshots
-All screenshots are in dev/review-screenshots/:
+All screenshots are in dev/ui-redesign/review-screenshots/:
 - home_rails.png
 - hero_banner.png
 - search.png
@@ -464,7 +464,7 @@ All screenshots are in dev/review-screenshots/:
 ## Rules
 
 - **Read before editing.** Use the Read tool on every file before changing it.
-- **Do not modify** any file listed in `dev/AGENTS.md` under "Constraints".
+- **Do not modify** any file listed in `dev/ui-redesign/AGENTS.md` under "Constraints".
 - **Do not change** any API call, OkHttp header, or DRM logic.
 - **Run `./gradlew assembleRelease`** after every step that touches Kotlin or
   build files. Fix compile errors before moving to the next step.

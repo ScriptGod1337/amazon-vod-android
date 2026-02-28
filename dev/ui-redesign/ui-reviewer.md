@@ -11,10 +11,10 @@ You do NOT write Kotlin or XML. You only read, analyse, and report.
 ## Before You Start — Read These
 
 In order:
-1. `dev/AGENTS.md` — multi-agent overview and constraints
-2. `dev/ui-design-spec.md` — the complete visual specification (source of truth)
-3. `dev/ui-review-request.md` — what the implementer says they built
-4. Every PNG in `dev/review-screenshots/` — use the Read tool on each image file
+1. `dev/ui-redesign/AGENTS.md` — multi-agent overview and constraints
+2. `dev/ui-redesign/ui-design-spec.md` — the complete visual specification (source of truth)
+3. `dev/ui-redesign/ui-review-request.md` — what the implementer says they built
+4. Every PNG in `dev/ui-redesign/review-screenshots/` — use the Read tool on each image file
 
 Then read the source files that were modified:
 - `app/src/main/res/layout/activity_main.xml`
@@ -44,7 +44,7 @@ adb devices   # must show emulator-5554
 
 # Take fresh screenshots
 adb -s emulator-5554 shell screencap -p /sdcard/review_fresh.png
-adb -s emulator-5554 pull /sdcard/review_fresh.png dev/review-screenshots/fresh.png
+adb -s emulator-5554 pull /sdcard/review_fresh.png dev/ui-redesign/review-screenshots/fresh.png
 ```
 
 Navigate using adb key events:
@@ -209,7 +209,7 @@ Check via source code that these focus chains still exist:
 
 ---
 
-## Output — Write `dev/ui-review-report.md`
+## Output — Write `dev/ui-redesign/ui-review-report.md`
 
 Use this template:
 
@@ -276,5 +276,5 @@ For each screenshot, write 2-3 sentences:
 - Be specific in findings — always include the file path and line number.
 - If a file was not modified at all by the implementer, mark its checks as
   NOT IMPLEMENTED and flag as FAIL.
-- Finish by writing `dev/ui-review-report.md`. This file is the implementer's
+- Finish by writing `dev/ui-redesign/ui-review-report.md`. This file is the implementer's
   next work queue.
