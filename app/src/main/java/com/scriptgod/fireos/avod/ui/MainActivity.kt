@@ -767,14 +767,24 @@ class MainActivity : AppCompatActivity() {
             tvError.visibility = View.VISIBLE
         } else {
             tvError.visibility = View.GONE
-            // Merge watchlist flags and local watch progress into items
+            // Merge watchlist flags and watch progress into items
             val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
             val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
             val markedItems = items
-                .map { it.copy(
-                    isInWatchlist = watchlistAsins.contains(it.asin),
-                    watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs
-                ) }
+                .map { item ->
+                    val localProgress = resumeMap[item.asin]
+                    val serverProgress = watchlistProgress[item.asin]
+                    val progressMs = localProgress
+                        ?: serverProgress?.first
+                        ?: item.watchProgressMs
+                    val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
+                        serverProgress.second else item.runtimeMs
+                    item.copy(
+                        isInWatchlist = watchlistAsins.contains(item.asin),
+                        watchProgressMs = progressMs,
+                        runtimeMs = runtimeMs
+                    )
+                }
                 .sortedBy { it.title.lowercase() }
             adapter.submitList(markedItems)
             // After items are submitted, request focus on first grid item for D-pad navigation
