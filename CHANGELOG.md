@@ -4,6 +4,14 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.28.12] - 2026-02-28
+
+### Fixed
+- Audio track menu no longer lists the same language multiple times — Amazon's DASH manifests split each bitrate into its own adaptation set; the dialog now shows one entry per unique language + channel-layout + codec combination
+- Audio track selection now uses adaptive bitrate within the chosen group (`TrackSelectionOverride` with empty track list) — ExoPlayer picks the best bitrate automatically after the user selects a language
+- Codec qualifier (`· Dolby` / `· AAC`) added to audio entries only when a title offers both codecs for the same language and channel count — otherwise labels stay clean (e.g. just `German (5.1)`)
+- Seekbar D-pad seek increment fixed from `duration ÷ 20` (≈ 6 min on a 2-hour film) to a fixed **10 seconds** per key press, matching standard TV remote behaviour; holding the key repeats at the same step
+
 ## [2026.02.28.8] - 2026-02-28
 
 ### Fixed

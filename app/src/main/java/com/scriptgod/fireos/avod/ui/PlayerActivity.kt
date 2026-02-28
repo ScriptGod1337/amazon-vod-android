@@ -109,6 +109,12 @@ class PlayerActivity : AppCompatActivity() {
         btnAudio = findViewById(R.id.btn_audio)
         btnSubtitle = findViewById(R.id.btn_subtitle)
 
+        // Fix D-pad seek increment: default is duration/20 (~6 min on a 2h film).
+        // 10 s per key press matches standard TV remote behaviour.
+        playerView.findViewById<androidx.media3.ui.DefaultTimeBar>(
+            androidx.media3.ui.R.id.exo_progress
+        )?.setKeyTimeIncrement(10_000L)
+
         // Sync trackButtons visibility with the PlayerView controller so they
         // always appear and disappear together.
         playerView.setControllerVisibilityListener(
@@ -372,31 +378,71 @@ class PlayerActivity : AppCompatActivity() {
             if (!anySelected) selectedIndex = 0
         }
 
-        for ((gi, group) in groups.withIndex()) {
-            for (ti in 0 until group.length) {
-                val format = group.getTrackFormat(ti)
-                val lang = format.language?.let { java.util.Locale.forLanguageTag(it).displayLanguage } ?: "Unknown"
-                val label = format.label
-                val name = when {
-                    label != null -> label
-                    trackType == C.TRACK_TYPE_AUDIO -> {
-                        val channels = when (format.channelCount) {
-                            6 -> "5.1"
-                            8 -> "7.1"
-                            2 -> "Stereo"
-                            1 -> "Mono"
-                            else -> "${format.channelCount}ch"
-                        }
-                        "$lang ($channels)"
+        // One entry per group — tracks within a group are bitrate variants of the
+        // same content; ExoPlayer selects the best one adaptively.
+        // Build a base label (language + channels) for each group first, then add a
+        // codec qualifier only when two groups share the same base label (e.g.
+        // "German (5.1)" via both AAC and Dolby Digital Plus).
+        data class GroupInfo(val gi: Int, val repIdx: Int, val baseLabel: String, val codec: String)
+
+        fun codecLabel(mimeType: String?): String = when {
+            mimeType == null -> ""
+            mimeType.contains("ec-3", ignoreCase = true) ||
+            mimeType.contains("eac3", ignoreCase = true) -> "Dolby"
+            mimeType.contains("ac-3", ignoreCase = true) ||
+            mimeType.contains("ac3",  ignoreCase = true) -> "Dolby"
+            mimeType.contains("mp4a", ignoreCase = true) ||
+            mimeType.contains("aac",  ignoreCase = true) -> "AAC"
+            else -> ""
+        }
+
+        val groupInfos = groups.mapIndexed { gi, group ->
+            val repIdx = (0 until group.length).firstOrNull { group.isTrackSelected(it) }
+                ?: (0 until group.length).maxByOrNull { group.getTrackFormat(it).bitrate }
+                ?: 0
+            val format = group.getTrackFormat(repIdx)
+            val lang = format.language
+                ?.let { java.util.Locale.forLanguageTag(it).displayLanguage }
+                ?: "Unknown"
+            val baseLabel = when {
+                format.label != null -> format.label!!
+                trackType == C.TRACK_TYPE_AUDIO -> {
+                    val channels = when (format.channelCount) {
+                        6 -> "5.1"; 8 -> "7.1"; 2 -> "Stereo"; 1 -> "Mono"
+                        else -> "${format.channelCount}ch"
                     }
-                    else -> lang
+                    "$lang ($channels)"
                 }
-                labels.add(name)
-                trackIndices.add(Pair(gi, ti))
-                if (group.isTrackSelected(ti)) {
-                    selectedIndex = labels.size - 1
-                }
+                else -> lang
             }
+            GroupInfo(gi, repIdx, baseLabel, codecLabel(format.sampleMimeType))
+        }
+
+        // Count how many groups share each base label — used to decide if a codec
+        // qualifier is needed (e.g. "German (5.1) · Dolby" vs "German (5.1) · AAC")
+        val labelCount = groupInfos.groupingBy { it.baseLabel }.eachCount()
+
+        // Deduplicate by final label: keep the currently-selected group, or else
+        // the highest-bitrate group — so ExoPlayer's adaptive pick is the best one.
+        val bestByLabel = linkedMapOf<String, GroupInfo>()
+        for (info in groupInfos) {
+            val name = if (labelCount.getValue(info.baseLabel) > 1 && info.codec.isNotEmpty())
+                "${info.baseLabel} · ${info.codec}" else info.baseLabel
+            val existing = bestByLabel[name]
+            val isSelected = groups[info.gi].isSelected
+            val existingSelected = existing != null && groups[existing.gi].isSelected
+            val betterBitrate = existing == null ||
+                groups[info.gi].getTrackFormat(info.repIdx).bitrate >
+                groups[existing.gi].getTrackFormat(existing.repIdx).bitrate
+            if (existing == null || (isSelected && !existingSelected) || (!existingSelected && betterBitrate)) {
+                bestByLabel[name] = info
+            }
+        }
+
+        for ((name, info) in bestByLabel) {
+            labels.add(name)
+            trackIndices.add(Pair(info.gi, info.repIdx))
+            if (groups[info.gi].isSelected) selectedIndex = labels.size - 1
         }
 
         AlertDialog.Builder(this)
@@ -409,12 +455,13 @@ class PlayerActivity : AppCompatActivity() {
                     builder.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
                     p.trackSelectionParameters = builder.build()
                 } else {
-                    // Enable track type and select specific track
+                    // Enable track type; select the group adaptively (empty list =
+                    // ExoPlayer picks the best bitrate within the group automatically)
                     val group = groups[gi]
                     val builder = p.trackSelectionParameters.buildUpon()
                     builder.setTrackTypeDisabled(trackType, false)
                     builder.setOverrideForType(
-                        TrackSelectionOverride(group.mediaTrackGroup, ti)
+                        TrackSelectionOverride(group.mediaTrackGroup, emptyList())
                     )
                     p.trackSelectionParameters = builder.build()
                 }

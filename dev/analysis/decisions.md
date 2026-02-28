@@ -226,6 +226,35 @@ cold start.
 
 ---
 
+## Decision 14: Audio track selection — one entry per adaptation set, adaptive bitrate
+
+Amazon's DASH manifests split audio into one `AdaptationSet` per bitrate variant (rather than grouping bitrates as `Representation` elements within one set). ExoPlayer maps each `AdaptationSet` to a separate `TrackGroup`. Naively iterating all groups × all tracks produces duplicate language entries (e.g. "German (Stereo)" three times at 64/128/192 kbps).
+
+**Approach**:
+1. One dialog entry per `TrackGroup` — bitrate selection is ExoPlayer's adaptive-bitrate responsibility
+2. Representative format per group: currently-playing track, else highest-bitrate track
+3. Base label = language + channel layout (`"German (5.1)"`, `"German (Stereo)"`, etc.)
+4. Codec qualifier (`· Dolby` / `· AAC`) added **only** when two groups share the same base label but differ in codec (EC-3 vs AAC) — avoids clutter for the common case
+5. Final label deduplication: if multiple per-bitrate groups still produce the same final label, keep the group with the highest bitrate (or the currently-selected group)
+6. Selection: `TrackSelectionOverride(group.mediaTrackGroup, emptyList())` — empty list = ExoPlayer picks best bitrate within the chosen group adaptively
+
+**codec detection** (`sampleMimeType`):
+- `audio/ec-3` / `eac3` → `Dolby`
+- `audio/ac-3` / `ac3` → `Dolby`
+- `audio/mp4a` / `aac` → `AAC`
+
+---
+
+## Decision 15: Seekbar D-pad seek increment — fixed 10 s
+
+`DefaultTimeBar` computes its key-press seek step as `duration ÷ 20`. On a 2-hour film this is ~360 s (6 min), making precise seeking impossible with a TV remote.
+
+**Fix**: call `DefaultTimeBar.setKeyTimeIncrement(10_000L)` in `onCreate` after `setContentView`. This sets a fixed 10-second step per D-pad press. Holding the key repeats at the same increment. 10 s matches the Netflix / Prime Video app convention for Fire TV remotes.
+
+Access via `playerView.findViewById<DefaultTimeBar>(androidx.media3.ui.R.id.exo_progress)`.
+
+---
+
 ## Workarounds
 
 ### POST with empty body for catalog requests

@@ -669,6 +669,35 @@ Verified on Fire TV. Build: 2026.02.28.8
 
 ---
 
+## Player UX Fixes (post-Phase 21)
+
+### Audio track menu duplicates
+**Symptom**: The Audio dialog listed the same language (e.g. "German (Stereo)") 3-5 times.
+
+**Root cause**: Amazon's DASH manifests use one `AdaptationSet` per bitrate variant (each as a separate ExoPlayer `TrackGroup`), rather than multiple `Representation` elements within one set. The old dialog iterated every track within every group, producing one entry per bitrate per language.
+
+**Fix** (`PlayerActivity.kt` — `showTrackSelectionDialog`):
+- One entry per group (bitrate variants within a group are ExoPlayer's ABR responsibility)
+- Representative format: currently-playing track, else highest-bitrate track in the group
+- Codec qualifier (`· Dolby` / `· AAC`) added only when two groups share the same base label (same language + channel count but different codecs)
+- Final label deduplication: when multiple per-bitrate groups produce the same final label, keep the highest-bitrate group (or currently-selected group if any)
+- Selection uses `TrackSelectionOverride(group, emptyList())` — adaptive within the chosen group
+
+### Seekbar D-pad seek step
+**Symptom**: Left/right D-pad on the seekbar jumped ~6 minutes per press on a 2-hour film.
+
+**Root cause**: `DefaultTimeBar` default key increment = `duration ÷ 20`. For a 7200 s film that is 360 s (6 min).
+
+**Fix** (`PlayerActivity.kt` — `onCreate`):
+```kotlin
+playerView.findViewById<DefaultTimeBar>(R.id.exo_progress)
+    ?.setKeyTimeIncrement(10_000L)  // 10 s per D-pad press
+```
+
+**Verified on Fire TV Stick 4K**: both fixes confirmed working (2026.02.28.12).
+
+---
+
 ## Phase 22: PENDING — UI Redesign
 
 Redesign the app UI from functional prototype to a polished, modern streaming experience.
