@@ -48,9 +48,9 @@ com.scriptgod.fireos.avod
 
 ## Screenshots
 
-| Home — Featured Rail | Home — Popular Now Rail |
+| Home — Featured Rail | Home — Multiple Rails |
 |:---:|:---:|
-| ![Home Featured](screenshots/02_home.png) | ![Home Popular Now](screenshots/02b_home_multi.png) |
+| ![Home Featured](screenshots/02_home.png) | ![Home Multiple Rails](screenshots/02b_home_multi.png) |
 
 | Login | Search Suggestions | Watchlist (with progress bar) |
 |:---:|:---:|:---:|
