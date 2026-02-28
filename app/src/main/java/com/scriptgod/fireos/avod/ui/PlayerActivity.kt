@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
@@ -56,6 +57,8 @@ class PlayerActivity : AppCompatActivity() {
 
         // Widevine UUID
         private val WIDEVINE_UUID = UUID.fromString("edef8ba9-79d6-4ace-a3c8-27dcd51d21ed")
+
+        private const val OVERLAY_TIMEOUT_MS = 3_000L
     }
 
     private lateinit var playerView: PlayerView
@@ -69,6 +72,8 @@ class PlayerActivity : AppCompatActivity() {
     private var trackSelector: DefaultTrackSelector? = null
     private lateinit var authService: AmazonAuthService
     private lateinit var apiService: AmazonApiService
+
+    private val hideOverlayRunnable = Runnable { trackButtons.visibility = View.GONE }
 
     private val scopeJob = Job()
     private val scope = CoroutineScope(Dispatchers.Main + scopeJob)
@@ -230,7 +235,6 @@ class PlayerActivity : AppCompatActivity() {
                 Player.STATE_BUFFERING -> progressBar.visibility = View.VISIBLE
                 Player.STATE_READY -> {
                     progressBar.visibility = View.GONE
-                    trackButtons.visibility = View.VISIBLE
                     if (!streamReportingStarted) {
                         streamReportingStarted = true
                         startStreamReporting()
@@ -248,12 +252,14 @@ class PlayerActivity : AppCompatActivity() {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             if (!streamReportingStarted) return
             if (isPlaying) {
-                // Resumed from pause — restart heartbeat
+                // Resumed from pause — restart heartbeat and hide overlay
                 startHeartbeat()
+                hideOverlay()
             } else if (player?.playbackState == Player.STATE_READY) {
-                // Paused (not buffering/ended)
+                // Paused — show overlay until play resumes
                 sendProgressEvent("PAUSE")
                 heartbeatJob?.cancel()
+                showOverlay(autoHide = false)
             }
         }
 
@@ -415,6 +421,29 @@ class PlayerActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun showOverlay(autoHide: Boolean) {
+        trackButtons.removeCallbacks(hideOverlayRunnable)
+        trackButtons.visibility = View.VISIBLE
+        if (autoHide) trackButtons.postDelayed(hideOverlayRunnable, OVERLAY_TIMEOUT_MS)
+    }
+
+    private fun hideOverlay() {
+        trackButtons.removeCallbacks(hideOverlayRunnable)
+        trackButtons.visibility = View.GONE
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_MENU) {
+            if (trackButtons.visibility == View.VISIBLE) {
+                hideOverlay()
+            } else {
+                showOverlay(autoHide = player?.isPlaying == true)
+            }
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
     private fun showError(message: String) {
         progressBar.visibility = View.GONE
         tvError.text = message
@@ -454,6 +483,7 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        trackButtons.removeCallbacks(hideOverlayRunnable)
         scopeJob.cancel()
         player?.release()
         player = null
