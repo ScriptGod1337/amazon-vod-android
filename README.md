@@ -48,11 +48,11 @@ com.scriptgod.fireos.avod
 
 ## Screenshots
 
-| Home — Featured Carousel | Home — Multiple Rails |
+| Home — Featured Rail | Home — Popular Now Rail |
 |:---:|:---:|
-| ![Home Featured](screenshots/02_home.png) | ![Home Multi Rails](screenshots/02b_home_multi.png) |
+| ![Home Featured](screenshots/02_home.png) | ![Home Popular Now](screenshots/02b_home_multi.png) |
 
-| Login | Search Suggestions | Watchlist |
+| Login | Search Suggestions | Watchlist (with progress bar) |
 |:---:|:---:|:---:|
 | ![Login](screenshots/01_login.png) | ![Search](screenshots/03_search.png) | ![Watchlist](screenshots/04_watchlist.png) |
 
