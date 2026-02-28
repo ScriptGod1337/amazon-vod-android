@@ -4,6 +4,11 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.28.16] - 2026-02-28
+
+### Fixed
+- Detail page action buttons (Play, Trailer, Browse, Watchlist) now always visible — moved to a fixed bottom bar that renders independently of synopsis/metadata scroll height; previously buttons could be cut off when the description text was long
+
 ## [2026.02.28.15] - 2026-02-28
 
 ### Added

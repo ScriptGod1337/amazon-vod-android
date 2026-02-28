@@ -16,7 +16,7 @@
         <!-- Hero / backdrop image -->
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="220dp">
+            android:layout_height="200dp">
 
             <ImageView
                 android:id="@+id/iv_hero"
@@ -32,7 +32,7 @@
 
         </FrameLayout>
 
-        <!-- Info row: poster | text block -->
+        <!-- Info row: poster | scrollable metadata -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -40,8 +40,8 @@
             android:orientation="horizontal"
             android:paddingStart="32dp"
             android:paddingEnd="32dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="16dp">
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp">
 
             <!-- Poster -->
             <ImageView
@@ -52,126 +52,138 @@
                 android:layout_marginEnd="24dp"
                 android:contentDescription="" />
 
-            <!-- Text + buttons -->
-            <LinearLayout
+            <!-- Scrollable text metadata -->
+            <androidx.core.widget.NestedScrollView
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:orientation="vertical">
+                android:scrollbars="none"
+                android:overScrollMode="never">
 
-                <TextView
-                    android:id="@+id/tv_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#FFFFFF"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:maxLines="2" />
-
-                <TextView
-                    android:id="@+id/tv_metadata"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#BBBBBB"
-                    android:textSize="13sp"
-                    android:layout_marginTop="6dp" />
-
-                <TextView
-                    android:id="@+id/tv_imdb"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#FFD700"
-                    android:textSize="14sp"
-                    android:layout_marginTop="6dp"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/tv_genres"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#AAAAAA"
-                    android:textSize="13sp"
-                    android:layout_marginTop="6dp"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/tv_synopsis"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="#CCCCCC"
-                    android:textSize="14sp"
-                    android:lineSpacingMultiplier="1.3"
-                    android:layout_marginTop="10dp"
-                    android:visibility="gone" />
+                    android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/tv_directors"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#888888"
-                    android:textSize="13sp"
-                    android:layout_marginTop="8dp"
-                    android:visibility="gone" />
-
-                <!-- Action buttons row -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="20dp">
-
-                    <Button
-                        android:id="@+id/btn_play"
+                    <TextView
+                        android:id="@+id/tv_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="▶  Play"
                         android:textColor="#FFFFFF"
-                        android:backgroundTint="#CC00A8E0"
-                        android:layout_marginEnd="12dp"
-                        android:focusable="true"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:maxLines="2" />
+
+                    <TextView
+                        android:id="@+id/tv_metadata"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#BBBBBB"
+                        android:textSize="13sp"
+                        android:layout_marginTop="6dp" />
+
+                    <TextView
+                        android:id="@+id/tv_imdb"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#FFD700"
+                        android:textSize="14sp"
+                        android:layout_marginTop="6dp"
                         android:visibility="gone" />
 
-                    <Button
-                        android:id="@+id/btn_trailer"
+                    <TextView
+                        android:id="@+id/tv_genres"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="▶  Trailer"
-                        android:textColor="#FFFFFF"
-                        android:backgroundTint="#CC444444"
-                        android:layout_marginEnd="12dp"
-                        android:focusable="true"
+                        android:textColor="#AAAAAA"
+                        android:textSize="13sp"
+                        android:layout_marginTop="6dp"
                         android:visibility="gone" />
 
-                    <Button
-                        android:id="@+id/btn_browse"
-                        android:layout_width="wrap_content"
+                    <TextView
+                        android:id="@+id/tv_synopsis"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Browse"
-                        android:textColor="#FFFFFF"
-                        android:backgroundTint="#CC00A8E0"
-                        android:layout_marginEnd="12dp"
-                        android:focusable="true"
+                        android:textColor="#CCCCCC"
+                        android:textSize="14sp"
+                        android:lineSpacingMultiplier="1.3"
+                        android:layout_marginTop="10dp"
                         android:visibility="gone" />
 
-                    <Button
-                        android:id="@+id/btn_watchlist"
+                    <TextView
+                        android:id="@+id/tv_directors"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="☆  Watchlist"
-                        android:textColor="#FFFFFF"
-                        android:backgroundTint="#CC333333"
-                        android:focusable="true"
+                        android:textColor="#888888"
+                        android:textSize="13sp"
+                        android:layout_marginTop="8dp"
                         android:visibility="gone" />
 
                 </LinearLayout>
 
-            </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+
+        </LinearLayout>
+
+        <!-- Action buttons bar — always visible at the bottom -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="176dp"
+            android:paddingEnd="32dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="12dp"
+            android:background="#CC111111">
+
+            <Button
+                android:id="@+id/btn_play"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="▶  Play"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#CC00A8E0"
+                android:layout_marginEnd="12dp"
+                android:focusable="true"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btn_trailer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="▶  Trailer"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#CC444444"
+                android:layout_marginEnd="12dp"
+                android:focusable="true"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btn_browse"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Browse"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#CC00A8E0"
+                android:layout_marginEnd="12dp"
+                android:focusable="true"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btn_watchlist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="☆  Watchlist"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#CC333333"
+                android:focusable="true"
+                android:visibility="gone" />
 
         </LinearLayout>
 
     </LinearLayout>
 
-    <!-- Loading spinner (shown while fetching detail) -->
+    <!-- Loading spinner -->
     <ProgressBar
         android:id="@+id/progress_bar"
         android:layout_width="wrap_content"
