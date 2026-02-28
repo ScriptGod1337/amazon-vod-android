@@ -255,6 +255,31 @@ Access via `playerView.findViewById<DefaultTimeBar>(androidx.media3.ui.R.id.exo_
 
 ---
 
+## Decision 16: Video quality setting — user-selectable with H265 capability detection
+
+Three quality presets, stored in SharedPreferences `"settings"` key `"video_quality"`:
+
+| Preset key | `deviceVideoQualityOverride` | `deviceVideoCodecOverride` | `deviceHdrFormatsOverride` |
+|---|---|---|---|
+| `"HD"` (default) | `HD` | `H264` | `None` |
+| `"HD_H265"` | `HD` | `H264,H265` | `None` |
+| `"UHD_HDR"` | `UHD` | `H264,H265` | `Hdr10,DolbyVision` |
+
+**Kodi reference**: `network.py:210-212` and `supported_hdr()` function (`network.py:231-239`).
+
+**Exact string values** confirmed in decompiled Prime APK:
+- `VideoQuality` enum (`.../PlaybackResourceServiceConstants$VideoQuality.smali`): `SD`, `HD`, `UHD`
+- `HdrFormat` enum (`.../PlaybackResourceServiceConstants$HdrFormat.smali`): `None`, `Hdr10`, `DolbyVision`
+- `Codec` enum (`.../atvplaybackdevice/types/Codec.smali`): `H264`, `H265`
+
+**Codec param format**: `H264,H265` comma-separated — Kodi does `'H264' + (',H265' if _s.use_h265 else '')`.
+
+**Fallback rule**: If `UHD_HDR` is selected but `MediaCodecList` finds no `video/hevc` hardware decoder on the device, the app automatically falls back to `HD_H265` at playback time. A Toast informs the user.
+
+**Where it applies**: `getPlaybackInfo()` and `buildLicenseUrl()` in `AmazonApiService` — the license server validates quality claims, so both the manifest request and the license request must use identical quality params.
+
+---
+
 ## Workarounds
 
 ### POST with empty body for catalog requests

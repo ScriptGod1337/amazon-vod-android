@@ -6,6 +6,7 @@ import com.scriptgod.fireos.avod.model.ContentItem
 import com.scriptgod.fireos.avod.model.ContentRail
 import com.scriptgod.fireos.avod.model.DetailInfo
 import com.scriptgod.fireos.avod.model.PlaybackInfo
+import com.scriptgod.fireos.avod.model.PlaybackQuality
 import com.scriptgod.fireos.avod.model.SubtitleTrack
 import com.google.gson.JsonArray
 import com.google.gson.Gson
@@ -1040,7 +1041,11 @@ class AmazonApiService(private val authService: AmazonAuthService) {
      * @param videoMaterialType Feature, Trailer, or Episode
      * @return PlaybackInfo with manifest and license URLs
      */
-    fun getPlaybackInfo(asin: String, videoMaterialType: String = "Feature"): PlaybackInfo {
+    fun getPlaybackInfo(
+        asin: String,
+        videoMaterialType: String = "Feature",
+        quality: PlaybackQuality = PlaybackQuality.HD
+    ): PlaybackInfo {
         val did = deviceId()
         val params = buildString {
             append("asin=").append(asin)
@@ -1062,10 +1067,10 @@ class AmazonApiService(private val authService: AmazonAuthService) {
             append("&videoMaterialType=").append(videoMaterialType)
             append("&desiredResources=PlaybackUrls,SubtitleUrls,ForcedNarratives,TransitionTimecodes")
             append("&supportedDRMKeyScheme=DUAL_KEY")
-            // Quality params (decisions.md Decision 9)
-            append("&deviceVideoCodecOverride=H264")
-            append("&deviceHdrFormatsOverride=None")
-            append("&deviceVideoQualityOverride=HD")
+            // Quality params (decisions.md Decision 16)
+            append("&deviceVideoCodecOverride=").append(quality.codecOverride)
+            append("&deviceHdrFormatsOverride=").append(quality.hdrOverride)
+            append("&deviceVideoQualityOverride=").append(quality.videoQuality)
         }
 
         val url = "$atvUrl/cdp/catalog/GetPlaybackResources?$params"
@@ -1094,7 +1099,7 @@ class AmazonApiService(private val authService: AmazonAuthService) {
             throw RuntimeException("Could not extract manifest URL from response")
         }
 
-        val licenseUrl = buildLicenseUrl(asin, did)
+        val licenseUrl = buildLicenseUrl(asin, did, quality)
         val subtitles = extractSubtitleTracks(body)
 
         return PlaybackInfo(manifestUrl = manifestUrl, licenseUrl = licenseUrl, asin = asin, subtitleTracks = subtitles)
@@ -1164,7 +1169,7 @@ class AmazonApiService(private val authService: AmazonAuthService) {
     /**
      * Builds the Widevine license server URL (api-map.md, playback.py:452-467).
      */
-    fun buildLicenseUrl(asin: String, deviceId: String): String {
+    fun buildLicenseUrl(asin: String, deviceId: String, quality: PlaybackQuality = PlaybackQuality.HD): String {
         return "$atvUrl/cdp/catalog/GetPlaybackResources" +
                "?asin=$asin" +
                "&deviceTypeID=${AmazonAuthService.DEVICE_TYPE_ID}" +
@@ -1185,9 +1190,9 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                "&videoMaterialType=Feature" +
                "&desiredResources=Widevine2License" +
                "&supportedDRMKeyScheme=DUAL_KEY" +
-               "&deviceVideoCodecOverride=H264" +
-               "&deviceHdrFormatsOverride=None" +
-               "&deviceVideoQualityOverride=HD"
+               "&deviceVideoCodecOverride=${quality.codecOverride}" +
+               "&deviceHdrFormatsOverride=${quality.hdrOverride}" +
+               "&deviceVideoQualityOverride=${quality.videoQuality}"
     }
 
     // --- Watchlist management (api-map.md, android_api.py:348-360) ---

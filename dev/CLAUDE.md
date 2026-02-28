@@ -6,6 +6,20 @@ by porting the existing Kodi plugin logic to Android.
 
 ---
 
+## Reference Sources
+
+Two reference codebases are available at `/home/vscode/` for API analysis and porting:
+
+| Path | Contents |
+|------|----------|
+| `/home/vscode/kodi-plugin/plugin.video.amazon-test/resources/lib/` | Kodi Prime Video plugin (Python) — primary porting reference; `network.py`, `login.py`, `playback.py`, `atv_api.py`, `common.py` |
+| `/home/vscode/prime-3.0.412.2947-smali/` | Decompiled Prime Video APK 3.0.412 (smali/baksmali) — use for confirming exact API parameter names, enum string values, and request formats |
+| `/home/vscode/prime-3.0.412.2947/` | Same APK decompiled with apktool (resources + smali) |
+
+When implementing a new feature or investigating an API issue, always check `network.py` first, then cross-reference with the smali for exact enum/constant values.
+
+---
+
 ## Device Access
 
 Fire TV is connected via ADB. IP is in `.env` as `FIRETV_IP`.

@@ -139,6 +139,77 @@
             android:layout_height="1dp"
             android:background="#333333"
             android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- Video Quality section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VIDEO QUALITY"
+            android:textColor="#666666"
+            android:textSize="12sp"
+            android:letterSpacing="0.15"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/tv_h265_support"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#888888"
+            android:textSize="13sp"
+            android:layout_marginBottom="12dp"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="6dp">
+
+            <Button
+                android:id="@+id/btn_quality_hd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HD (H264)"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#CC555555"
+                android:layout_marginEnd="8dp"
+                android:focusable="true"/>
+
+            <Button
+                android:id="@+id/btn_quality_hd_h265"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HD (H265)"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#CC555555"
+                android:layout_marginEnd="8dp"
+                android:focusable="true"/>
+
+            <Button
+                android:id="@+id/btn_quality_uhd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4K / HDR"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#CC555555"
+                android:focusable="true"/>
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_quality_note"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#666666"
+            android:textSize="12sp"
+            android:layout_marginBottom="4dp"/>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#333333"
+            android:layout_marginTop="16dp"
             android:layout_marginBottom="32dp"/>
 
         <!-- Sign out button -->

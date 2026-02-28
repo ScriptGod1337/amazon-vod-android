@@ -33,12 +33,14 @@ import com.scriptgod.fireos.avod.api.AmazonApiService
 import com.scriptgod.fireos.avod.auth.AmazonAuthService
 import com.scriptgod.fireos.avod.drm.AmazonLicenseService
 import com.scriptgod.fireos.avod.model.PlaybackInfo
+import com.scriptgod.fireos.avod.model.PlaybackQuality
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.media.MediaCodecList
 import java.io.File
 import java.util.UUID
 
@@ -145,15 +147,42 @@ class PlayerActivity : AppCompatActivity() {
         loadAndPlay(asin, materialType)
     }
 
+    /** Returns true if this device has any H265/HEVC video decoder. */
+    private fun deviceSupportsH265(): Boolean =
+        MediaCodecList(MediaCodecList.ALL_CODECS).codecInfos.any { info ->
+            !info.isEncoder && info.supportedTypes.any { it.equals("video/hevc", ignoreCase = true) }
+        }
+
+    /**
+     * Resolves the effective PlaybackQuality for this playback session.
+     * Reads the saved preference; if UHD_HDR is requested but the device has no H265 decoder,
+     * falls back to HD_H265 and shows a Toast so the user knows.
+     */
+    private fun resolveQuality(): PlaybackQuality {
+        val pref = getSharedPreferences("settings", MODE_PRIVATE)
+            .getString(PlaybackQuality.PREF_KEY, null)
+        val requested = PlaybackQuality.fromPrefValue(pref)
+        if (requested == PlaybackQuality.UHD_HDR && !deviceSupportsH265()) {
+            android.widget.Toast.makeText(
+                this, "4K/HDR requires H265 — falling back to HD+H265", android.widget.Toast.LENGTH_LONG
+            ).show()
+            return PlaybackQuality.HD_H265
+        }
+        return requested
+    }
+
     private fun loadAndPlay(asin: String, materialType: String = "Feature") {
         progressBar.visibility = View.VISIBLE
         tvError.visibility = View.GONE
+
+        val quality = resolveQuality()
+        Log.i(TAG, "Playback quality: ${quality.videoQuality} codec=${quality.codecOverride} hdr=${quality.hdrOverride}")
 
         scope.launch {
             try {
                 val info = withContext(Dispatchers.IO) {
                     apiService.detectTerritory()
-                    apiService.getPlaybackInfo(asin, materialType)
+                    apiService.getPlaybackInfo(asin, materialType, quality)
                 }
                 setupPlayer(info)
             } catch (e: Exception) {

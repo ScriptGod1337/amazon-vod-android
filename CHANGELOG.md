@@ -4,6 +4,20 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.28.18] - 2026-02-28
+
+### Added
+- **Video quality setting** in the About screen (⚙) — three presets selectable per device:
+  - **HD (H264)** — 1080p SDR, H264 only (safe default, works everywhere)
+  - **HD (H265)** — 1080p SDR with H265/HEVC streams included in the DASH manifest
+  - **4K / HDR** — UHD with H265, HDR10 and Dolby Vision streams
+- Device H265/HEVC capability indicator shown in the About screen — H265 and 4K/HDR buttons are greyed-out when the device has no HEVC decoder
+- Auto-fallback: if 4K/HDR is selected but the device has no H265 hardware decoder at playback time, the app falls back to HD+H265 and shows a Toast notification
+- `model/PlaybackQuality.kt` — data class holding the three API override params; stored in SharedPreferences `"settings"` / `"video_quality"`
+
+### Changed
+- `AmazonApiService.getPlaybackInfo()` and `buildLicenseUrl()` now accept a `PlaybackQuality` parameter — quality params are sent consistently to both the manifest request and the Widevine license request (decisions.md Decision 16)
+
 ## [2026.02.28.17] - 2026-02-28
 
 ### Added
