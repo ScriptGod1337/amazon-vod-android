@@ -18,13 +18,19 @@ In order:
 
 Then read the source files that were modified:
 - `app/src/main/res/layout/activity_main.xml`
+- `app/src/main/res/layout/activity_browse.xml`
 - `app/src/main/res/layout/item_content.xml`
 - `app/src/main/res/layout/item_rail.xml`
 - `app/src/main/res/layout/activity_detail.xml`
+- `app/src/main/res/layout/activity_player.xml`
 - `app/src/main/res/layout/item_shimmer_card.xml` (if it exists)
+- `app/src/main/java/com/scriptgod/fireos/avod/ui/BrowseActivity.kt`
 - `app/src/main/java/com/scriptgod/fireos/avod/ui/ContentAdapter.kt`
+- `app/src/main/java/com/scriptgod/fireos/avod/ui/DetailActivity.kt`
 - `app/src/main/java/com/scriptgod/fireos/avod/ui/MainActivity.kt`
+- `app/src/main/java/com/scriptgod/fireos/avod/ui/PlayerActivity.kt` (if changed)
 - `app/src/main/java/com/scriptgod/fireos/avod/ui/RailsAdapter.kt`
+- `app/src/main/java/com/scriptgod/fireos/avod/ui/ShimmerAdapter.kt` (if it exists)
 - `app/src/main/res/drawable/` (list and read all new drawables)
 - `app/src/main/res/values/themes.xml`
 - `app/src/main/res/values/dimens.xml` (if it exists)
@@ -118,10 +124,14 @@ Evaluate each item as **PASS**, **FAIL**, or **PARTIAL** with a short reason.
 |---|-------|--------|----------|
 | D1 | Rail header font size | item_rail.xml | 18sp |
 | D2 | Rail header font weight | item_rail.xml | bold |
-| D3 | "See All" link present | item_rail.xml | `tv_see_all` TextView, focusable |
-| D4 | "See All" shown only when collectionId non-empty | RailsAdapter.kt | visibility GONE else VISIBLE |
+| D3 | "See All" link present | item_rail.xml | `tv_see_all` TextView, focusable when enabled |
+| D4 | "See All" shown only when a safe browse route exists | RailsAdapter.kt | visible+wired only when supported; otherwise hidden with deviation documented |
 | D5 | "See All" colour | item_rail.xml | `#00A8E0` |
 | D6 | Rail vertical spacing | item_rail.xml or dimens.xml | ≥ 24dp paddingBottom |
+
+For D3/D4: if the implementer explicitly documents that the current app has no
+safe full-collection route without API/model changes, mark as **PARTIAL** rather
+than **FAIL** when the link is intentionally hidden.
 
 ---
 
@@ -131,7 +141,7 @@ Evaluate each item as **PASS**, **FAIL**, or **PARTIAL** with a short reason.
 |---|-------|--------|----------|
 | E1 | `item_shimmer_card.xml` exists | res/layout/ | ShimmerFrameLayout wrapping placeholder |
 | E2 | Shimmer shown during load | MainActivity.kt or BrowseActivity.kt | starts before API call, stops after |
-| E3 | Spinner (ProgressBar) hidden or replaced | activity_main.xml | not visible during shimmer |
+| E3 | Spinner (ProgressBar) hidden or replaced | activity_main.xml / activity_browse.xml | not visible during shimmer |
 
 ---
 
@@ -201,10 +211,23 @@ Check via source code that these focus chains still exist:
 
 ---
 
+### Section J — Player Overlay
+
+| # | Check | Source | Expected |
+|---|-------|--------|----------|
+| J1 | Top-right overlay remains readable | activity_player.xml / PlayerActivity.kt | semi-transparent dark background behind format/audio/subtitle controls |
+| J2 | Player layout not restructured | activity_player.xml | only minor overlay polish, no major layout rewrite |
+
+**Screenshot check (J — visual)**:
+- `player_overlay.png`: the video-format / track controls should remain legible
+  against a bright or error-state background.
+
+---
+
 ## Scoring
 
 - **Critical (must fix)**: any item that breaks navigation or crashes the app.
-- **Important (should fix)**: any item from Sections C, D, F, G that is FAIL.
+- **Important (should fix)**: any item from Sections C, D, F, G, J that is FAIL.
 - **Minor (optional)**: any item that is PARTIAL or a visual deviation < 10%.
 
 ---
@@ -233,6 +256,7 @@ Use this template:
 | G — Detail Screen | PASS/FAIL/PARTIAL | ... |
 | H — D-pad Navigation | PASS/FAIL/PARTIAL | ... |
 | I — Regression | PASS/FAIL/PARTIAL | ... |
+| J — Player Overlay | PASS/FAIL/PARTIAL | ... |
 
 **Overall**: APPROVED / NEEDS FIXES
 
@@ -275,6 +299,8 @@ For each screenshot, write 2-3 sentences:
 - Use the Read tool to read image files (the tool renders them visually).
 - Be specific in findings — always include the file path and line number.
 - If a file was not modified at all by the implementer, mark its checks as
-  NOT IMPLEMENTED and flag as FAIL.
+  NOT IMPLEMENTED and flag as FAIL, unless the instructions explicitly define
+  the item as an allowed documented deviation (for example D3/D4 when no safe
+  collection-browse route exists without backend changes).
 - Finish by writing `dev/ui-redesign/ui-review-report.md`. This file is the implementer's
   next work queue.

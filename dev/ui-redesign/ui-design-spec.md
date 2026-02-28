@@ -101,8 +101,10 @@ Both the Implementer and Reviewer agents treat this file as the source of truth.
 ```
 
 **Hero banner**:
-- Source: `heroImageUrl` from the first item of the first rail (same field used
-  in `DetailActivity`). Fall back to poster if unavailable.
+- Source: the first item of the first rail. Use the best image already available
+  on `ContentItem`; in the current codebase that is typically `imageUrl`. If a
+  hero-specific image is already exposed without changing API/model contracts,
+  prefer it; otherwise fall back to the poster image.
 - Gradient overlay: transparent at top, `#CC000000` at bottom (60% black).
 - Title and action buttons are overlaid on the bottom portion of the banner.
 - `[▶ Play]` launches `DetailActivity` for that item (same as tapping the card).
@@ -127,8 +129,10 @@ Both the Implementer and Reviewer agents treat this file as the source of truth.
 
 **Rail rows**:
 - Use `item_rail.xml` with an 18sp bold rail header and a "See All" `TextView`
-  right-aligned (only shown when `collectionId` is non-empty). "See All" is
-  focusable; pressing it navigates to a `BrowseActivity` showing the full collection.
+  right-aligned when the current app already has a safe browse route for the
+  rail. If a full-collection route is not supported without API/model work,
+  leave "See All" hidden and document the limitation rather than inventing a
+  new contract.
 - Horizontal `RecyclerView` with `LinearLayoutManager(HORIZONTAL)` (already the
   case). Keep existing snap behaviour.
 
@@ -165,8 +169,9 @@ itemView.setOnFocusChangeListener { v, hasFocus ->
 ```
 
 **Badges** (`4K`, `HDR`, `Prime`) shown as small rounded TextViews overlaid on
-the top-right of the poster image. Source: `ContentItem.badges` (already parsed;
-check `ContentItem.kt` for available fields).
+the top-right of the poster image. Bind only from metadata already present on
+`ContentItem`; do not add API/model parsing solely to synthesize cosmetic card
+badges for this phase. In the current app, `Prime` is the most reliable badge.
 
 **Rounded corners**: use a `MaterialCardView` wrapping or a custom
 `OutlineProvider` — whichever is simpler given the existing view type.
@@ -272,7 +277,7 @@ These rules must all continue to work after redesign:
 | `res/drawable/card_selector.xml` | StateListDrawable: focused → `card_focused`, else → `card_background` |
 | `res/drawable/chip_active.xml` | Pill shape, `#00A8E0` fill, 24dp corner radius |
 | `res/drawable/chip_inactive.xml` | Pill shape, `#2A2A2A` fill, 24dp corner radius |
-| `res/drawable/nav_tab_indicator.xml` | Bottom-aligned 3dp `#00A8E0` rectangle |
+| `res/drawable/nav_active_indicator.xml` | Bottom-aligned 3dp `#00A8E0` rectangle |
 | `res/layout/item_shimmer_card.xml` | Shimmer placeholder card |
 | `res/values/dimens.xml` | All dimension constants |
 
@@ -280,12 +285,17 @@ These rules must all continue to work after redesign:
 | File | What changes |
 |------|-------------|
 | `res/layout/activity_main.xml` | Hero banner section + styled nav tabs + search overlay |
+| `res/layout/activity_browse.xml` | Shimmer loading state + browse-screen polish |
 | `res/layout/item_content.xml` | Larger card, rounded corners, badge overlays |
 | `res/layout/item_rail.xml` | Rail header typography + See All link |
 | `res/layout/activity_detail.xml` | Taller hero, pill buttons, badges |
+| `res/layout/activity_player.xml` | Top-right overlay readability polish |
 | `res/values/themes.xml` | Background color → `#0D0D0D` |
+| `ui/BrowseActivity.kt` | Browse shimmer visibility and loading-state wiring |
 | `ui/ContentAdapter.kt` | Focus scale animation, badge binding |
+| `ui/DetailActivity.kt` | IMDb glyph + detail-screen binding updates |
 | `ui/MainActivity.kt` | Hero banner data binding + search overlay toggle |
 | `ui/RailsAdapter.kt` | See All button wiring |
+| `ui/PlayerActivity.kt` | Only if needed for overlay/readability polish |
 | `gradle/libs.versions.toml` | Add shimmer + material versions |
 | `app/build.gradle.kts` | Add shimmer + material dependencies |

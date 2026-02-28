@@ -20,7 +20,7 @@ reviews and requests fixes. They iterate until the reviewer approves all section
 | File | What it defines |
 |------|----------------|
 | `dev/ui-redesign/ui-design-spec.md` | Color system, dimensions, per-screen visual spec |
-| `dev/progress.md` | Full build history — read to understand architecture context |
+| `dev/progress.md` | Build history — use recent phases to understand current UI architecture and known constraints |
 | `dev/analysis/decisions.md` | API-level decisions — do not break any listed workaround |
 | `app/src/main/java/com/scriptgod/fireos/avod/` | All Kotlin source |
 | `app/src/main/res/` | All layouts, drawables, values |
@@ -102,6 +102,11 @@ These files must not be modified by either agent:
 - `ui/LoginActivity.kt` (login flow is separate concern)
 - `ui/DpadEditText.kt`
 - `.github/workflows/build.yml`
+
+If a visual requirement depends on data or navigation flows that the current app
+does not already expose safely, do not guess or add speculative backend changes.
+Keep the UI work within the existing app contracts and document the gap in the
+review request/report instead.
 
 ---
 

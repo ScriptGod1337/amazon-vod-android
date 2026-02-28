@@ -12,16 +12,21 @@ and take screenshots for the reviewer.
 In order:
 1. `dev/ui-redesign/AGENTS.md` — multi-agent overview, constraints, emulator commands
 2. `dev/ui-redesign/ui-design-spec.md` — the complete visual specification (source of truth)
-3. `dev/progress.md` — understand current architecture (Phase 22 section)
+3. `dev/progress.md` — understand current architecture from the recent completed phases, especially the Main/Browse/Player changes from Phase 10 onward
 4. `dev/analysis/decisions.md` — API workarounds you must not break
 
 Then read the source files you will modify before touching them:
 - `app/src/main/res/layout/activity_main.xml`
+- `app/src/main/res/layout/activity_browse.xml`
 - `app/src/main/res/layout/item_content.xml`
 - `app/src/main/res/layout/item_rail.xml`
 - `app/src/main/res/layout/activity_detail.xml`
+- `app/src/main/res/layout/activity_player.xml`
+- `app/src/main/java/com/scriptgod/fireos/avod/ui/BrowseActivity.kt`
 - `app/src/main/java/com/scriptgod/fireos/avod/ui/ContentAdapter.kt`
+- `app/src/main/java/com/scriptgod/fireos/avod/ui/DetailActivity.kt`
 - `app/src/main/java/com/scriptgod/fireos/avod/ui/MainActivity.kt`
+- `app/src/main/java/com/scriptgod/fireos/avod/ui/PlayerActivity.kt` (only if needed)
 - `app/src/main/java/com/scriptgod/fireos/avod/ui/RailsAdapter.kt`
 - `app/src/main/res/values/themes.xml`
 - `app/build.gradle.kts`
@@ -202,9 +207,10 @@ itemView.setOnFocusChangeListener { v, hasFocus ->
 }
 ```
 
-2. Badge binding: populate `ll_badges` from `item.badges` (check `ContentItem.kt`
-   for the field name). Clear existing badge views before adding new ones.
-   Show at most 3 badges (e.g. `4K`, `HDR`, `Prime`).
+2. Badge binding: populate `ll_badges` only from metadata that already exists on
+   `ContentItem`. Clear existing badge views before adding new ones. Show at most
+   3 badges. In the current codebase, `Prime` is the reliable badge; do not add
+   risky API/model changes just to invent `4K` / `HDR` card badges.
 
 3. Keep all existing click, long-click, watchlist-star, and progress-bar logic
    exactly as-is — only add focus animation and badge binding on top.
@@ -222,10 +228,11 @@ itemView.setOnFocusChangeListener { v, hasFocus ->
     `focusable="true"`, `visibility="gone"`.
 - `RecyclerView id=rv_rail_items` — unchanged.
 
-**`RailsAdapter.kt`**: show `tv_see_all` and set its `OnClickListener` when
-`rail.collectionId` is non-empty. The click should start `BrowseActivity` with
-that `collectionId`. Read the existing `BrowseActivity` extras to pass the right
-Intent data.
+**`RailsAdapter.kt`**: add the `tv_see_all` view and only wire/show it if the
+current app already has a safe full-collection browse path you can implement
+without touching API/model contracts. If that route does not exist, leave the
+view hidden and call the limitation out in `ui-review-request.md` instead of
+guessing a new `BrowseActivity` contract.
 
 ---
 
@@ -360,15 +367,18 @@ if (heroItem != null) {
     heroSection.visibility = View.VISIBLE
     Coil.imageLoader(this).enqueue(
         ImageRequest.Builder(this)
-            .data(heroItem.heroImageUrl ?: heroItem.imageUrl)
+            .data(heroItem.imageUrl)
             .target(ivHeroBackdrop)
             .build()
     )
     tvHeroTitle.text = heroItem.title
-    tvHeroMeta.text  = listOfNotNull(heroItem.year?.toString(), heroItem.contentType)
+    tvHeroMeta.text  = listOfNotNull(
+                           heroItem.subtitle.takeIf { it.isNotBlank() },
+                           heroItem.contentType.takeIf { it.isNotBlank() }
+                       )
                            .joinToString(" · ")
     btnHeroPlay.setOnClickListener { onItemSelected(heroItem) }
-    // Watchlist toggle uses existing toggleWatchlist() or similar
+    btnHeroWatchlist.setOnClickListener { toggleWatchlist(heroItem) }
 }
 ```
 
@@ -376,7 +386,7 @@ if (heroItem != null) {
 
 ---
 
-### Step 7 — Detail Screen Polish (`activity_detail.xml`)
+### Step 7 — Detail + Player Polish (`activity_detail.xml`, `DetailActivity.kt`, `activity_player.xml`)
 
 Only small changes:
 1. Hero height → 240dp.
@@ -385,6 +395,9 @@ Only small changes:
    on all buttons (or wrap in `style`).
 3. Add IMDb star glyph: change `tv_imdb` text in `DetailActivity.kt` to prefix
    with `"★ "`.
+4. Player overlay: improve readability of the top-right format/audio/subtitle
+   controls in `activity_player.xml` with a semi-transparent dark pill/card
+   background. Do not restructure the player screen.
 
 ---
 
@@ -466,6 +479,9 @@ All screenshots are in dev/ui-redesign/review-screenshots/:
 - **Read before editing.** Use the Read tool on every file before changing it.
 - **Do not modify** any file listed in `dev/ui-redesign/AGENTS.md` under "Constraints".
 - **Do not change** any API call, OkHttp header, or DRM logic.
+- If the current data model does not expose a cosmetic value you want, use the
+  closest existing field or document the deviation. Do not expand API/model
+  parsing just to satisfy a visual nicety.
 - **Run `./gradlew assembleRelease`** after every step that touches Kotlin or
   build files. Fix compile errors before moving to the next step.
 - **If a step fails**: diagnose from the Gradle error output, fix the root cause,
