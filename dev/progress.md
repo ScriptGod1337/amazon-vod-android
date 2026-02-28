@@ -812,6 +812,54 @@ BrowseActivity (episodes list) → episode card → PlayerActivity (unchanged, d
 #### "All Seasons" button on season detail pages (v2026.02.28.17)
 **Feature**: Season detail pages now show two action buttons: "Browse Episodes" (opens episode list for the current season) and "All Seasons" (opens the season picker for the parent show). Uses `resource.show.titleId` (stored as `DetailInfo.showAsin`) which the API already returns for season ASINs. The button only appears when `showAsin` is non-empty.
 
+### Post-Phase 23 H265/quality + trailer fixes (v2026.02.28.19–29)
+
+#### H265 CDN fallback (v2026.02.28.19)
+**Problem**: Some titles return HTTP 400 on H265 init segments (CDN rejects the request for that codec).
+**Fix**: `onPlayerError` in `PlayerActivity` detects `ERROR_CODE_IO_BAD_HTTP_STATUS` when `currentQuality.codecOverride` contains `"H265"` and `!h265FallbackAttempted`. Saves resume position, releases player, re-fetches with `PlaybackQuality.HD` (H264 manifest). `h265FallbackAttempted` flag prevents infinite retry.
+
+#### `detectTerritory()` caching (v2026.02.28.20)
+**Problem**: H265 fallback was calling `GetAppStartupConfig` again on retry because `territoryDetected` was set but never read.
+**Fix**: Added `if (territoryDetected) return` at top of `detectTerritory()`. Eliminates redundant network call on fallback.
+
+#### Video format label in player overlay (v2026.02.28.20)
+**Feature**: Added `tv_video_format` TextView to the top-right overlay in `activity_player.xml`. Label shows `"720p · H265 · SDR"` or `"4K · H265 · HDR10"` etc., updated via `updateVideoFormatLabel()`.
+**Implementation**: Reads `player.videoFormat` (live decoder format, not the track group seed). Called from `onVideoSizeChanged`, `onTracksChanged`, and `STATE_READY`. Codec from `sampleMimeType` (hevc → H265, avc → H264). HDR from `colorInfo.colorTransfer` or codec string prefix (`hvc1.2.*` = HDR10).
+
+#### Instant H265 fallback via track selector (v2026.02.28.21)
+**Attempt**: Tried `setPreferredVideoMimeType(VIDEO_H264)` + re-prepare for faster switching without full manifest re-fetch.
+**Reverted**: UHD manifest only contains H264 up to 720p, so track selector fallback yielded 720p H264 from the UHD manifest. Re-fetch with `PlaybackQuality.HD` is correct — it fetches the HD-specific manifest that provides full-tier H264.
+
+#### Quality investigation — Amazon HD tier = 720p cap (v2026.02.28.22–26)
+**Finding**: Amazon's `deviceVideoQualityOverride=HD` caps at 720p SDR for both H264 and H265. There is no 1080p SDR tier. 1080p+ requires `UHD` quality + HDR format override.
+- HEVC Main profile (`hvc1.1.*`) = SDR H265, available at HD tier, observed at 720p (or occasionally 800p per CDN encoding)
+- HEVC Main 10 (`hvc1.2.*`) = HDR10, requires `UHD + Hdr10` quality params
+
+**Final quality presets** (`PlaybackQuality.kt`):
+| Preset | quality | codecOverride | hdrOverride | Result |
+|--------|---------|---------------|-------------|--------|
+| HD (H264) | HD | H264 | None | 720p H264 SDR |
+| H265 | HD | H264,H265 | None | 720p H265 SDR (no HDR needed) |
+| 4K / DV HDR | UHD | H264,H265 | Hdr10,DolbyVision | 4K H265 HDR (requires HDR display) |
+
+**Documented** in `dev/analysis/decisions.md` Decision 16.
+
+#### Display HDR capability detection (v2026.02.28.25)
+**Problem**: Selecting 4K/DV HDR on an SDR TV causes a blank screen (device requests HDR stream, display can't render it).
+**Fix**: `displaySupportsHdr()` checks `windowManager.defaultDisplay.hdrCapabilities.supportedHdrTypes`. If empty, `resolveQuality()` falls back UHD_HDR → HD (H264). `AboutActivity.setupQualitySection()` disables 4K/DV button when display has no HDR and shows an explanatory note. Combined capability line: `"Device H265/HEVC: Yes  ·  Display HDR: Yes (HDR10)"`.
+
+#### Clear stale format label on new playback (v2026.02.28.27)
+**Problem**: After H265 fallback, the format label retained the H265 value from the previous attempt.
+**Fix**: `tvVideoFormat.text = ""` at the top of `loadAndPlay()`.
+
+#### Trailers don't write watch progress (v2026.02.28.28)
+**Problem**: Trailer ASIN = movie ASIN; playing a trailer to completion wrote `resumePrefs[asin] = -1` (watched marker), marking the movie as fully watched.
+**Fix**: `saveResumePosition()` returns early if `currentMaterialType == "Trailer"`. `STATE_ENDED` handler skips `resumePrefs` write for trailers. `currentMaterialType` field set in `loadAndPlay()`.
+
+#### Trailers start from position 0 (v2026.02.28.29)
+**Problem**: `setupPlayer()` read `resumePrefs.getLong(currentAsin, 0L)` — trailers share the movie ASIN and inherited the movie's resume position.
+**Fix**: `val resumeMs = if (currentMaterialType == "Trailer") 0L else resumePrefs.getLong(currentAsin, 0L)`.
+
 ---
 
 ## Phase 22: PENDING — UI Redesign

@@ -4,6 +4,79 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.02.28.29] - 2026-02-28
+
+### Fixed
+- Trailers now always start from position 0 — previously `setupPlayer()` loaded the movie's saved resume position (e.g. 45 min) into the trailer, which is past the trailer's ~2 min duration, causing it to start at the end
+
+## [2026.02.28.28] - 2026-02-28
+
+### Fixed
+- Watching or finishing a trailer no longer marks the movie as fully watched — `saveResumePosition()` and the `STATE_ENDED` handler now skip all `resumePrefs` writes when `currentMaterialType == "Trailer"`
+
+## [2026.02.28.27] - 2026-02-28
+
+### Fixed
+- Format label (codec/resolution overlay) no longer shows stale codec from the previous session when the H265→H264 fallback fires — `tvVideoFormat` is cleared at the start of every `loadAndPlay()` call
+
+## [2026.02.28.26] - 2026-02-28
+
+### Changed
+- **Quality presets finalised** based on CDN behaviour findings:
+  - **HD H264** (`HD + H264 + None`) → 720p H264 SDR — universal, works on all devices and displays
+  - **H265** (`HD + H264,H265 + None`) → 720p H265 SDR — H265 codec where available; no HDR display needed
+  - **4K / DV HDR** (`UHD + H265 + Hdr10,DolbyVision`) → 4K H265 HDR — requires H265 decoder + HDR display
+- Amazon's `HD` quality tier confirmed to cap at **720p SDR** for both H264 and H265; 1080p+ only available in the UHD+HDR tier — documented in `decisions.md` Decision 16
+- `resolveQuality()` now only blocks `UHD_HDR` when the display lacks HDR support; the H265 (SDR) preset is available on all displays
+- About screen: `H265` button enabled on non-HDR displays; only `4K / DV HDR` greyed out when no HDR display detected; note text explains the 720p SDR ceiling
+
+## [2026.02.28.25] - 2026-02-28
+
+### Fixed
+- H265 HDR / 4K presets now fall back to HD H264 when the connected display reports no HDR support via HDMI EDID (`Display.getHdrCapabilities()`), preventing blank-screen output on SDR TVs
+
+### Added
+- About screen capability line now shows both H265 decoder and display HDR status on one line: `"Device H265/HEVC: Yes  ·  Display HDR: Yes (HDR10)"` — HDR type (HDR10, DV, HLG) shown when detected
+
+## [2026.02.28.24] - 2026-02-28
+
+### Changed
+- `HD_H265` preset renamed to **"H265 HDR10"** and changed to request `deviceHdrFormatsOverride=Hdr10` — Amazon only serves H265 above 720p when HDR is part of the request; Fire TV tonemaps to SDR on non-HDR displays (later superseded by v26 findings)
+
+## [2026.02.28.23] - 2026-02-28
+
+### Fixed
+- H265→H264 fallback now re-fetches the HD H264 manifest instead of restricting the track selector — UHD+H265 manifests only include H264 tracks up to 720p; the HD manifest provides H264 up to the tier maximum. Current resume position saved to `resumePrefs` before player release so `setupPlayer()` seeks to it automatically
+- Format label always shows HDR status — `else -> "SDR"` replaces `else -> ""` so label reads `720p · H265 · SDR` or `720p · H265 · HDR10` consistently
+- Format label updated at `STATE_READY` as well as `onVideoSizeChanged` / `onTracksChanged`
+- Added `Log.i` of height, sampleMimeType, codecs, colorTransfer on every format update for CDN debugging
+
+## [2026.02.28.22] - 2026-02-28
+
+### Fixed
+- `HD_H265` preset changed to `UHD` quality tier so Amazon serves H265 above 720p (later refined in v24/v26)
+- HDR detection in format label: added codec-string fallback — `hvc1.2.*` / `hev1.2.*` (HEVC Main 10 profile) → `HDR10`; `dvhe` / `dvav` (Dolby Vision) → `DV`; covers streams where MPD omits explicit colorimetry attributes
+
+## [2026.02.28.21] - 2026-02-28
+
+### Fixed
+- H265→H264 fallback is now instant — restricts `DefaultTrackSelector` to prefer `video/avc` and calls `player.prepare()` on the existing DASH source rather than releasing the player and re-fetching the manifest; no extra network round-trips (later revised in v23)
+- Video format label now reads `player.videoFormat` (live decoder format) via `onVideoSizeChanged` instead of reading from the track group selection, fixing spurious low-resolution readings (e.g. 208p seed representation)
+
+## [2026.02.28.20] - 2026-02-28
+
+### Fixed
+- `detectTerritory()` now returns immediately when territory has already been resolved — the H265 fallback was triggering a redundant `GetAppStartupConfig` round-trip on every retry
+- Video format label (`tv_video_format`) now updates on `onVideoSizeChanged` (every ABR switch) in addition to `onTracksChanged`, so it reflects the actual decoded resolution rather than the initial seed representation
+
+### Added
+- Video format label in player overlay — sits to the left of the Audio/Subtitle buttons, showing e.g. `720p · H265 · SDR` or `4K · H265 · HDR10`; updates live as ABR switches quality tiers
+
+## [2026.02.28.19] - 2026-02-28
+
+### Fixed
+- H265 CDN fallback: when `ERROR_CODE_IO_BAD_HTTP_STATUS` occurs during H265 playback, automatically switch to H264 without showing an error to the user. Shows a brief Toast notification. Guard flag prevents infinite retry loops
+
 ## [2026.02.28.18] - 2026-02-28
 
 ### Added
