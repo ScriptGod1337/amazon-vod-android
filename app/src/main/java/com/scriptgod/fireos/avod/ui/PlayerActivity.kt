@@ -160,9 +160,18 @@ class PlayerActivity : AppCompatActivity() {
             !info.isEncoder && info.supportedTypes.any { it.equals("video/hevc", ignoreCase = true) }
         }
 
+    /** Returns true if the connected display reports HDR support via HDMI EDID. */
+    @Suppress("DEPRECATION")
+    private fun displaySupportsHdr(): Boolean {
+        val caps = windowManager.defaultDisplay.hdrCapabilities ?: return false
+        return caps.supportedHdrTypes.isNotEmpty()
+    }
+
     /**
      * Resolves the effective PlaybackQuality for this playback session.
-     * Any H265 preset falls back to plain HD H264 when the device has no HEVC decoder.
+     * Falls back to HD H264 when:
+     *  - an H265 preset is selected but the device has no HEVC decoder, or
+     *  - an HDR preset is selected but the connected display doesn't report HDR support.
      */
     private fun resolveQuality(): PlaybackQuality {
         val pref = getSharedPreferences("settings", MODE_PRIVATE)
@@ -170,7 +179,13 @@ class PlayerActivity : AppCompatActivity() {
         val requested = PlaybackQuality.fromPrefValue(pref)
         if (requested.codecOverride.contains("H265") && !deviceSupportsH265()) {
             android.widget.Toast.makeText(
-                this, "H265 not supported on this device — falling back to H264", android.widget.Toast.LENGTH_LONG
+                this, "H265 not supported on this device — using HD H264", android.widget.Toast.LENGTH_LONG
+            ).show()
+            return PlaybackQuality.HD
+        }
+        if (requested.hdrOverride != "None" && !displaySupportsHdr()) {
+            android.widget.Toast.makeText(
+                this, "Display does not support HDR — using HD H264", android.widget.Toast.LENGTH_LONG
             ).show()
             return PlaybackQuality.HD
         }

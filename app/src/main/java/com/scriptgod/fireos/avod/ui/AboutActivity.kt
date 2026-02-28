@@ -60,13 +60,24 @@ class AboutActivity : AppCompatActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun setupQualitySection() {
-        // H265 capability indicator
+        // H265 decoder + display HDR capability indicators
         val supportsH265 = MediaCodecList(MediaCodecList.ALL_CODECS).codecInfos.any { info ->
             !info.isEncoder && info.supportedTypes.any { it.equals("video/hevc", ignoreCase = true) }
         }
+        val hdrTypes = windowManager.defaultDisplay.hdrCapabilities?.supportedHdrTypes ?: intArrayOf()
+        val hdrLabel = when {
+            android.view.Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION in hdrTypes &&
+            android.view.Display.HdrCapabilities.HDR_TYPE_HDR10 in hdrTypes -> "Yes (DV + HDR10)"
+            android.view.Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION in hdrTypes -> "Yes (Dolby Vision)"
+            android.view.Display.HdrCapabilities.HDR_TYPE_HDR10 in hdrTypes -> "Yes (HDR10)"
+            android.view.Display.HdrCapabilities.HDR_TYPE_HLG in hdrTypes   -> "Yes (HLG)"
+            hdrTypes.isNotEmpty() -> "Yes"
+            else -> "No"
+        }
         findViewById<TextView>(R.id.tv_h265_support).text =
-            "Device H265/HEVC support: ${if (supportsH265) "Yes" else "No"}"
+            "Device H265/HEVC: ${if (supportsH265) "Yes" else "No"}  ·  Display HDR: $hdrLabel"
 
         val prefs = getSharedPreferences("settings", MODE_PRIVATE)
         val btnHd     = findViewById<Button>(R.id.btn_quality_hd)
@@ -74,10 +85,15 @@ class AboutActivity : AppCompatActivity() {
         val btnUhd    = findViewById<Button>(R.id.btn_quality_uhd)
         val tvNote    = findViewById<TextView>(R.id.tv_quality_note)
 
+        val supportsDisplayHdr = hdrTypes.isNotEmpty()
         if (!supportsH265) {
             btnHdH265.isEnabled = false
             btnUhd.isEnabled    = false
             tvNote.text = "H265 HDR10 and 4K/DV require H265 decoder — not available on this device"
+        } else if (!supportsDisplayHdr) {
+            btnHdH265.isEnabled = false
+            btnUhd.isEnabled    = false
+            tvNote.text = "H265 HDR10 and 4K/DV require an HDR-capable display — not detected on current output"
         }
 
         fun updateButtons(selected: PlaybackQuality) {
