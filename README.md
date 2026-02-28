@@ -48,17 +48,17 @@ com.scriptgod.fireos.avod
 
 ## Screenshots
 
-| Login | Home Catalog | Search Suggestions |
-|:---:|:---:|:---:|
-| ![Login](screenshots/01_login.png) | ![Home](screenshots/02_home.png) | ![Search](screenshots/03_search.png) |
-
-| Watchlist | My Library | Series Filter |
-|:---:|:---:|:---:|
-| ![Watchlist](screenshots/04_watchlist.png) | ![Library](screenshots/05_library.png) | ![Filter](screenshots/06_filter.png) |
-
-| Season Selection | Episode List |
+| Home — Featured Carousel | Home — Multiple Rails |
 |:---:|:---:|
-| ![Seasons](screenshots/07_series_drilldown.png) | ![Episodes](screenshots/08_episodes.png) |
+| ![Home Featured](screenshots/02_home.png) | ![Home Multi Rails](screenshots/02b_home_multi.png) |
+
+| Login | Search Suggestions | Watchlist |
+|:---:|:---:|:---:|
+| ![Login](screenshots/01_login.png) | ![Search](screenshots/03_search.png) | ![Watchlist](screenshots/04_watchlist.png) |
+
+| My Library | Season Selection | Episode List |
+|:---:|:---:|:---:|
+| ![Library](screenshots/05_library.png) | ![Seasons](screenshots/07_series_drilldown.png) | ![Episodes](screenshots/08_episodes.png) |
 
 ## Roadmap
 
