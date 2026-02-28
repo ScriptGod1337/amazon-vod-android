@@ -304,12 +304,13 @@ class PlayerActivity : AppCompatActivity() {
         // Fallback: codec string profile — Amazon uses hvc1.2.* / hev1.2.* (HEVC Main 10)
         // exclusively for HDR10 content; Dolby Vision containers start with dvhe/dvav.
         val codecs = fmt.codecs ?: ""
+        Log.i(TAG, "Video format: ${fmt.height}p mime=${fmt.sampleMimeType} codecs=$codecs colorTransfer=${fmt.colorInfo?.colorTransfer}")
         val hdr = when {
             fmt.colorInfo?.colorTransfer == C.COLOR_TRANSFER_ST2084 -> "HDR10"
             fmt.colorInfo?.colorTransfer == C.COLOR_TRANSFER_HLG    -> "HLG"
             codecs.startsWith("dvhe") || codecs.startsWith("dvav")  -> "DV"
             codecs.startsWith("hvc1.2") || codecs.startsWith("hev1.2") -> "HDR10"
-            else -> ""
+            else -> "SDR"
         }
         tvVideoFormat.text = listOf(res, codec, hdr).filter { it.isNotEmpty() }.joinToString(" · ")
     }
@@ -320,6 +321,7 @@ class PlayerActivity : AppCompatActivity() {
                 Player.STATE_BUFFERING -> progressBar.visibility = View.VISIBLE
                 Player.STATE_READY -> {
                     progressBar.visibility = View.GONE
+                    updateVideoFormatLabel()
                     if (!streamReportingStarted) {
                         streamReportingStarted = true
                         startStreamReporting()
@@ -359,30 +361,27 @@ class PlayerActivity : AppCompatActivity() {
             stopStreamReporting()
 
             // Amazon's CDN returns HTTP 400 for H265 segment URLs on some titles.
-            // The DASH manifest already contains H264 representations (we request H264,H265).
-            // Instead of re-fetching the manifest, restrict the track selector to H264 and
-            // re-prepare the same source — no extra network calls, instant switch.
+            // The UHD manifest's H264 tracks only reach 720p — must re-fetch using the HD
+            // quality preset (H264-only manifest) to get 1080p H264. detectTerritory() is
+            // cached so the only overhead is one GetPlaybackResources round-trip.
             if (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS &&
                 currentQuality.codecOverride.contains("H265") &&
                 !h265FallbackAttempted) {
                 h265FallbackAttempted = true
                 val lastPos = player?.currentPosition ?: 0L
-                Log.w(TAG, "H265 CDN returned 400 — forcing H264 via track selector, resume at ${lastPos}ms")
+                Log.w(TAG, "H265 CDN returned 400 — re-fetching H264 manifest, resume at ${lastPos}ms")
                 android.widget.Toast.makeText(
                     this@PlayerActivity,
                     "H265 not available for this title — switching to H264",
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
-                trackSelector?.let { ts ->
-                    ts.parameters = ts.parameters.buildUpon()
-                        .setPreferredVideoMimeType(MimeTypes.VIDEO_H264)
-                        .build()
-                }
+                // Save position so setupPlayer() can seek to it via resumePrefs
+                if (lastPos > 10_000) resumePrefs.edit().putLong(currentAsin, lastPos).apply()
+                player?.release()
+                player = null
                 streamReportingStarted = false
                 watchSessionId = UUID.randomUUID().toString()
-                player?.prepare()
-                if (lastPos > 0) player?.seekTo(lastPos)
-                player?.playWhenReady = true
+                loadAndPlay(currentAsin, currentMaterialType, PlaybackQuality.HD)
                 return
             }
 
