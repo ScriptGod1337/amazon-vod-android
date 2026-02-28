@@ -79,6 +79,9 @@ class PlayerActivity : AppCompatActivity() {
     private val scope = CoroutineScope(Dispatchers.Main + scopeJob)
     private var heartbeatJob: Job? = null
     private var currentAsin: String = ""
+    private var currentMaterialType: String = "Feature"
+    private var currentQuality: PlaybackQuality = PlaybackQuality.HD
+    private var h265FallbackAttempted: Boolean = false
     private var watchSessionId: String = UUID.randomUUID().toString()
     private var pesSessionToken: String = ""
     private var heartbeatIntervalMs: Long = 60_000
@@ -171,11 +174,14 @@ class PlayerActivity : AppCompatActivity() {
         return requested
     }
 
-    private fun loadAndPlay(asin: String, materialType: String = "Feature") {
+    private fun loadAndPlay(asin: String, materialType: String = "Feature", qualityOverride: PlaybackQuality? = null) {
         progressBar.visibility = View.VISIBLE
         tvError.visibility = View.GONE
 
-        val quality = resolveQuality()
+        val quality = qualityOverride ?: resolveQuality()
+        currentMaterialType = materialType
+        currentQuality = quality
+        if (qualityOverride == null) h265FallbackAttempted = false  // fresh start resets guard
         Log.i(TAG, "Playback quality: ${quality.videoQuality} codec=${quality.codecOverride} hdr=${quality.hdrOverride}")
 
         scope.launch {
@@ -304,8 +310,29 @@ class PlayerActivity : AppCompatActivity() {
 
         override fun onPlayerError(error: PlaybackException) {
             Log.e(TAG, "Player error: ${error.errorCodeName}", error)
-            showError("Playback error: ${error.errorCodeName}\n${error.message}")
             stopStreamReporting()
+
+            // Amazon's CDN returns HTTP 400 for H265 segment URLs on some titles.
+            // Auto-retry with H264 before showing an error to the user.
+            if (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS &&
+                currentQuality.codecOverride.contains("H265") &&
+                !h265FallbackAttempted) {
+                h265FallbackAttempted = true
+                Log.w(TAG, "H265 CDN returned 400 — retrying with H264")
+                android.widget.Toast.makeText(
+                    this@PlayerActivity,
+                    "H265 not available for this title — switching to H264",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+                player?.release()
+                player = null
+                streamReportingStarted = false
+                watchSessionId = UUID.randomUUID().toString()
+                loadAndPlay(currentAsin, currentMaterialType, PlaybackQuality.HD)
+                return
+            }
+
+            showError("Playback error: ${error.errorCodeName}\n${error.message}")
         }
     }
 
