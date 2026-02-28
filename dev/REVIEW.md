@@ -46,6 +46,7 @@ Check for:
 | UI | `ui/PlayerActivity.kt` | ExoPlayer lifecycle, DRM setup, track selection, resume |
 | UI | `ui/RailsAdapter.kt` | Outer vertical ListAdapter for home carousels; inner ContentAdapter per rail |
 | UI | `ui/ContentAdapter.kt` | RecyclerView diffing, image loading, watchlist star, progress bar tinting |
+| UI | `ui/AboutActivity.kt` | Version info, masked device ID, token location, Sign Out flow |
 | UI | `ui/DpadEditText.kt` | Fire TV remote keyboard handling |
 | Model | `model/ContentRail.kt` | Rail data class (headerText, items, collectionId, paginationParams) |
 
@@ -66,18 +67,36 @@ The login mirrors `dev/register_device.py` exactly. Verify:
 2. **client_id format**: hex-encoded `{device_id}#A1MPSLFC7L5AFK` (NOT just device type)
 3. **Cookie handling**: Map-based cookie jar (deduplicates by `domain:name`), cleared on each attempt
 4. **FRC + map-md cookies**: fraud risk cookie (313 random bytes), app metadata cookie set before first request
-5. **OAuth URL construction**: opens amazon.com → follows sign-in link → modifies URL with PKCE params
-6. **Form submission**: extracts hidden fields + form action, POSTs credentials without following redirects
-7. **CVF handling**: detects Customer Verification Flow (email code) separately from TOTP MFA
-8. **Device registration**: POST to `/auth/register` with auth code + PKCE verifier → bearer tokens
-9. **Token storage**: writes to app-internal `filesDir/.device-token`, tries legacy `/data/local/tmp/` as fallback
+5. **App-identity headers**: OkHttp interceptor on the login client adds `X-Requested-With: com.amazon.avod.thirdpartyclient` and `x-gasc-enabled: true` to **every** login request. Without these, Amazon serves a browser-mode page that requires JS-set cookies and rejects the credential POST with "Please Enable Cookies".
+6. **OAuth URL construction**: opens amazon.com → follows sign-in link → modifies URL with PKCE params
+7. **Form submission**: extracts hidden fields + form action, POSTs credentials without following redirects; includes `Origin` header
+8. **CVF handling**: detects Customer Verification Flow (email code) separately from TOTP MFA
+9. **Device registration**: POST to `/auth/register` with auth code + PKCE verifier → bearer tokens
+10. **Token storage**: writes to app-internal `filesDir/.device-token`, tries legacy `/data/local/tmp/` as fallback
 
-### Token File Resolution
+### Token File Resolution (`LoginActivity.findTokenFile()`)
 
 All activities use `LoginActivity.findTokenFile(context)`:
-1. Check `filesDir/.device-token` (app-internal, written by in-app login)
-2. Fall back to `/data/local/tmp/.device-token` (legacy, pushed via ADB for development)
-3. Return `null` if neither exists → redirect to LoginActivity
+1. Check `filesDir/.device-token` (app-internal, written by in-app login) → return if exists
+2. Check `logged_out_at` timestamp in `auth` SharedPreferences
+3. If legacy `/data/local/tmp/.device-token` exists:
+   - `logged_out_at` absent → accept (no logout recorded)
+   - `file.lastModified() > logged_out_at` → accept fresh debug token, clear flag
+   - `file.lastModified() ≤ logged_out_at` → skip (stale token from before logout)
+4. Return `null` → LoginActivity shows login form
+
+**Why not delete**: app process cannot delete `/data/local/tmp/.device-token` (shell owns the
+directory). Timestamp comparison is used instead. See Decision 13 in `decisions.md`.
+
+### About Screen & Logout (`AboutActivity.kt`)
+
+- Displays: version (from PackageManager), package name, masked device ID (first 8 + last 4 chars), token file location
+- **Sign Out**: shows confirmation dialog → calls `performLogout()`:
+  1. Deletes `filesDir/.device-token` (succeeds)
+  2. Attempts `File("/data/local/tmp/.device-token").delete()` (may fail silently)
+  3. Sets `auth` pref `logged_out_at = currentTimeMillis()` (guards against stale legacy token)
+  4. Clears `resume_positions` SharedPreferences
+  5. Starts LoginActivity with `FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_CLEAR_TASK`
 
 ### DRM Review (`AmazonLicenseService.kt`)
 
@@ -116,6 +135,11 @@ All activities use `LoginActivity.findTokenFile(context)`:
 | Invalid credentials | Enter wrong password | Error message displayed, can retry |
 | Retry after failure | Fail login, try again | Fresh cookies, no "Please Enable Cookies" error |
 | Show password | Check "Show password" checkbox | Password becomes visible |
+| About screen | On home, click ⚙ gear button | AboutActivity opens: version, package, masked device ID, token location |
+| Sign Out | On About screen, click Sign Out → confirm | Returns to LoginActivity, does NOT bounce back to MainActivity |
+| Stale token after logout | Sign out, cold-restart without pushing token | Login screen remains (stale legacy token blocked by timestamp) |
+| Fresh token after logout | Sign out, `adb push token` + `adb shell touch token`, cold-restart | Skips login, goes to MainActivity (fresh mtime accepted) |
+| Re-login after logout | Sign out, enter credentials in login form | Successful login, `logged_out_at` cleared, MainActivity |
 
 #### 2. Browse & Navigation (emulator OK)
 

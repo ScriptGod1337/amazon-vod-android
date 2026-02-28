@@ -5,6 +5,7 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 ## Features
 
 - **In-app login** with Amazon email/password + MFA support (PKCE OAuth device registration)
+- **Sign Out** via About screen (⚙ gear button) — clears tokens and returns to login
 - **Home page horizontal carousels** — categorised rails (Featured, Trending, Top 10, etc.) matching the real Prime Video home layout, with page-level infinite scroll for more rails
 - **Watch progress bars** on content cards — amber for in-progress, synced with server-side `remainingTimeInSeconds` so progress from the official app shows up here too
 - Browse home catalog, watchlist, and personal library
@@ -39,6 +40,7 @@ com.scriptgod.fireos.avod
  +-- ui/
      +-- LoginActivity.kt          Amazon login: email/password + MFA, PKCE OAuth, device registration
      +-- MainActivity.kt           Home screen: rails or grid, search, nav, filters, pagination
+     +-- AboutActivity.kt          App info (version, device ID) and Sign Out
      +-- BrowseActivity.kt         Series detail: seasons / episodes grid
      +-- PlayerActivity.kt         ExoPlayer with DASH + Widevine DRM, track selection, resume
      +-- RailsAdapter.kt           Outer vertical adapter (one row per ContentRail)
@@ -65,8 +67,9 @@ com.scriptgod.fireos.avod
 See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history and upcoming work.
 
 **Recently completed:**
-- **Phase 19** — Home page horizontal carousels (v2 landing API rails, watch progress bars)
-- **Fix** — Watch progress bars now show correctly in search results, Freevee, and Library (grid views were missing the server-side progress merge that home rails already had)
+- **Phase 20** — About screen with version info and Sign Out (⚙ gear button in nav)
+- **Fix** — In-app login "Session expired" — missing `X-Requested-With` / `x-gasc-enabled` headers caused Amazon to serve browser-mode login page requiring JS cookies
+- **Fix** — Logout correctly blocks stale legacy dev token via `logged_out_at` timestamp; fresh `adb push` + `touch` still works
 
 **Next up:**
 - **Phase 21** — AI Code Review (security audit, code quality, best practices)

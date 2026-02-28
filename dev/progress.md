@@ -523,27 +523,93 @@ legitimately unwatched watchlist bookmarks — this is correct behaviour.
 
 ---
 
-## Phase 20: PENDING — About / App Info + Logout
-
-### Goal
-Add an About screen accessible from the nav bar showing version info and allowing logout.
+## Phase 20: COMPLETE — About / App Info + Logout
 
 ### Features
-- App version, package name (from `PackageManager`)
-- Device ID (masked, from token file)
-- Token file location (internal `filesDir` vs legacy `/data/local/tmp/`)
-- **Logout button**: deletes token file(s), clears `resume_positions` SharedPreferences, returns to `LoginActivity`
+- ⚙ gear button pushed to the far right of the nav bar via a weighted spacer View
+- **About screen** shows: app version (from `PackageManager`), package name, masked device ID (first 8 + last 4 chars), token file location (internal storage vs legacy `/data/local/tmp`)
+- **Sign Out button** (red, with confirmation dialog): deletes internal token, sets `logged_out_at` timestamp in `auth` SharedPreferences, clears `resume_positions`, starts LoginActivity with `FLAG_ACTIVITY_CLEAR_TASK`
 
 ### Files
-- `ui/AboutActivity.kt` — new screen
-- `res/layout/activity_about.xml` — new layout (ScrollView, info rows, Sign Out button)
-- `activity_main.xml` — add `btn_about` at end of nav row (pushed right with spacer)
-- `MainActivity.kt` — bind `btnAbout`, launch `AboutActivity` on click; handle `RESULT_LOGOUT` to finish itself
-- `AndroidManifest.xml` — register `AboutActivity`
+- `ui/AboutActivity.kt` — new; reads token via `LoginActivity.findTokenFile()`, shows info, performs logout
+- `res/layout/activity_about.xml` — ScrollView with APP and ACCOUNT sections, red Sign Out button
+- `activity_main.xml` — added weighted spacer + `btn_about` gear button at right end of nav row
+- `MainActivity.kt` — added `btnAbout` field, click → `startActivity(AboutActivity)`
+- `AndroidManifest.xml` — registered `AboutActivity` (not exported)
+
+### Logout mechanism (multi-commit)
+
+#### Problem: legacy token cannot be deleted
+`File("/data/local/tmp/.device-token").delete()` silently returns `false` — the app process lacks
+write permission on `/data/local/tmp` (directory owned by `shell`). Without a guard, LoginActivity's
+`findTokenFile()` finds the surviving legacy file and immediately bounces back to MainActivity.
+
+#### Solution: `logged_out_at` timestamp
+- `performLogout()` stores `logged_out_at = System.currentTimeMillis()` in `auth` SharedPreferences
+- `findTokenFile()` compares legacy file's `lastModified()` against `logged_out_at`:
+  - File older than logout → skip (stale token) → return null → login screen
+  - File newer than logout → accept (fresh debug token pushed after logout) → clear flag → auto-login
+- `launchMain()` clears `logged_out_at` on real login
+
+#### `adb push` mtime pitfall
+`adb push` preserves the host file's mtime, so a bare push of a 2026-02-26 file appears older than
+a 2026-02-28 logout. Developer must run `adb shell touch` after push:
+```bash
+adb push .device-token /data/local/tmp/.device-token
+adb shell touch /data/local/tmp/.device-token
+```
+
+### Verified
+- ⚙ button visible top-right on all nav pages
+- About screen shows correct version (2026.02.28.x), masked device ID, token location
+- Sign Out → confirmation dialog → LoginActivity shown, does NOT bounce back
+- Push + touch fresh token after logout → cold restart auto-logins
+- Tags: v2026.02.28.2 (initial) … v2026.02.28.4 (timestamp fix)
 
 ---
 
-## Phase 17: PENDING — AI Code Review
+## In-App Login Fix (post-Phase 20)
+
+### Bug
+After signing out and trying to log back in via the login form, Amazon returned "Please Enable Cookies
+to Continue" (2950-byte response) on the credential POST — every time, not intermittently.
+
+### Root cause
+Amazon serves two different login page modes depending on request headers:
+- **Browser mode** (default): requires JavaScript-set cookies for CSRF validation → fails in plain HTTP client
+- **App mode** (`X-Requested-With: com.amazon.avod.thirdpartyclient` + `x-gasc-enabled: true`): accepts
+  the credential POST without JS cookies
+
+The `register_device.py` reference script sets these headers globally on its `requests.Session`.
+The `LoginActivity` OkHttp client was only setting `User-Agent` and was not sending `X-Requested-With`
+or `x-gasc-enabled`, so Amazon served the browser-mode page whose form submission requires cookies
+that only JavaScript can set.
+
+Additional fixes in the same commit:
+- Added `Origin: https://www.amazon.com` to the credential POST (browsers send this on form submit)
+- Aligned `Accept-Language` value (`en-US,en;q=0.9`) across all login requests
+
+### Fix (`LoginActivity.kt`)
+Added an OkHttp application interceptor to the login `httpClient` that appends the two headers to
+**every** request in the login flow (homepage, sign-in link, OAuth URL, credential POST):
+```kotlin
+.addInterceptor { chain ->
+    val req = chain.request().newBuilder()
+        .header("X-Requested-With", AmazonAuthService.APP_NAME)
+        .header("x-gasc-enabled", "true")
+        .build()
+    chain.proceed(req)
+}
+```
+
+### Verified
+- In-app login now works: email + password → CVF/MFA (if required) → MainActivity
+- Sign Out → re-login via form → success
+- Tag: v2026.02.28.5
+
+---
+
+## Phase 21: PENDING — AI Code Review
 
 Full codebase review performed by an AI agent using `dev/REVIEW.md` as the checklist.
 
@@ -562,7 +628,7 @@ Full codebase review performed by an AI agent using `dev/REVIEW.md` as the check
 - Suggested fixes for any issues found
 - Confirmation that security checklist passes
 
-## Phase 18: PENDING — UI Redesign
+## Phase 22: PENDING — UI Redesign
 
 Redesign the app UI from functional prototype to a polished, modern streaming experience.
 

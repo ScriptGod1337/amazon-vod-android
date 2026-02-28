@@ -179,6 +179,53 @@ The v2 landing API (`landing/initial/v2.kt`) returns structured rails with `coll
 
 ---
 
+## Decision 12: Login HTTP client must send app-identity headers on all requests
+
+Amazon's sign-in page detects whether the HTTP client is a browser or a native app via the
+`X-Requested-With` and `x-gasc-enabled` request headers. Without them, Amazon serves a
+browser-mode login page that relies on JavaScript to set CSRF cookies before the credential POST.
+A plain HTTP client (no JS execution) therefore receives "Please Enable Cookies to Continue" on
+every credential POST, regardless of how many real cookies are present.
+
+The reference Python script (`dev/register_device.py`) sets these headers globally on its
+`requests.Session`:
+```python
+'X-Requested-With': 'com.amazon.avod.thirdpartyclient'
+'x-gasc-enabled':   'true'
+```
+
+**Fix**: The `LoginActivity` OkHttp client adds an application interceptor that injects both headers
+into every request in the login flow (homepage, sign-in link, OAuth page, credential POST).
+
+**Related to Decision 3** (device identity / SHIELD fingerprint) and **Decision 6** (headers
+removed from token-refresh calls — `AmazonAuthService` must NOT send `x-gasc-enabled` or
+`X-Requested-With` to the token refresh endpoint; only the login HTTP client needs them).
+
+---
+
+## Decision 13: Logout uses `logged_out_at` timestamp, not file deletion
+
+The legacy dev token at `/data/local/tmp/.device-token` cannot be deleted by the app process
+(directory owned by `shell`, app UID lacks write permission). A silent `File.delete()` failure
+means `findTokenFile()` finds the old token and immediately bounces the user back to MainActivity.
+
+**Approach**: Store `logged_out_at = System.currentTimeMillis()` in the `auth` SharedPreferences
+on sign-out. `findTokenFile()` compares the legacy file's `lastModified()` (mtime) against this
+timestamp:
+- `mtime ≤ logged_out_at` → stale token from before logout → skip
+- `mtime > logged_out_at` → file was written/touched after logout → accept (fresh dev push)
+- `logged_out_at` absent (0L) → no logout recorded → accept
+
+**`adb push` mtime pitfall**: `adb push` preserves the source file's mtime from the host. A token
+file last modified 2026-02-26 appears older than a 2026-02-28 logout timestamp. Developers must
+`adb shell touch` the file after pushing to update mtime to the current device time.
+
+**`launchMain()`** clears `logged_out_at` from SharedPreferences on every successful login, so a
+fresh in-app login fully resets the state and the legacy token is usable again on the next
+cold start.
+
+---
+
 ## Workarounds
 
 ### POST with empty body for catalog requests
