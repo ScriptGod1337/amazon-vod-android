@@ -5,15 +5,17 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 ## Features
 
 - **In-app login** with Amazon email/password + MFA support (PKCE OAuth device registration)
+- **Home page horizontal carousels** — categorised rails (Featured, Trending, Top 10, etc.) matching the real Prime Video home layout, with page-level infinite scroll for more rails
+- **Watch progress bars** on content cards — amber for in-progress, synced with server-side `remainingTimeInSeconds` so progress from the official app shows up here too
 - Browse home catalog, watchlist, and personal library
 - Search with instant results
-- Filter by source (All / Prime) and type (Movies / Series) -- filters combine independently
-- Series drill-down: show -> seasons -> episodes -> play
+- Filter by source (All / Prime) and type (Movies / Series) — filters combine independently
+- Series drill-down: show → seasons → episodes → play
 - Widevine L1 hardware-secure playback (DASH/MPD)
 - **Audio & subtitle track selection** during playback (5.1/Stereo audio, SDH/Forced/Regular subtitles)
 - **Watch progress tracking** via UpdateStream API (START/PLAY/PAUSE/STOP)
-- **Resume from last position** -- automatically seeks to where you left off
-- Watchlist management (long-press to add/remove)
+- **Resume from last position** — automatically seeks to where you left off
+- Watchlist management (long-press to add/remove, star indicator)
 - Library with pagination, sub-filters (Movies / TV Shows), and sort (Recent / A-Z / Z-A)
 - Freevee section (territory-dependent)
 - D-pad navigation optimized for Fire TV remote
@@ -31,14 +33,16 @@ com.scriptgod.fireos.avod
  +-- drm/
  |   +-- AmazonLicenseService.kt   Widevine license: wraps challenge as widevine2Challenge, unwraps widevine2License
  +-- model/
- |   +-- ContentItem.kt            Content data model (asin, title, imageUrl, contentType, isPrime, ...)
+ |   +-- ContentItem.kt            Content data model (asin, title, imageUrl, contentType, watchProgressMs, ...)
+ |   +-- ContentRail.kt            Named row of ContentItems (headerText, items, collectionId)
  |   +-- TokenData.kt              Token JSON model (access_token, refresh_token, device_id, expires_at)
  +-- ui/
      +-- LoginActivity.kt          Amazon login: email/password + MFA, PKCE OAuth, device registration
-     +-- MainActivity.kt           Home screen: search, nav, filters, content grid
+     +-- MainActivity.kt           Home screen: rails or grid, search, nav, filters, pagination
      +-- BrowseActivity.kt         Series detail: seasons / episodes grid
      +-- PlayerActivity.kt         ExoPlayer with DASH + Widevine DRM, track selection, resume
-     +-- ContentAdapter.kt         RecyclerView adapter with poster images (Coil), watchlist star
+     +-- RailsAdapter.kt           Outer vertical adapter (one row per ContentRail)
+     +-- ContentAdapter.kt         Inner horizontal adapter with poster, watchlist star, progress bar
      +-- DpadEditText.kt           EditText with Fire TV remote keyboard handling
 ```
 
@@ -60,9 +64,12 @@ com.scriptgod.fireos.avod
 
 See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history and upcoming work.
 
+**Recently completed:**
+- **Phase 19** — Home page horizontal carousels (v2 landing API rails, watch progress bars)
+
 **Next up:**
 - **Phase 17** — AI Code Review (security audit, code quality, best practices)
-- **Phase 18** — UI Redesign (hero banners, horizontal carousels, animations, polished streaming UX)
+- **Phase 18** — UI Redesign (hero banners, animations, polished streaming UX)
 
 ## Requirements
 
@@ -82,8 +89,8 @@ Output: `app/build/outputs/apk/release/app-release.apk`
 
 ```bash
 ./gradlew assembleRelease \
-  -PversionNameOverride=2026.02.26_1 \
-  -PversionCodeOverride=20260226
+  -PversionNameOverride=2026.02.28.1 \
+  -PversionCodeOverride=20260228
 ```
 
 ## Deploy to Fire TV
@@ -114,7 +121,7 @@ The app auto-detects an existing token and skips the login screen. Generate the 
 
 ## CI/CD
 
-GitHub Actions builds APKs on version tags (`v*`), pull requests to `main`, and manual dispatch. Versioning uses the date format `YYYY.MM.DD_N` (e.g., `2026.02.26_1`).
+GitHub Actions builds APKs on version tags (`v*`), pull requests to `main`, and manual dispatch. Versioning uses the date format `YYYY.MM.DD.N` (e.g., `2026.02.27.5`).
 
 [View recent builds](https://github.com/ScriptGod1337/amazon-vod-android/actions) | [Download latest release](https://github.com/ScriptGod1337/amazon-vod-android/releases/latest)
 
@@ -133,7 +140,7 @@ base64 -w0 release.keystore | pbcopy  # macOS
 base64 -w0 release.keystore           # Linux (pipe to clipboard)
 ```
 
-Pushing a version tag (e.g., `git tag v2026.02.26_1 && git push --tags`) creates a GitHub Release with the signed APK attached.
+Pushing a version tag (e.g., `git tag v2026.02.28.1 && git push --tags`) creates a GitHub Release with the signed APK attached.
 
 ## Emulator notes
 
