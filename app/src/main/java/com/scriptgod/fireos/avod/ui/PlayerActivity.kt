@@ -162,18 +162,17 @@ class PlayerActivity : AppCompatActivity() {
 
     /**
      * Resolves the effective PlaybackQuality for this playback session.
-     * Reads the saved preference; if UHD_HDR is requested but the device has no H265 decoder,
-     * falls back to HD_H265 and shows a Toast so the user knows.
+     * Any H265 preset falls back to plain HD H264 when the device has no HEVC decoder.
      */
     private fun resolveQuality(): PlaybackQuality {
         val pref = getSharedPreferences("settings", MODE_PRIVATE)
             .getString(PlaybackQuality.PREF_KEY, null)
         val requested = PlaybackQuality.fromPrefValue(pref)
-        if (requested == PlaybackQuality.UHD_HDR && !deviceSupportsH265()) {
+        if (requested.codecOverride.contains("H265") && !deviceSupportsH265()) {
             android.widget.Toast.makeText(
-                this, "4K/HDR requires H265 — falling back to HD+H265", android.widget.Toast.LENGTH_LONG
+                this, "H265 not supported on this device — falling back to H264", android.widget.Toast.LENGTH_LONG
             ).show()
-            return PlaybackQuality.HD_H265
+            return PlaybackQuality.HD
         }
         return requested
     }

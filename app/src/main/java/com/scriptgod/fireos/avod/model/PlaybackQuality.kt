@@ -12,10 +12,14 @@ data class PlaybackQuality(
 ) {
     companion object {
         /** 1080p SDR H264 — safe default, works on all devices */
-        val HD     = PlaybackQuality("HD",  "H264",      "None")
-        /** 1080p SDR H265 — uses UHD quality tier to unlock 1080p H265 (HD tier caps at 720p H265) */
-        val HD_H265 = PlaybackQuality("UHD", "H264,H265", "None")
-        /** 4K HDR — requires H265 hardware decoder and compatible display */
+        val HD      = PlaybackQuality("HD",  "H264",      "None")
+        /**
+         * H265 HDR10 — requests Hdr10 to unlock 1080p+ H265 streams.
+         * Amazon serves H265 only up to 720p when HDR=None; Hdr10 is required for 1080p+.
+         * Fire TV / TV tonemaps to SDR automatically if the display is not HDR-capable.
+         */
+        val HD_H265 = PlaybackQuality("UHD", "H264,H265", "Hdr10")
+        /** 4K Dolby Vision / HDR10 — requires H265 decoder and HDR-capable display */
         val UHD_HDR = PlaybackQuality("UHD", "H264,H265", "Hdr10,DolbyVision")
 
         const val PREF_KEY = "video_quality"

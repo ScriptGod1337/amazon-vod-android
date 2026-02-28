@@ -77,7 +77,7 @@ class AboutActivity : AppCompatActivity() {
         if (!supportsH265) {
             btnHdH265.isEnabled = false
             btnUhd.isEnabled    = false
-            tvNote.text = "H265 and 4K/HDR require H265 decoder — not available on this device"
+            tvNote.text = "H265 HDR10 and 4K/DV require H265 decoder — not available on this device"
         }
 
         fun updateButtons(selected: PlaybackQuality) {
@@ -103,9 +103,9 @@ class AboutActivity : AppCompatActivity() {
     }
 
     private fun btnLabel(q: PlaybackQuality) = when (q) {
-        PlaybackQuality.HD_H265 -> "HD (H265)"
-        PlaybackQuality.UHD_HDR -> "4K / HDR"
-        else                    -> "HD (H264)"
+        PlaybackQuality.HD_H265 -> "H265 HDR10"
+        PlaybackQuality.UHD_HDR -> "4K / DV HDR"
+        else                    -> "HD H264"
     }
 
     private fun performLogout() {
