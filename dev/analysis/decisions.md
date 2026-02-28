@@ -265,16 +265,24 @@ Three quality presets, stored in SharedPreferences `"settings"` key `"video_qual
 | `"HD_H265"` | `HD` | `H264,H265` | `None` | **720p H265 SDR** — same resolution as HD H264; H265 gives slightly better compression at 720p; no HDR display needed |
 | `"UHD_HDR"` | `UHD` | `H264,H265` | `Hdr10,DolbyVision` | **4K H265 HDR** — requires H265 decoder + HDR display |
 
-**Key finding**: Amazon's `HD` quality tier caps at **720p** for both H264 and H265 SDR streams.
-There is **no 1080p SDR** option; 1080p+ content requires the `UHD` quality tier with HDR.
-The practical resolution choices are: 720p SDR (H264 or H265) or 4K HDR.
+**Key finding (empirical)**: Amazon's `HD` quality tier was observed at **720p** for both
+H264 and H265 SDR on two test titles. This is a CDN-side policy — the APK does not
+encode a 720p resolution limit in client code. The 720p cap is likely correct in general
+but is based on observation, not APK proof.
+
+**No confirmed 1080p SDR option**: 1080p+ from `UHD+HDR` is confirmed. A hypothetical
+`HD+Hdr10` → 1080p HDR path is **unconfirmed** — see `dev/analysis/quality-tier-analysis.md`.
 
 **Kodi reference**: `network.py:210-212` and `supported_hdr()` function (`network.py:231-239`).
 
 **Exact string values** confirmed in decompiled Prime APK:
-- `VideoQuality` enum (`.../PlaybackResourceServiceConstants$VideoQuality.smali`): `SD`, `HD`, `UHD`
-- `HdrFormat` enum (`.../PlaybackResourceServiceConstants$HdrFormat.smali`): `None`, `Hdr10`, `DolbyVision`
+- `VideoQuality` enum (`.../atvplaybackdevice/types/VideoQuality.smali`): `SD`, `HD`, `UHD`
+- `HdrFormat` enum (`.../atvplaybackdevice/types/HdrFormat.smali`): `None`, `Hdr10`, `DolbyVision`
 - `Codec` enum (`.../atvplaybackdevice/types/Codec.smali`): `H264`, `H265`
+- `ThirdPartyProfileName` enum: `HD`, `HD_HEVC`, **`HDR`** (separate from `UHD_HDR`), `UHD_HDR`
+- `QualityConfig$Values` enum: `GOOD`, `BETTER`, `BEST`, **`BEST_1080`**, `DATA_SAVER`
+
+**Full APK quality tier analysis**: `dev/analysis/quality-tier-analysis.md`
 
 **Codec param format**: `H264,H265` comma-separated — Kodi does `'H264' + (',H265' if _s.use_h265 else '')`.
 
