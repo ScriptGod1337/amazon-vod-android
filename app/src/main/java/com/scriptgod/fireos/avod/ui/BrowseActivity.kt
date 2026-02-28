@@ -12,6 +12,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.scriptgod.fireos.avod.R
 import com.scriptgod.fireos.avod.api.AmazonApiService
@@ -36,6 +37,7 @@ class BrowseActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
+    private lateinit var shimmerRecyclerView: RecyclerView
     private lateinit var tvError: TextView
     private lateinit var tvTitle: TextView
     private lateinit var tvSubtitle: TextView
@@ -50,6 +52,7 @@ class BrowseActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recycler_view)
         progressBar = findViewById(R.id.progress_bar)
+        shimmerRecyclerView = findViewById(R.id.shimmer_recycler_view)
         tvError = findViewById(R.id.tv_error)
         tvTitle = findViewById(R.id.tv_browse_title)
         tvSubtitle = findViewById(R.id.tv_browse_subtitle)
@@ -65,8 +68,10 @@ class BrowseActivity : AppCompatActivity() {
             onItemClick = { item -> onItemSelected(item) },
             onMenuKey = { item -> showItemMenu(item) }
         )
-        recyclerView.layoutManager = GridLayoutManager(this, 5)
+        recyclerView.layoutManager = GridLayoutManager(this, 4)
         recyclerView.adapter = adapter
+        shimmerRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        shimmerRecyclerView.adapter = ShimmerAdapter()
 
         val asin = intent.getStringExtra(EXTRA_ASIN) ?: return
         val title = intent.getStringExtra(EXTRA_TITLE) ?: ""
@@ -95,7 +100,7 @@ class BrowseActivity : AppCompatActivity() {
     }
 
     private fun loadDetails(asin: String, filterType: String? = null, fallbackImage: String = "") {
-        progressBar.visibility = View.VISIBLE
+        showLoadingState()
         tvError.visibility = View.GONE
         lifecycleScope.launch {
             try {
@@ -103,7 +108,7 @@ class BrowseActivity : AppCompatActivity() {
                     apiService.detectTerritory()
                     apiService.getDetailPage(asin)
                 }
-                progressBar.visibility = View.GONE
+                hideLoadingState()
                 Log.i(TAG, "Detail page for $asin returned ${items.size} items, types: ${items.map { it.contentType }.distinct()}")
 
                 val filtered = when (filterType) {
@@ -135,9 +140,11 @@ class BrowseActivity : AppCompatActivity() {
                 } else filtered
 
                 if (withImages.isEmpty()) {
+                    recyclerView.visibility = View.GONE
                     tvError.text = "No content found"
                     tvError.visibility = View.VISIBLE
                 } else {
+                    recyclerView.visibility = View.VISIBLE
                     val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
                     val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
                     val withProgress = withImages.map { it.copy(watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs) }
@@ -152,11 +159,24 @@ class BrowseActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading details for $asin", e)
-                progressBar.visibility = View.GONE
+                hideLoadingState()
+                recyclerView.visibility = View.GONE
                 tvError.text = "Error: ${e.message}"
                 tvError.visibility = View.VISIBLE
             }
         }
+    }
+
+    private fun showLoadingState() {
+        progressBar.visibility = View.GONE
+        recyclerView.visibility = View.GONE
+        shimmerRecyclerView.visibility = View.VISIBLE
+        tvError.visibility = View.GONE
+    }
+
+    private fun hideLoadingState() {
+        progressBar.visibility = View.GONE
+        shimmerRecyclerView.visibility = View.GONE
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {

@@ -9,6 +9,7 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -19,7 +20,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.scriptgod.fireos.avod.R
-import android.widget.LinearLayout
 import com.scriptgod.fireos.avod.api.AmazonApiService
 import com.scriptgod.fireos.avod.model.ContentRail
 import com.scriptgod.fireos.avod.api.AmazonApiService.LibraryFilter
@@ -38,10 +38,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var recyclerView: RecyclerView
+    private lateinit var shimmerRecyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
     private lateinit var tvError: TextView
+    private lateinit var searchRow: LinearLayout
     private lateinit var etSearch: DpadEditText
     private lateinit var btnSearch: Button
+    private lateinit var btnSearchIcon: Button
     private lateinit var btnHome: Button
     private lateinit var btnFreevee: Button
     private lateinit var btnWatchlist: Button
@@ -50,7 +53,9 @@ class MainActivity : AppCompatActivity() {
 
     // Category buttons — two independent groups
     private lateinit var categoryFilterRow: LinearLayout
+    private lateinit var sourceFilterSection: LinearLayout
     private lateinit var sourceFilterGroup: LinearLayout
+    private lateinit var typeFilterSection: LinearLayout
     private lateinit var btnCatAll: Button
     private lateinit var btnCatPrime: Button
     private lateinit var btnTypeAll: Button
@@ -93,10 +98,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         recyclerView = findViewById(R.id.recycler_view)
+        shimmerRecyclerView = findViewById(R.id.shimmer_recycler_view)
         progressBar = findViewById(R.id.progress_bar)
         tvError = findViewById(R.id.tv_error)
+        searchRow = findViewById(R.id.search_row)
         etSearch = findViewById(R.id.et_search)
         btnSearch = findViewById(R.id.btn_search)
+        btnSearchIcon = findViewById(R.id.btn_search_icon)
         btnHome = findViewById(R.id.btn_home)
         btnFreevee = findViewById(R.id.btn_freevee)
         btnWatchlist = findViewById(R.id.btn_watchlist)
@@ -104,7 +112,9 @@ class MainActivity : AppCompatActivity() {
         btnAbout = findViewById(R.id.btn_about)
 
         categoryFilterRow = findViewById(R.id.category_filter_row)
+        sourceFilterSection = findViewById(R.id.source_filter_section)
         sourceFilterGroup = findViewById(R.id.source_filter_group)
+        typeFilterSection = findViewById(R.id.type_filter_section)
         btnCatAll = findViewById(R.id.btn_cat_all)
         btnCatPrime = findViewById(R.id.btn_cat_prime)
         btnTypeAll = findViewById(R.id.btn_type_all)
@@ -134,9 +144,12 @@ class MainActivity : AppCompatActivity() {
             onItemClick = { item -> onItemSelected(item) },
             onMenuKey = { item -> showItemMenu(item) }
         )
-        val gridLayoutManager = GridLayoutManager(this, 5)
+        shimmerRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        shimmerRecyclerView.adapter = ShimmerAdapter()
+        val gridLayoutManager = GridLayoutManager(this, 4)
         recyclerView.layoutManager = gridLayoutManager
         recyclerView.adapter = adapter
+        recyclerView.itemAnimator = null
 
         // On Fire TV: EditText gets D-pad focus (highlight) but keyboard only
         // shows when user presses DPAD_CENTER (click). stateHidden in manifest
@@ -151,10 +164,8 @@ class MainActivity : AppCompatActivity() {
 
         // Handle back press while keyboard is showing (onKeyPreIme intercepts before IME)
         etSearch.onBackPressedWhileFocused = {
-            Log.i(TAG, "Back pressed while search focused — hiding keyboard")
-            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.hideSoftInputFromWindow(etSearch.windowToken, 0)
-            etSearch.clearFocus()
+            Log.i(TAG, "Back pressed while search focused — collapsing search")
+            hideSearchRow()
             recyclerView.requestFocus()
         }
 
@@ -176,6 +187,7 @@ class MainActivity : AppCompatActivity() {
 
         // Search button click
         btnSearch.setOnClickListener { dismissKeyboardAndSearch() }
+        btnSearchIcon.setOnClickListener { toggleSearchRow() }
 
         // Navigation buttons
         btnHome.setOnClickListener { loadNav("home") }
@@ -222,6 +234,8 @@ class MainActivity : AppCompatActivity() {
         // Give initial focus to recycler, not the search field (prevents keyboard on startup)
         etSearch.clearFocus()
         recyclerView.requestFocus()
+        updateNavButtonHighlight()
+        updateFilterHighlights()
 
         // Hide filter rows on initial home load (rails are server-curated)
         updateFilterRowVisibility()
@@ -241,11 +255,37 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun dismissKeyboardAndSearch() {
-        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(etSearch.windowToken, 0)
+        hideKeyboard()
         etSearch.clearFocus()
         recyclerView.requestFocus()
         performSearch()
+    }
+
+    private fun toggleSearchRow() {
+        if (searchRow.visibility == View.VISIBLE) hideSearchRow()
+        else showSearchRow()
+    }
+
+    private fun showSearchRow() {
+        searchRow.visibility = View.VISIBLE
+        etSearch.requestFocus()
+        showKeyboard()
+    }
+
+    private fun hideSearchRow() {
+        hideKeyboard()
+        searchRow.visibility = View.GONE
+        etSearch.clearFocus()
+    }
+
+    private fun showKeyboard() {
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.showSoftInput(etSearch, InputMethodManager.SHOW_FORCED)
+    }
+
+    private fun hideKeyboard() {
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(etSearch.windowToken, 0)
     }
 
     // --- Filter selection (two independent dimensions) ---
@@ -267,22 +307,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateFilterHighlights() {
-        val activeColor = Color.parseColor("#00A8E0")
-        val inactiveColor = Color.parseColor("#555555")
-        val activeText = Color.BLACK
-        val inactiveText = Color.WHITE
-
         // Source group
         listOf(btnCatAll to "all", btnCatPrime to "prime").forEach { (btn, value) ->
             val active = value == sourceFilter
-            btn.backgroundTintList = android.content.res.ColorStateList.valueOf(if (active) activeColor else inactiveColor)
-            btn.setTextColor(if (active) activeText else inactiveText)
+            btn.isSelected = active
         }
         // Type group
         listOf(btnTypeAll to "all", btnCatMovies to "movies", btnCatSeries to "series").forEach { (btn, value) ->
             val active = value == typeFilter
-            btn.backgroundTintList = android.content.res.ColorStateList.valueOf(if (active) activeColor else inactiveColor)
-            btn.setTextColor(if (active) activeText else inactiveText)
+            btn.isSelected = active
         }
     }
 
@@ -388,20 +421,13 @@ class MainActivity : AppCompatActivity() {
     // --- Nav button highlight ---
 
     private fun updateNavButtonHighlight() {
-        val activeColor = Color.parseColor("#00A8E0")
-        val inactiveColor = Color.parseColor("#333333")
-        val activeText = Color.BLACK
-        val inactiveText = Color.WHITE
-
         listOf(
             btnHome to "home",
             btnFreevee to "freevee",
             btnWatchlist to "watchlist",
             btnLibrary to "library"
         ).forEach { (btn, page) ->
-            val active = page == currentNavPage
-            btn.backgroundTintList = android.content.res.ColorStateList.valueOf(if (active) activeColor else inactiveColor)
-            btn.setTextColor(if (active) activeText else inactiveText)
+            btn.isSelected = page == currentNavPage
         }
     }
 
@@ -409,37 +435,72 @@ class MainActivity : AppCompatActivity() {
         when (currentNavPage) {
             "library" -> {
                 categoryFilterRow.visibility = View.GONE
+                sourceFilterSection.visibility = View.GONE
+                sourceFilterGroup.visibility = View.GONE
+                typeFilterSection.visibility = View.GONE
                 libraryFilterRow.visibility = View.VISIBLE
                 setNavFocusTarget(R.id.btn_lib_all)
             }
             "home" -> {
-                // Show type filters (Movies/Series) but hide source group (All/Prime)
                 categoryFilterRow.visibility = View.VISIBLE
+                sourceFilterSection.visibility = View.GONE
                 sourceFilterGroup.visibility = View.GONE
+                typeFilterSection.visibility = View.VISIBLE
                 libraryFilterRow.visibility = View.GONE
                 setNavFocusTarget(R.id.btn_type_all)
             }
             "watchlist" -> {
                 categoryFilterRow.visibility = View.VISIBLE
+                sourceFilterSection.visibility = View.VISIBLE
                 sourceFilterGroup.visibility = View.VISIBLE
+                typeFilterSection.visibility = View.VISIBLE
                 libraryFilterRow.visibility = View.GONE
                 setNavFocusTarget(R.id.btn_cat_all)
             }
             else -> {
                 categoryFilterRow.visibility = View.GONE
+                sourceFilterSection.visibility = View.GONE
+                sourceFilterGroup.visibility = View.GONE
+                typeFilterSection.visibility = View.GONE
                 libraryFilterRow.visibility = View.GONE
                 setNavFocusTarget(R.id.recycler_view)
             }
         }
+        updateFilterFocusTargets()
     }
 
     private fun setNavFocusTarget(targetId: Int) {
+        val cardFocusTarget = if (targetId == R.id.recycler_view) R.id.btn_home else targetId
         btnHome.nextFocusDownId = targetId
         btnFreevee.nextFocusDownId = targetId
         btnWatchlist.nextFocusDownId = targetId
         btnLibrary.nextFocusDownId = targetId
-        // Also update recyclerView's upward focus target
-        recyclerView.nextFocusUpId = targetId
+        btnSearchIcon.nextFocusDownId = targetId
+        btnAbout.nextFocusDownId = targetId
+        recyclerView.nextFocusUpId = cardFocusTarget
+        adapter.nextFocusUpId = cardFocusTarget
+        railsAdapter.itemNextFocusUpId = cardFocusTarget
+    }
+
+    private fun updateFilterFocusTargets() {
+        val navUpTarget = when (currentNavPage) {
+            "watchlist" -> R.id.btn_watchlist
+            "library" -> R.id.btn_library
+            "freevee" -> R.id.btn_freevee
+            else -> R.id.btn_home
+        }
+        val filterButtons = listOf(btnCatAll, btnCatPrime, btnTypeAll, btnCatMovies, btnCatSeries)
+        val nextDownTarget = R.id.recycler_view
+
+        filterButtons.forEach { button ->
+            button.nextFocusUpId = navUpTarget
+            button.nextFocusDownId = nextDownTarget
+        }
+
+        btnLibAll.nextFocusUpId = navUpTarget
+        btnLibMovies.nextFocusUpId = navUpTarget
+        btnLibShows.nextFocusUpId = navUpTarget
+        btnLibSort.nextFocusUpId = navUpTarget
     }
 
     // --- Watchlist pagination ---
@@ -481,20 +542,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateLibraryFilterHighlight() {
-        val activeColor = Color.parseColor("#00A8E0")
-        val inactiveColor = Color.parseColor("#555555")
-        val activeText = Color.BLACK
-        val inactiveText = Color.WHITE
-
         listOf(
             btnLibAll to LibraryFilter.ALL,
             btnLibMovies to LibraryFilter.MOVIES,
             btnLibShows to LibraryFilter.TV_SHOWS
         ).forEach { (btn, f) ->
-            val active = f == libraryFilter
-            btn.backgroundTintList = android.content.res.ColorStateList.valueOf(if (active) activeColor else inactiveColor)
-            btn.setTextColor(if (active) activeText else inactiveText)
+            btn.isSelected = f == libraryFilter
         }
+        btnLibSort.isSelected = false
     }
 
     private fun updateLibrarySortLabel() {
@@ -632,7 +687,7 @@ class MainActivity : AppCompatActivity() {
     private fun switchToGridMode() {
         if (!isRailsMode) return
         isRailsMode = false
-        recyclerView.layoutManager = GridLayoutManager(this, 5)
+        recyclerView.layoutManager = GridLayoutManager(this, 4)
         recyclerView.adapter = adapter
     }
 
@@ -701,10 +756,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun showRails(rails: List<ContentRail>) {
         progressBar.visibility = View.GONE
+        shimmerRecyclerView.visibility = View.GONE
         if (rails.isEmpty()) {
+            recyclerView.visibility = View.GONE
             tvError.text = "No content found"
             tvError.visibility = View.VISIBLE
         } else {
+            recyclerView.visibility = View.VISIBLE
             tvError.visibility = View.GONE
             val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
             val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
@@ -765,7 +823,9 @@ class MainActivity : AppCompatActivity() {
     // --- View state helpers ---
 
     private fun showLoading() {
-        progressBar.visibility = View.VISIBLE
+        progressBar.visibility = View.GONE
+        shimmerRecyclerView.visibility = View.VISIBLE
+        recyclerView.visibility = View.GONE
         tvError.visibility = View.GONE
         if (isRailsMode) railsAdapter.submitList(emptyList())
         else adapter.submitList(emptyList())
@@ -773,10 +833,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun showItems(items: List<ContentItem>) {
         progressBar.visibility = View.GONE
+        shimmerRecyclerView.visibility = View.GONE
         if (items.isEmpty()) {
+            recyclerView.visibility = View.GONE
             tvError.text = "No content found"
             tvError.visibility = View.VISIBLE
         } else {
+            recyclerView.visibility = View.VISIBLE
             tvError.visibility = View.GONE
             // Merge watchlist flags and watch progress into items
             val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
@@ -791,6 +854,11 @@ class MainActivity : AppCompatActivity() {
                     val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
                         serverProgress.second else item.runtimeMs
                     item.copy(
+                        isPrime = if (currentNavPage == "watchlist") {
+                            item.isPrime || (!item.isFreeWithAds && !item.isLive)
+                        } else {
+                            item.isPrime
+                        },
                         isInWatchlist = watchlistAsins.contains(item.asin),
                         watchProgressMs = progressMs,
                         runtimeMs = runtimeMs
@@ -811,11 +879,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun showError(msg: String) {
         progressBar.visibility = View.GONE
+        shimmerRecyclerView.visibility = View.GONE
+        recyclerView.visibility = View.GONE
         tvError.text = msg
         tvError.visibility = View.VISIBLE
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_BACK && searchRow.visibility == View.VISIBLE) {
+            hideSearchRow()
+            recyclerView.requestFocus()
+            return true
+        }
         if (keyCode == KeyEvent.KEYCODE_MENU) {
             val item = focusedContentItem()
             if (item != null) {
@@ -862,7 +937,6 @@ class MainActivity : AppCompatActivity() {
                 adapter.submitList(updated)
             }
         }
-
         // Re-focus when returning from another activity
         recyclerView.post {
             val firstChild = recyclerView.getChildAt(0)

@@ -164,7 +164,7 @@ class DetailActivity : AppCompatActivity() {
 
         // IMDb
         if (info.imdbRating > 0f) {
-            tvImdb.text = "IMDb  %.1f / 10".format(info.imdbRating)
+            tvImdb.text = "\u2605 IMDb %.1f / 10".format(info.imdbRating)
             tvImdb.visibility = View.VISIBLE
         }
 

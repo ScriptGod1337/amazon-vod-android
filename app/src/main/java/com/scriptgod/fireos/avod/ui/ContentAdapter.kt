@@ -1,11 +1,13 @@
 package com.scriptgod.fireos.avod.ui
 
 import android.content.res.ColorStateList
+import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
@@ -14,10 +16,13 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.scriptgod.fireos.avod.R
 import com.scriptgod.fireos.avod.model.ContentItem
+import kotlin.math.roundToInt
 
 class ContentAdapter(
     private val onItemClick: (ContentItem) -> Unit,
-    private val onMenuKey: ((ContentItem) -> Unit)? = null
+    private val onMenuKey: ((ContentItem) -> Unit)? = null,
+    var nextFocusUpId: Int = View.NO_ID,
+    private val onVerticalFocusMove: ((position: Int, direction: Int) -> Boolean)? = null
 ) : ListAdapter<ContentItem, ContentAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -25,6 +30,7 @@ class ContentAdapter(
         val title: TextView = itemView.findViewById(R.id.tv_title)
         val subtitle: TextView = itemView.findViewById(R.id.tv_subtitle)
         val watchlistIcon: ImageView = itemView.findViewById(R.id.iv_watchlist)
+        val badges: LinearLayout = itemView.findViewById(R.id.ll_badges)
         val watchProgress: ProgressBar = itemView.findViewById(R.id.pb_watch_progress)
     }
 
@@ -38,6 +44,7 @@ class ContentAdapter(
         val item = getItem(position)
         holder.title.text = item.title
         holder.subtitle.text = item.subtitle
+        holder.subtitle.visibility = if (item.subtitle.isBlank()) View.GONE else View.VISIBLE
         if (item.imageUrl.isNotEmpty()) {
             holder.poster.load(item.imageUrl) {
                 crossfade(true)
@@ -54,23 +61,48 @@ class ContentAdapter(
             else android.R.drawable.btn_star_big_off
         )
 
+        holder.badges.removeAllViews()
+        listOfNotNull(
+            "Prime".takeIf { item.isPrime },
+            "Freevee".takeIf { item.isFreeWithAds },
+            "Live".takeIf { item.isLive }
+        ).take(3).forEach { badge ->
+            val density = holder.itemView.resources.displayMetrics.density
+            val chip = TextView(holder.itemView.context).apply {
+                text = badge
+                setTextColor(0xFFFFFFFF.toInt())
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+                setBackgroundResource(R.drawable.badge_bg)
+                setPadding(
+                    (4 * density).roundToInt(),
+                    (2 * density).roundToInt(),
+                    (4 * density).roundToInt(),
+                    (2 * density).roundToInt()
+                )
+            }
+            val params = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            params.marginStart = 6
+            holder.badges.addView(chip, params)
+        }
+
         // Watch progress bar
         when {
             item.watchProgressMs == -1L -> {
-                // Fully watched — green bar at 100%
                 holder.watchProgress.visibility = View.VISIBLE
                 holder.watchProgress.max = 100
                 holder.watchProgress.progress = 100
-                holder.watchProgress.progressTintList = ColorStateList.valueOf(0xFF4CAF50.toInt())
+                holder.watchProgress.progressTintList = ColorStateList.valueOf(0xFFF5A623.toInt())
                 holder.watchProgress.progressBackgroundTintList = ColorStateList.valueOf(0x44FFFFFF)
                 holder.title.setTextColor(0xFFFFFFFF.toInt())
             }
             item.watchProgressMs > 0 && item.runtimeMs > 0 -> {
-                // Partially watched — amber bar
                 holder.watchProgress.visibility = View.VISIBLE
                 holder.watchProgress.max = 100
                 holder.watchProgress.progress = (item.watchProgressMs * 100 / item.runtimeMs).toInt().coerceIn(1, 99)
-                holder.watchProgress.progressTintList = ColorStateList.valueOf(0xFFFFAB00.toInt())
+                holder.watchProgress.progressTintList = ColorStateList.valueOf(0xFFF5A623.toInt())
                 holder.watchProgress.progressBackgroundTintList = ColorStateList.valueOf(0x44FFFFFF)
                 holder.title.setTextColor(0xFFFFFFFF.toInt())
             }
@@ -83,6 +115,14 @@ class ContentAdapter(
 
         // Tag the item so Activity.onKeyDown can retrieve it from the focused view
         holder.itemView.tag = item
+        if (nextFocusUpId != View.NO_ID) {
+            holder.itemView.nextFocusUpId = nextFocusUpId
+        }
+        holder.itemView.setOnFocusChangeListener { view, hasFocus ->
+            val scale = if (hasFocus) 1.08f else 1.0f
+            view.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
+            view.elevation = if (hasFocus) view.resources.displayMetrics.density * 12f else 0f
+        }
         holder.itemView.setOnClickListener { onItemClick(item) }
         // Long-press SELECT (standard Fire TV context-menu gesture on remotes without a Menu button)
         holder.itemView.setOnLongClickListener {
@@ -91,10 +131,22 @@ class ContentAdapter(
         }
         // KEYCODE_MENU for remotes that have a physical Menu button
         holder.itemView.setOnKeyListener { _, keyCode, event ->
-            if (keyCode == KeyEvent.KEYCODE_MENU && event.action == KeyEvent.ACTION_DOWN) {
-                onMenuKey?.invoke(item)
-                true
-            } else false
+            if (event.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+
+            when (keyCode) {
+                KeyEvent.KEYCODE_MENU -> {
+                    onMenuKey?.invoke(item)
+                    true
+                }
+                KeyEvent.KEYCODE_DPAD_UP,
+                KeyEvent.KEYCODE_DPAD_DOWN -> {
+                    onVerticalFocusMove?.invoke(
+                        holder.bindingAdapterPosition,
+                        if (keyCode == KeyEvent.KEYCODE_DPAD_UP) -1 else 1
+                    ) ?: false
+                }
+                else -> false
+            }
         }
     }
 

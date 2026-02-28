@@ -1,260 +1,440 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@android:color/black"
-    android:padding="32dp">
+    android:background="#0D0D0D">
 
-    <!-- Search bar -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
-
-        <com.scriptgod.fireos.avod.ui.DpadEditText
-            android:id="@+id/et_search"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:hint="@string/search_hint"
-            android:textColor="@android:color/white"
-            android:textColorHint="#888"
-            android:background="#333"
-            android:padding="8dp"
-            android:inputType="text"
-            android:imeOptions="actionSearch"
-            android:singleLine="true"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:nextFocusDown="@id/btn_home"/>
-
-        <Button
-            android:id="@+id/btn_search"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_marginStart="8dp"
-            android:text="Search"
-            android:textColor="@android:color/white"
-            android:backgroundTint="#00A8E0"
-            android:nextFocusDown="@id/btn_home"/>
-    </LinearLayout>
-
-    <!-- Navigation buttons: Home / Freevee / Watchlist / My Library -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="8dp">
-
-        <Button
-            android:id="@+id/btn_home"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Home"
-            android:textColor="@android:color/white"
-            android:backgroundTint="#333"
-            android:layout_marginEnd="8dp"
-            android:nextFocusDown="@id/btn_cat_all"/>
-
-        <Button
-            android:id="@+id/btn_freevee"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Freevee"
-            android:textColor="@android:color/white"
-            android:backgroundTint="#333"
-            android:layout_marginEnd="8dp"
-            android:nextFocusDown="@id/btn_cat_all"/>
-
-        <Button
-            android:id="@+id/btn_watchlist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Watchlist"
-            android:textColor="@android:color/white"
-            android:backgroundTint="#333"
-            android:layout_marginEnd="8dp"
-            android:nextFocusDown="@id/btn_cat_all"/>
-
-        <Button
-            android:id="@+id/btn_library"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="My Library"
-            android:textColor="@android:color/white"
-            android:backgroundTint="#333"
-            android:layout_marginEnd="8dp"
-            android:nextFocusDown="@id/btn_cat_all"/>
-
-        <!-- Spacer pushes About to the right -->
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1"/>
-
-        <Button
-            android:id="@+id/btn_about"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="⚙"
-            android:textSize="18sp"
-            android:textColor="@android:color/white"
-            android:backgroundTint="#333"
-            android:nextFocusDown="@id/btn_cat_all"/>
-    </LinearLayout>
-
-    <!-- Library sub-filters: All / Movies / TV Shows + Sort (only visible on Library page) -->
-    <LinearLayout
-        android:id="@+id/library_filter_row"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="8dp"
-        android:visibility="gone">
-
-        <Button
-            android:id="@+id/btn_lib_all"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="All"
-            android:textColor="@android:color/black"
-            android:textSize="12sp"
-            android:backgroundTint="#00A8E0"
-            android:layout_marginEnd="6dp"/>
-
-        <Button
-            android:id="@+id/btn_lib_movies"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="Movies"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:backgroundTint="#555"
-            android:layout_marginEnd="6dp"/>
-
-        <Button
-            android:id="@+id/btn_lib_shows"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="TV Shows"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:backgroundTint="#555"
-            android:layout_marginEnd="16dp"/>
-
-        <Button
-            android:id="@+id/btn_lib_sort"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="↕ Recent"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:backgroundTint="#444"/>
-
-    </LinearLayout>
-
-    <!-- Category filter chips: [All | Prime]  [All | Movies | Series] -->
-    <LinearLayout
-        android:id="@+id/category_filter_row"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingTop="@dimen/safe_top_inset">
 
         <LinearLayout
-            android:id="@+id/source_filter_group"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:id="@+id/nav_bar"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/nav_bar_height"
+            android:background="@drawable/header_nav_bar_background"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp">
 
             <Button
-                android:id="@+id/btn_cat_all"
+                android:id="@+id/btn_home"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="All"
-                android:textColor="@android:color/black"
-                android:textSize="12sp"
-                android:backgroundTint="#00A8E0"
-                android:layout_marginEnd="6dp"
-                android:nextFocusDown="@id/recycler_view"/>
+                android:layout_height="match_parent"
+                android:background="@drawable/nav_button_background"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null"
+                android:minWidth="0dp"
+                android:nextFocusDown="@id/recycler_view"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:stateListAnimator="@null"
+                android:text="Home"
+                android:textAllCaps="false"
+                android:textColor="@color/nav_button_text"
+                android:textSize="15sp" />
 
             <Button
-                android:id="@+id/btn_cat_prime"
+                android:id="@+id/btn_freevee"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="Prime"
-                android:textColor="@android:color/white"
-                android:textSize="12sp"
-                android:backgroundTint="#555"
-                android:layout_marginEnd="20dp"
-                android:nextFocusDown="@id/recycler_view"/>
+                android:layout_height="match_parent"
+                android:background="@drawable/nav_button_background"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null"
+                android:minWidth="0dp"
+                android:nextFocusDown="@id/recycler_view"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:stateListAnimator="@null"
+                android:text="Freevee"
+                android:textAllCaps="false"
+                android:textColor="@color/nav_button_text"
+                android:textSize="15sp" />
+
+            <Button
+                android:id="@+id/btn_watchlist"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="@drawable/nav_button_background"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null"
+                android:minWidth="0dp"
+                android:nextFocusDown="@id/recycler_view"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:stateListAnimator="@null"
+                android:text="Watchlist"
+                android:textAllCaps="false"
+                android:textColor="@color/nav_button_text"
+                android:textSize="15sp" />
+
+            <Button
+                android:id="@+id/btn_library"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="@drawable/nav_button_background"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null"
+                android:minWidth="0dp"
+                android:nextFocusDown="@id/recycler_view"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:stateListAnimator="@null"
+                android:text="Library"
+                android:textAllCaps="false"
+                android:textColor="@color/nav_button_text"
+                android:textSize="15sp" />
 
             <View
-                android:layout_width="1dp"
-                android:layout_height="match_parent"
-                android:background="#555"
-                android:layout_marginEnd="20dp"/>
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
 
+            <Button
+                android:id="@+id/btn_search_icon"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/header_icon_button_background"
+                android:minWidth="0dp"
+                android:stateListAnimator="@null"
+                android:text="🔍"
+                android:textAllCaps="false"
+                android:textColor="@color/header_icon_text"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/btn_about"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/header_icon_button_background"
+                android:minWidth="0dp"
+                android:stateListAnimator="@null"
+                android:text="⚙"
+                android:textAllCaps="false"
+                android:textColor="@color/header_icon_text"
+                android:textSize="18sp" />
         </LinearLayout>
 
-        <Button
-            android:id="@+id/btn_type_all"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="All Types"
-            android:textColor="@android:color/black"
-            android:textSize="12sp"
-            android:backgroundTint="#00A8E0"
-            android:layout_marginEnd="6dp"
-            android:nextFocusDown="@id/recycler_view"/>
+        <LinearLayout
+            android:id="@+id/search_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="@dimen/page_padding"
+            android:layout_marginEnd="@dimen/page_padding"
+            android:background="@drawable/header_secondary_row_background"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="12dp"
+            android:visibility="gone">
 
-        <Button
-            android:id="@+id/btn_cat_movies"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="Movies"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:backgroundTint="#555"
-            android:layout_marginEnd="6dp"
-            android:nextFocusDown="@id/recycler_view"/>
+            <com.scriptgod.fireos.avod.ui.DpadEditText
+                android:id="@+id/et_search"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/search_field_background"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:hint="@string/search_hint"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:nextFocusDown="@id/recycler_view"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:singleLine="true"
+                android:textColor="@android:color/white"
+                android:textColorHint="#888888" />
 
-        <Button
-            android:id="@+id/btn_cat_series"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="Series"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:backgroundTint="#555"
-            android:nextFocusDown="@id/recycler_view"/>
+            <Button
+                android:id="@+id/btn_search"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/button_pill_primary"
+                android:nextFocusDown="@id/recycler_view"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:text="Search"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/library_filter_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/page_padding"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="@dimen/page_padding"
+            android:layout_marginBottom="6dp"
+            android:background="@drawable/header_secondary_row_background"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="8dp"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/btn_lib_all"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/filter_chip_background"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:stateListAnimator="@null"
+                android:text="All"
+                android:textAllCaps="false"
+                android:textColor="@color/filter_chip_text"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btn_lib_movies"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/filter_chip_background"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:stateListAnimator="@null"
+                android:text="Movies"
+                android:textAllCaps="false"
+                android:textColor="@color/filter_chip_text"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btn_lib_shows"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/filter_chip_background"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:stateListAnimator="@null"
+                android:text="TV Shows"
+                android:textAllCaps="false"
+                android:textColor="@color/filter_chip_text"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btn_lib_sort"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:background="@drawable/filter_chip_background"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:stateListAnimator="@null"
+                android:text="↕ Recent"
+                android:textAllCaps="false"
+                android:textColor="@color/filter_chip_text"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/category_filter_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/page_padding"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="@dimen/page_padding"
+            android:layout_marginBottom="6dp"
+            android:background="@drawable/header_secondary_row_background"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="8dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/source_filter_section"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tv_source_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="10dp"
+                    android:letterSpacing="0.08"
+                    android:text="Availability"
+                    android:textColor="#7F8A92"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/source_filter_group"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="18dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btn_cat_all"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/filter_chip_background"
+                        android:nextFocusDown="@id/recycler_view"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:stateListAnimator="@null"
+                        android:text="All"
+                        android:textAllCaps="false"
+                        android:textColor="@color/filter_chip_text"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btn_cat_prime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:background="@drawable/filter_chip_background"
+                        android:nextFocusDown="@id/recycler_view"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:stateListAnimator="@null"
+                        android:text="Prime"
+                        android:textAllCaps="false"
+                        android:textColor="@color/filter_chip_text"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/type_filter_section"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tv_type_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="10dp"
+                    android:letterSpacing="0.08"
+                    android:text="Type"
+                    android:textColor="#7F8A92"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/type_filter_group"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btn_type_all"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/filter_chip_background"
+                        android:nextFocusDown="@id/recycler_view"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:stateListAnimator="@null"
+                        android:text="All Types"
+                        android:textAllCaps="false"
+                        android:textColor="@color/filter_chip_text"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btn_cat_movies"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/filter_chip_background"
+                        android:nextFocusDown="@id/recycler_view"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:stateListAnimator="@null"
+                        android:text="Movies"
+                        android:textAllCaps="false"
+                        android:textColor="@color/filter_chip_text"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btn_cat_series"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:background="@drawable/filter_chip_background"
+                        android:nextFocusDown="@id/recycler_view"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:stateListAnimator="@null"
+                        android:text="Series"
+                        android:textAllCaps="false"
+                        android:textColor="@color/filter_chip_text"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <ProgressBar
+                android:id="@+id/progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tv_error"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textColor="#FF4444"
+                android:textSize="16sp"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/shimmer_recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:focusable="false"
+                android:paddingStart="@dimen/page_padding"
+                android:paddingTop="12dp"
+                android:paddingEnd="@dimen/page_padding"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:descendantFocusability="afterDescendants"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:nextFocusUp="@id/btn_home"
+                android:paddingTop="8dp"
+                android:paddingBottom="24dp" />
+        </FrameLayout>
     </LinearLayout>
-
-    <ProgressBar
-        android:id="@+id/progress_bar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:visibility="gone"/>
-
-    <TextView
-        android:id="@+id/tv_error"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="#FF4444"
-        android:visibility="gone"/>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
-        android:descendantFocusability="afterDescendants"
-        android:nextFocusUp="@id/btn_type_all"/>
-
-</LinearLayout>
+</FrameLayout>

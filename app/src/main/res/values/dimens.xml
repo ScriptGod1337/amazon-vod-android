@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="page_padding">32dp</dimen>
+    <dimen name="safe_top_inset">72dp</dimen>
+    <dimen name="card_width">200dp</dimen>
+    <dimen name="card_image_height">240dp</dimen>
+    <dimen name="card_corner_radius">6dp</dimen>
+    <dimen name="card_spacing">8dp</dimen>
+    <dimen name="nav_bar_height">56dp</dimen>
+    <dimen name="hero_height">176dp</dimen>
+    <dimen name="rail_header_size">18sp</dimen>
+    <dimen name="rail_vertical_spacing">28dp</dimen>
+</resources>
