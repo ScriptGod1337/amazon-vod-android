@@ -196,6 +196,7 @@ class PlayerActivity : AppCompatActivity() {
     private fun loadAndPlay(asin: String, materialType: String = "Feature", qualityOverride: PlaybackQuality? = null) {
         progressBar.visibility = View.VISIBLE
         tvError.visibility = View.GONE
+        tvVideoFormat.text = ""   // clear stale label until new player reports its format
 
         val quality = qualityOverride ?: resolveQuality()
         currentMaterialType = materialType
