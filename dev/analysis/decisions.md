@@ -259,11 +259,15 @@ Access via `playerView.findViewById<DefaultTimeBar>(androidx.media3.ui.R.id.exo_
 
 Three quality presets, stored in SharedPreferences `"settings"` key `"video_quality"`:
 
-| Preset key | `deviceVideoQualityOverride` | `deviceVideoCodecOverride` | `deviceHdrFormatsOverride` | Notes |
+| Preset key | `deviceVideoQualityOverride` | `deviceVideoCodecOverride` | `deviceHdrFormatsOverride` | Actual result |
 |---|---|---|---|---|
-| `"HD"` (default) | `HD` | `H264` | `None` | Up to 1080p H264 SDR |
-| `"HD_H265"` | `UHD` | `H264,H265` | `None` | Up to 1080p H265 SDR; `HD` tier caps H265 at 720p — must use `UHD` quality override to unlock 1080p |
-| `"UHD_HDR"` | `UHD` | `H264,H265` | `Hdr10,DolbyVision` | 4K HDR |
+| `"HD"` (default) | `HD` | `H264` | `None` | **720p H264 SDR** |
+| `"HD_H265"` | `HD` | `H264,H265` | `None` | **720p H265 SDR** — same resolution as HD H264; H265 gives slightly better compression at 720p; no HDR display needed |
+| `"UHD_HDR"` | `UHD` | `H264,H265` | `Hdr10,DolbyVision` | **4K H265 HDR** — requires H265 decoder + HDR display |
+
+**Key finding**: Amazon's `HD` quality tier caps at **720p** for both H264 and H265 SDR streams.
+There is **no 1080p SDR** option; 1080p+ content requires the `UHD` quality tier with HDR.
+The practical resolution choices are: 720p SDR (H264 or H265) or 4K HDR.
 
 **Kodi reference**: `network.py:210-212` and `supported_hdr()` function (`network.py:231-239`).
 

@@ -169,24 +169,25 @@ class PlayerActivity : AppCompatActivity() {
 
     /**
      * Resolves the effective PlaybackQuality for this playback session.
-     * Falls back to HD H264 when:
-     *  - an H265 preset is selected but the device has no HEVC decoder, or
-     *  - an HDR preset is selected but the connected display doesn't report HDR support.
+     * UHD_HDR requires both an H265 decoder and an HDR-capable display; falls back to HD.
+     * HD_H265 (SDR) only needs an H265 decoder; falls back to HD on devices without HEVC.
      */
     private fun resolveQuality(): PlaybackQuality {
         val pref = getSharedPreferences("settings", MODE_PRIVATE)
             .getString(PlaybackQuality.PREF_KEY, null)
         val requested = PlaybackQuality.fromPrefValue(pref)
-        if (requested.codecOverride.contains("H265") && !deviceSupportsH265()) {
-            android.widget.Toast.makeText(
-                this, "H265 not supported on this device — using HD H264", android.widget.Toast.LENGTH_LONG
-            ).show()
-            return PlaybackQuality.HD
+        if (requested == PlaybackQuality.UHD_HDR) {
+            if (!deviceSupportsH265()) {
+                android.widget.Toast.makeText(this, "H265 not supported — using HD H264", android.widget.Toast.LENGTH_LONG).show()
+                return PlaybackQuality.HD
+            }
+            if (!displaySupportsHdr()) {
+                android.widget.Toast.makeText(this, "Display does not support HDR — using HD H264", android.widget.Toast.LENGTH_LONG).show()
+                return PlaybackQuality.HD
+            }
         }
-        if (requested.hdrOverride != "None" && !displaySupportsHdr()) {
-            android.widget.Toast.makeText(
-                this, "Display does not support HDR — using HD H264", android.widget.Toast.LENGTH_LONG
-            ).show()
+        if (requested == PlaybackQuality.HD_H265 && !deviceSupportsH265()) {
+            android.widget.Toast.makeText(this, "H265 not supported — using HD H264", android.widget.Toast.LENGTH_LONG).show()
             return PlaybackQuality.HD
         }
         return requested

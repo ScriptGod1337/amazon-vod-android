@@ -89,11 +89,11 @@ class AboutActivity : AppCompatActivity() {
         if (!supportsH265) {
             btnHdH265.isEnabled = false
             btnUhd.isEnabled    = false
-            tvNote.text = "H265 HDR10 and 4K/DV require H265 decoder — not available on this device"
+            tvNote.text = "H265 and 4K/DV require H265 decoder — not available on this device"
         } else if (!supportsDisplayHdr) {
-            btnHdH265.isEnabled = false
-            btnUhd.isEnabled    = false
-            tvNote.text = "H265 HDR10 and 4K/DV require an HDR-capable display — not detected on current output"
+            // H265 SDR still works without HDR display; only 4K/DV HDR is blocked
+            btnUhd.isEnabled = false
+            tvNote.text = "Amazon HD tier = 720p SDR (both H264 and H265). 1080p+ requires 4K/DV HDR and an HDR-capable display."
         }
 
         fun updateButtons(selected: PlaybackQuality) {
@@ -119,7 +119,7 @@ class AboutActivity : AppCompatActivity() {
     }
 
     private fun btnLabel(q: PlaybackQuality) = when (q) {
-        PlaybackQuality.HD_H265 -> "H265 HDR10"
+        PlaybackQuality.HD_H265 -> "H265"
         PlaybackQuality.UHD_HDR -> "4K / DV HDR"
         else                    -> "HD H264"
     }

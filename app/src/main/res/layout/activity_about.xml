@@ -179,7 +179,7 @@
                 android:id="@+id/btn_quality_hd_h265"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="H265 HDR10"
+                android:text="H265"
                 android:textColor="#FFFFFF"
                 android:backgroundTint="#CC555555"
                 android:layout_marginEnd="8dp"
