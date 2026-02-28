@@ -730,10 +730,14 @@ Long-press to toggle watchlist is awkward on a TV remote. Replaced with a MENU k
 ### Key technical finding: KEYCODE_MENU dispatch
 `View.setOnKeyListener` for `KEYCODE_MENU` is unreliable — Android's `PhoneWindow` intercepts `KEYCODE_MENU` at the window level before key events reach the focused view in some RecyclerView configurations. The robust fix is `Activity.onKeyDown(KEYCODE_MENU)` combined with `recyclerView.findFocus()` + tag-based item lookup, which always fires regardless of the focused view type.
 
-### Verified on emulator
-- Home tab (rails): MENU on a focused rail card → AlertDialog with item title + "Add/Remove from Watchlist"
-- Watchlist tab (flat grid): MENU on a starred card → "Remove from Watchlist"; star disappears after selection
-- BrowseActivity (seasons view): MENU on a season card (passed `watchlistAsins` from MainActivity) → correct "Add/Remove" label based on season's membership; star updates on the card
+### Fire TV remote key mapping fix (2026.02.28.14)
+The Alexa Voice Remote shipped with Fire TV Stick 4K (AFTR/raven) has **no physical Menu button** — `KEYCODE_MENU` (82) is never generated. The MENU-only trigger was therefore silently inert on this device.
+
+**Fix**: restored `setOnLongClickListener` on item views in `ContentAdapter` as the primary trigger (hold D-pad SELECT ~500 ms → `AlertDialog`). `KEYCODE_MENU` retained as secondary for older/3rd-party remotes that do have the button.
+
+### Verified
+- Emulator: MENU key → AlertDialog on all three contexts (home rails, flat grid, BrowseActivity)
+- Fire TV Stick 4K: long press SELECT → AlertDialog; "Add/Remove from Watchlist" works end-to-end
 
 ---
 
