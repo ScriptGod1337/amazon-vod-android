@@ -994,6 +994,119 @@ If the build fails or the layout breaks D-pad focus order, fall back to Option B
 
 ---
 
+## Phase 26: PENDING — Audio Passthrough (Configurable)
+
+### Background
+
+ExoPlayer's `DefaultAudioSink` uses `AudioCapabilities.DEFAULT_AUDIO_CAPABILITIES` by default,
+which assumes **no passthrough** is available. All encoded audio (AC3, EAC3) is decoded to PCM
+before reaching the Android audio mixer. This means connected AV receivers never receive a
+Dolby bitstream, even when the hardware chain supports it.
+
+Amazon's catalog format breakdown:
+
+| Format | Used by Amazon | Fire TV 4K passthrough |
+|--------|---------------|------------------------|
+| AAC stereo/5.1 | All titles | Decoded (no passthrough for AAC) |
+| AC3 (Dolby Digital 5.1) | Yes | Yes — if receiver supports |
+| EAC3 (Dolby Digital Plus) | Yes (most HD/4K) | Yes — if receiver supports |
+| DTS | **No** | Capable, irrelevant for this app |
+| TrueHD / Atmos | No | N/A |
+
+DTS passthrough is therefore out of scope. The target is AC3 / EAC3 Dolby passthrough.
+
+**Important system constraint**: Fire TV has a system-level "Dolby Digital Plus" toggle at
+Settings → Display & Sounds → Audio. If disabled there, `AudioCapabilities.getCapabilities()`
+already reports no passthrough support, so the app setting has no effect in that case. The app
+setting purely controls whether we *ask* ExoPlayer to use passthrough when the device permits it.
+
+### Goal
+
+Add a user-facing toggle **"Audio passthrough"** (on/off) in `AboutActivity` (Settings panel).
+Persisted in `SharedPreferences("settings")` under key `"audio_passthrough"` (default: `false`).
+
+When enabled, `PlayerActivity` builds `DefaultAudioSink` with
+`AudioCapabilities.getCapabilities(context)` so ExoPlayer can send encoded Dolby bitstreams to
+the HDMI output. When disabled (default), behaviour is unchanged (decoded PCM, volume rocker
+works normally).
+
+### UI — AboutActivity
+
+Add a new section below the Video Quality section:
+
+```
+┌─────────────────────────────────────────────┐
+│ Audio                                       │
+│ Passthrough  [ Off ]  [ On ]                │
+│                                             │
+│ Sends encoded Dolby audio directly to your  │
+│ AV receiver over HDMI. Requires a receiver  │
+│ that supports Dolby Digital. Volume control │
+│ moves to the receiver when enabled.         │
+│ Takes effect on next playback session.      │
+└─────────────────────────────────────────────┘
+```
+
+Buttons follow the same selected/unselected style as the quality buttons (`btn_quality_*`).
+
+**Pref key**: `"audio_passthrough"` (Boolean) in `SharedPreferences("settings", MODE_PRIVATE)`
+
+### PlayerActivity changes
+
+At player construction time (inside `buildPlayer()` / `setupPlayer()`), read the pref and
+conditionally override the audio sink:
+
+```kotlin
+val passthroughEnabled = getSharedPreferences("settings", MODE_PRIVATE)
+    .getBoolean("audio_passthrough", false)
+
+val renderersFactory = if (passthroughEnabled) {
+    object : DefaultRenderersFactory(this) {
+        override fun buildAudioSink(
+            context: Context,
+            enableFloatOutput: Boolean,
+            enableAudioTrackPlaybackParams: Boolean
+        ): AudioSink = DefaultAudioSink.Builder(context)
+            .setAudioCapabilities(AudioCapabilities.getCapabilities(context))
+            .setEnableFloatOutput(enableFloatOutput)
+            .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+            .build()
+    }
+} else {
+    DefaultRenderersFactory(this)
+        .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF)
+}
+```
+
+Note: `AudioCapabilities.AUDIO_CAPABILITIES_CHANGED_ACTION` broadcast signals HDMI changes
+(e.g. user switches receiver input). Register a `BroadcastReceiver` in `onStart`/`onStop` that
+calls `releasePlayer()` + `buildPlayer()` so the sink is rebuilt with updated capabilities. Only
+needed when passthrough is enabled.
+
+### Volume rocker caveat
+
+When passthrough is active the Android audio stack is bypassed; the volume rocker does nothing.
+Show a one-time `Snackbar`/`Toast` on first passthrough playback session: *"Volume is now
+controlled by your AV receiver."* Use a separate pref key `"audio_passthrough_warned"` (Boolean)
+to gate the warning.
+
+### Files to change
+
+| File | Change |
+|------|--------|
+| `ui/AboutActivity.kt` | Add `setupAudioSection()`: two-button Off/On toggle wired to `"audio_passthrough"` pref |
+| `res/layout/activity_about.xml` | Add audio section card with Off/On buttons and description text |
+| `ui/PlayerActivity.kt` | Read pref; build passthrough `DefaultRenderersFactory` when enabled; register `AudioCapabilities` broadcast receiver |
+
+### Pref key constants (add to a shared file or companion object)
+
+```kotlin
+const val PREF_AUDIO_PASSTHROUGH = "audio_passthrough"
+const val PREF_AUDIO_PASSTHROUGH_WARNED = "audio_passthrough_warned"
+```
+
+---
+
 ## Phase 22: PENDING — UI Redesign
 
 Redesign the app UI from functional prototype to a polished, modern streaming experience.
