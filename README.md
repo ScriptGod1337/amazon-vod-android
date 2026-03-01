@@ -90,6 +90,10 @@ Current redesigned UI, captured from the Android TV emulator:
 |:---:|:---:|
 | ![Season Picker](screenshots/07_browse_seasons_emulator.png) | ![Episode Browse](screenshots/08_browse_episodes_emulator.png) |
 
+| Player Controls Overlay | |
+|:---:|:---:|
+| ![Player Controls](screenshots/09_player_overlay_emulator.png) | |
+
 ## Roadmap
 
 See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history and upcoming work.
