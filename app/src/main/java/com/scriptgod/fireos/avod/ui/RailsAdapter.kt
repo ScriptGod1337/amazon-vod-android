@@ -55,15 +55,21 @@ class RailsAdapter(
 
     override fun onBindViewHolder(holder: RailViewHolder, position: Int) {
         val rail = getItem(position)
-        val hasProgressItems = rail.items.any { it.watchProgressMs > 0 || it.watchProgressMs == -1L }
-        val eyebrowLabel = railEyebrow(rail, position, hasProgressItems)
+        val progressItemCount = rail.items.count { it.watchProgressMs > 0 || it.watchProgressMs == -1L }
+        val isProgressRail = isProgressRail(rail, progressItemCount)
+        val displayItems = if (isProgressRail) {
+            rail.items.filter { it.watchProgressMs > 0 || it.watchProgressMs == -1L }
+        } else {
+            rail.items
+        }
+        val eyebrowLabel = railEyebrow(rail, position, isProgressRail)
         holder.eyebrow.visibility = if (eyebrowLabel != null) View.VISIBLE else View.GONE
         holder.eyebrow.text = eyebrowLabel ?: ""
         holder.header.text = rail.headerText
         holder.seeAll.visibility = View.GONE
         holder.seeAll.setOnClickListener(null)
 
-        val presentation = resolvePresentation(rail, position, hasProgressItems)
+        val presentation = resolvePresentation(rail, position, isProgressRail)
         val innerAdapter = ContentAdapter(
             onItemClick = onItemClick,
             onMenuKey = onMenuKey,
@@ -74,13 +80,13 @@ class RailsAdapter(
             }
         )
         holder.innerRecycler.adapter = innerAdapter
-        innerAdapter.submitList(rail.items)
+        innerAdapter.submitList(displayItems)
     }
 
-    private fun resolvePresentation(rail: ContentRail, position: Int, hasProgressItems: Boolean): CardPresentation {
+    private fun resolvePresentation(rail: ContentRail, position: Int, isProgressRail: Boolean): CardPresentation {
         val header = rail.headerText.lowercase()
         return when {
-            hasProgressItems -> CardPresentation.PROGRESS
+            isProgressRail -> CardPresentation.PROGRESS
             position == 0 -> CardPresentation.LANDSCAPE
             header.contains("top 10") -> CardPresentation.LANDSCAPE
             header.contains("continue") -> CardPresentation.LANDSCAPE
@@ -94,8 +100,8 @@ class RailsAdapter(
         }
     }
 
-    private fun railEyebrow(rail: ContentRail, position: Int, hasProgressItems: Boolean): String? {
-        if (hasProgressItems) return "Continue Watching"
+    private fun railEyebrow(rail: ContentRail, position: Int, isProgressRail: Boolean): String? {
+        if (isProgressRail) return "Continue Watching"
         val header = rail.headerText.lowercase()
         return when {
             position == 0 -> "Featured Now"
@@ -105,6 +111,16 @@ class RailsAdapter(
             header.contains("because") || header.contains("empfehl") -> "Recommended"
             else -> null
         }
+    }
+
+    private fun isProgressRail(rail: ContentRail, progressItemCount: Int): Boolean {
+        if (progressItemCount == 0) return false
+        val header = rail.headerText.lowercase()
+        return header.contains("continue")
+            || header.contains("watch next")
+            || header.contains("weiter")
+            || (rail.items.size <= 3 && progressItemCount == rail.items.size)
+            || (progressItemCount >= 2 && progressItemCount * 2 >= rail.items.size)
     }
 
     private fun moveFocusBetweenRails(currentRailPosition: Int, itemPosition: Int, direction: Int): Boolean {

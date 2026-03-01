@@ -18,6 +18,19 @@ data class ContentItem(
 
 fun ContentItem.isIncludedWithPrime(): Boolean = isPrime && !isFreeWithAds && !isLive
 
+fun ContentItem.isFullyWatched(): Boolean = when {
+    contentType.equals("Season", true) -> false
+    contentType.equals("Series", true) -> false
+    contentType.equals("Show", true) -> false
+    contentType.equals("TVSeason", true) -> false
+    contentType.equals("TVSeries", true) -> false
+    watchProgressMs == -1L -> true
+    watchProgressMs <= 0L -> false
+    runtimeMs <= 0L -> false
+    watchProgressMs >= (runtimeMs * 95 / 100) -> true
+    else -> false
+}
+
 fun ContentItem.primaryAvailabilityBadge(): String? = when {
     isFreeWithAds -> "Freevee"
     isLive -> "Live"

@@ -27,7 +27,13 @@ internal object ContentItemParser {
         val badgeText = listOfNotNull(
             model.safeString("badgeInfo"),
             model.safeString("contentBadge"),
-            model.getAsJsonObject("badges")?.safeString("text")
+            model.safeString("primaryBadge"),
+            model.safeString("secondaryBadge"),
+            model.getAsJsonObject("badges")?.safeString("text"),
+            model.getAsJsonObject("badges")?.safeString("primaryText"),
+            model.getAsJsonObject("badges")?.safeString("secondaryText"),
+            model.safeArray("entitlementBadges")?.joinPrimitiveStrings(),
+            model.safeArray("badges")?.joinPrimitiveStrings()
         ).joinToString(" ")
 
         val isFreeWithAds = model.safeBoolean("isFreeWithAds")
@@ -147,5 +153,25 @@ internal object ContentItemParser {
     private fun JsonObject.safeBoolean(key: String): Boolean? {
         val el = get(key) ?: return null
         return if (el.isJsonPrimitive) el.asBoolean else null
+    }
+
+    private fun JsonObject.safeArray(key: String): com.google.gson.JsonArray? {
+        val el = get(key) ?: return null
+        return if (el.isJsonArray) el.asJsonArray else null
+    }
+
+    private fun com.google.gson.JsonArray.joinPrimitiveStrings(): String {
+        return mapNotNull { element ->
+            when {
+                element.isJsonPrimitive -> element.asString
+                element.isJsonObject -> {
+                    val obj = element.asJsonObject
+                    obj.safeString("text")
+                        ?: obj.safeString("label")
+                        ?: obj.safeString("title")
+                }
+                else -> null
+            }
+        }.joinToString(" ")
     }
 }

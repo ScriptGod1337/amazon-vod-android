@@ -48,6 +48,49 @@ class ContentItemParserTest {
     }
 
     @Test
+    fun parseCollectionElement_detectsPrimeFromBadgeArrayLabels() {
+        val item = parse(
+            """
+            {
+              "model": {
+                "catalogId": "movie-2b",
+                "title": "Prime Movie",
+                "contentType": "Feature",
+                "entitlementBadges": [
+                  {"label": "Included with Prime"}
+                ]
+              }
+            }
+            """.trimIndent()
+        )
+
+        assertTrue(item.isPrime)
+        assertFalse(item.isFreeWithAds)
+    }
+
+    @Test
+    fun parseCollectionElement_handlesBadgeObjectWithoutCrashing() {
+        val item = parse(
+            """
+            {
+              "model": {
+                "catalogId": "season-1",
+                "title": "Fallout - Staffel 2",
+                "contentType": "SEASON",
+                "badges": {
+                  "text": "Prime",
+                  "primaryText": "Included with Prime"
+                }
+              }
+            }
+            """.trimIndent()
+        )
+
+        assertEquals("Fallout - Staffel 2", item.title)
+        assertTrue(item.isPrime)
+    }
+
+    @Test
     fun parseCollectionElement_detectsFreeveeFromBadgeText() {
         val item = parse(
             """

@@ -36,6 +36,8 @@
 - [x] Player overlay tuning pass: Fire TV-safe overlay margins were tightened and MENU now routes track focus to `Audio`
 - [x] Player compactness pass: the track overlay is now narrower, denser, and hides the format pill when no real playback format is available
 - [x] Continue Watching progress fix: Home progress cards now keep a visible progress indicator even when only local resume data exists, and the bar is anchored over the artwork so it remains visible in the lower viewport
+- [x] Fallout browse parser fix: episode/season browse now tolerates object-shaped `badges` payloads instead of failing with a parser exception and showing `No content found`
+- [x] Watched-state scope fix: green fully-watched progress is now limited to fully watched episodes and movies, not season/series shells
 
 ## Known issues / deviations from spec
 - `See All` remains intentionally hidden. The current app still has no safe full-collection browse contract for `collectionId` without API/model work.
@@ -43,6 +45,7 @@
 
 ## Build / verification
 - `./gradlew assembleRelease` completed successfully on March 1, 2026.
+- `./gradlew testDebugUnitTest` completed successfully on March 1, 2026.
 - Installed and verified on `emulator-5554` (`AOSP_TV_on_x86`) on March 1, 2026.
 - Installed and spot-checked on Fire TV `192.168.0.12:5555` on March 1, 2026.
 - Fire TV login bypass was re-enabled by pushing `.device-token` to `/data/local/tmp/.device-token`, fixing permissions, and updating the file timestamp.
@@ -73,6 +76,8 @@
 - MENU on cards now opens a custom watchlist action overlay with explicit `Add/Remove` and `Cancel` actions.
 - The final Home state now includes a verified `Continue Watching` rail using the dedicated progress-first card presentation.
 - Home `Continue Watching` cards now use the shared metadata layer and keep a visible progress indicator for resumed titles such as `Borderlands`.
+- Emulator log validation confirmed the `Fallout - Staffel 2` browse failure was caused by a `ClassCastException` in the badge parser, and the parser now accepts object-shaped `badges` payloads instead of crashing the browse load.
+- Fully watched state is now intentionally scoped away from season and series containers, so green completion bars remain reserved for fully watched episodes and movies.
 - Detail metadata now collapses empty rows cleanly and keeps season/episode support text more relevant to the current content type.
 - Player overlay audio/subtitle controls use the updated redesign styling.
 - Player overlay now uses a denser track panel with shorter hint copy, smaller buttons, and conditional video-format visibility.

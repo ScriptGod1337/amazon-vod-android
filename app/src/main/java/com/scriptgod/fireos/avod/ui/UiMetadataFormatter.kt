@@ -3,6 +3,7 @@ package com.scriptgod.fireos.avod.ui
 import com.scriptgod.fireos.avod.api.AmazonApiService
 import com.scriptgod.fireos.avod.model.ContentItem
 import com.scriptgod.fireos.avod.model.DetailInfo
+import com.scriptgod.fireos.avod.model.isFullyWatched
 import com.scriptgod.fireos.avod.model.primaryAvailabilityBadge
 
 internal object UiMetadataFormatter {
@@ -15,7 +16,7 @@ internal object UiMetadataFormatter {
 
     fun badgeLabels(item: ContentItem): List<String> = buildList {
         item.primaryAvailabilityBadge()?.let(::add)
-        if (item.watchProgressMs == -1L) add("Watched")
+        if (item.isFullyWatched()) add("Watched")
     }.take(3)
 
     fun featuredMeta(railHeader: String, item: ContentItem): String {
@@ -82,6 +83,7 @@ internal object UiMetadataFormatter {
         return when (item.watchProgressMs) {
             -1L -> "Finished recently"
             else -> {
+                if (item.isFullyWatched()) return "Finished recently"
                 val progressPercent = ((item.watchProgressMs * 100) / item.runtimeMs).toInt().coerceIn(1, 99)
                 val remainingMinutes = ((item.runtimeMs - item.watchProgressMs).coerceAtLeast(0L) / 60000L).toInt()
                 if (remainingMinutes > 0) "$progressPercent% watched · ${remainingMinutes} min left"
@@ -134,15 +136,18 @@ internal object UiMetadataFormatter {
     }
 
     private fun sanitizedSubtitle(item: ContentItem): String {
-        return item.subtitle
+        val cleaned = item.subtitle
             .replace("Included with Prime", "", ignoreCase = true)
             .replace("Prime Video", "", ignoreCase = true)
+            .replace("Watch with Prime", "", ignoreCase = true)
+            .replace("Included with", "", ignoreCase = true)
             .replace("  ·   ·  ", "  ·  ")
             .replace(" • ", "  ·  ")
             .replace(Regex("\\s+·\\s*$"), "")
             .replace(Regex("^\\s*·\\s+"), "")
             .replace(Regex("\\s{2,}"), " ")
             .trim()
+        return if (cleaned.equals(item.title, ignoreCase = true)) "" else cleaned
     }
 
     private fun episodeLabelParts(rawTitle: String): Pair<String, String> {

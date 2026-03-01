@@ -730,42 +730,9 @@ class AmazonApiService(private val authService: AmazonAuthService) {
 
             val allItemLists = mutableListOf<JsonArray>()
 
-            val collectionsArray = root?.getAsJsonArray("collections")
-            if (collectionsArray != null) {
-                for (collectionElement in collectionsArray) {
-                    val collection = collectionElement?.asJsonObject ?: continue
-                    val collectionList = collection.getAsJsonArray("collectionItemList") ?: continue
-                    allItemLists.add(collectionList)
-                }
-            }
-
-            val titlesArray = root?.getAsJsonArray("titles")
-            if (titlesArray != null && titlesArray.size() > 0) {
-                val firstTitle = titlesArray[0]?.asJsonObject
-                val collectionList = firstTitle?.getAsJsonArray("collectionItemList")
-                if (collectionList != null) {
-                    allItemLists.add(collectionList)
-                }
-            }
-
-            val rootCollectionList = root?.getAsJsonArray("collectionItemList")
-            if (rootCollectionList != null) {
-                allItemLists.add(rootCollectionList)
-            }
-
-            val dataWidgets = root?.getAsJsonArray("dataWidgetModels")
-            if (dataWidgets != null) {
-                allItemLists.add(dataWidgets)
-            }
-
-            val seasonsArray = root?.getAsJsonArray("seasons")
-            if (seasonsArray != null) {
-                allItemLists.add(seasonsArray)
-            }
-            val episodesArray = root?.getAsJsonArray("episodes")
-            if (episodesArray != null) {
-                allItemLists.add(episodesArray)
-            }
+            collectItemLists(root, allItemLists)
+            collectItemLists(root?.getAsJsonObject("selectedSeason"), allItemLists)
+            collectItemLists(root?.getAsJsonObject("show"), allItemLists)
 
             if (allItemLists.isEmpty()) {
                 Log.i(TAG, "No parseable item lists in response keys: ${root?.keySet()?.take(10)}")
@@ -781,6 +748,30 @@ class AmazonApiService(private val authService: AmazonAuthService) {
         val unique = items.distinctBy { it.asin }
         Log.w(TAG, "Parsed ${unique.size} content items (${items.size - unique.size} duplicates removed)")
         return unique
+    }
+
+    private fun collectItemLists(node: JsonObject?, target: MutableList<JsonArray>) {
+        if (node == null) return
+
+        val collectionsArray = node.getAsJsonArray("collections")
+        if (collectionsArray != null) {
+            for (collectionElement in collectionsArray) {
+                val collection = collectionElement?.asJsonObject ?: continue
+                val collectionList = collection.getAsJsonArray("collectionItemList") ?: continue
+                target.add(collectionList)
+            }
+        }
+
+        val titlesArray = node.getAsJsonArray("titles")
+        if (titlesArray != null && titlesArray.size() > 0) {
+            val firstTitle = titlesArray[0]?.asJsonObject
+            firstTitle?.getAsJsonArray("collectionItemList")?.let(target::add)
+        }
+
+        node.getAsJsonArray("collectionItemList")?.let(target::add)
+        node.getAsJsonArray("dataWidgetModels")?.let(target::add)
+        node.getAsJsonArray("seasons")?.let(target::add)
+        node.getAsJsonArray("episodes")?.let(target::add)
     }
 
     /**

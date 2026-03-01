@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.scriptgod.fireos.avod.R
 import com.scriptgod.fireos.avod.model.ContentItem
+import com.scriptgod.fireos.avod.model.isFullyWatched
 import kotlin.math.roundToInt
 
 class ContentAdapter(
@@ -117,12 +118,12 @@ class ContentAdapter(
 
         // Watch progress bar
         when {
-            item.watchProgressMs == -1L -> {
+            item.isFullyWatched() -> {
                 holder.watchProgress.visibility = View.VISIBLE
                 holder.watchProgress.isIndeterminate = false
                 holder.watchProgress.max = 100
                 holder.watchProgress.progress = 100
-                holder.watchProgress.progressTintList = ColorStateList.valueOf(0xFFF5A623.toInt())
+                holder.watchProgress.progressTintList = ColorStateList.valueOf(0xFF2EBD59.toInt())
                 holder.watchProgress.progressBackgroundTintList = ColorStateList.valueOf(0x44FFFFFF)
                 holder.title.setTextColor(0xFFFFFFFF.toInt())
             }

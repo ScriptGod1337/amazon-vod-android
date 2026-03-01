@@ -2,7 +2,9 @@ package com.scriptgod.fireos.avod.ui
 
 import com.scriptgod.fireos.avod.model.ContentItem
 import com.scriptgod.fireos.avod.model.DetailInfo
+import com.scriptgod.fireos.avod.model.isFullyWatched
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UiMetadataFormatterTest {
@@ -98,5 +100,32 @@ class UiMetadataFormatterTest {
         )
 
         assertEquals("From The Good Doctor  ·  Drama", UiMetadataFormatter.detailSupportLine(info))
+    }
+
+    @Test
+    fun badgeLabels_marksNearlyCompletedTitlesAsWatched() {
+        val item = ContentItem(
+            asin = "movie",
+            title = "Movie",
+            isPrime = false,
+            runtimeMs = 100_000L,
+            watchProgressMs = 96_000L
+        )
+
+        assertTrue(item.isFullyWatched())
+        assertEquals(listOf("Watched"), UiMetadataFormatter.badgeLabels(item))
+    }
+
+    @Test
+    fun cardMetadata_dedupesSubtitleMatchingTitle() {
+        val item = ContentItem(
+            asin = "dup",
+            title = "Borderlands",
+            subtitle = "Borderlands",
+            contentType = "Feature"
+        )
+
+        val metadata = UiMetadataFormatter.cardMetadata(item, CardPresentation.POSTER)
+        assertEquals("Feature film", metadata.subtitle)
     }
 }

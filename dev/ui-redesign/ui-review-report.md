@@ -70,6 +70,8 @@
 - The latest Detail cleanup also tightens support text so seasons and episodes carry contextual `From ...` copy only where it adds value, while empty metadata rows collapse cleanly instead of leaving dead space.
 - The latest player pass reduces overlay width, trims padding/button height, shortens the hint copy, and hides the video-format pill when the player has no trustworthy live format to report.
 - The latest Home progress fix keeps the Continue Watching indicator visible on resumed titles even when only local resume data is available, and it places the bar over the artwork so it remains visible when the row is only partially in view.
+- The latest browse parser fix closes a real regression on `Fallout - Staffel 2`: object-shaped `badges` payloads no longer crash the detail-page item parser, so Browse no longer falls through to a false `No content found` state for that reason.
+- The latest watched-state scope fix also keeps green completion bars reserved for fully watched episodes and movies instead of season/series containers.
 
 ## Device Validation Notes
 
@@ -94,4 +96,5 @@
   - `The Good Doctor - Staffel 7` renders the season-detail support line as `Drama  ·  From The Good Doctor`
   - Home still exposes the dedicated `Continue Watching` presentation with watchlist iconography and the shared badge rules
 - Emulator validation during the latest Home fix reproduced the missing `Continue Watching` progress indicator on `Borderlands`, and the follow-up patch moved that indicator onto the artwork region so it is not lost at the bottom edge of the viewport.
+- Emulator log validation on March 1, 2026 identified the `Fallout - Staffel 2` browse regression as a `ClassCastException` in `ContentItemParser` when `badges` arrived as a `JsonObject` instead of a `JsonArray`; that parser path is now guarded and covered by unit test.
 - Emulator validation after the latest player pass confirmed `PlayerActivity` still opens, and on DRM/license failure the bottom-left error panel is the only visible surface, which is the intended fallback behavior for failed playback.

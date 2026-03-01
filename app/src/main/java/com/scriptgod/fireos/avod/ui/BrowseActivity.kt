@@ -52,6 +52,7 @@ class BrowseActivity : AppCompatActivity() {
     private var parentImageUrl: String = ""
     private var watchlistAsins: MutableSet<String> = mutableSetOf()
     private var preferHeaderFocus: Boolean = false
+    private var currentFilter: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,6 +92,7 @@ class BrowseActivity : AppCompatActivity() {
         // Determine filter: explicit extra overrides content type inference
         val filter = intent.getStringExtra(EXTRA_FILTER)
             ?: if (AmazonApiService.isSeriesContentType(contentType)) "seasons" else null
+        currentFilter = filter
         preferHeaderFocus = filter == "seasons"
         configureGridForFilter(filter)
 
@@ -123,6 +125,7 @@ class BrowseActivity : AppCompatActivity() {
                             // No seasons — might be episodes directly
                             val episodes = items.filter { AmazonApiService.isEpisodeContentType(it.contentType) }
                             if (episodes.isNotEmpty()) {
+                                currentFilter = "episodes"
                                 applyBrowseHeader("episodes", "EPISODE")
                                 configureGridForFilter("episodes")
                                 episodes
@@ -215,6 +218,7 @@ class BrowseActivity : AppCompatActivity() {
     }
 
     private fun configureGridForFilter(filter: String?) {
+        currentFilter = filter
         val presentation = when (filter) {
             "seasons" -> CardPresentation.SEASON
             "episodes" -> CardPresentation.EPISODE
@@ -354,7 +358,7 @@ class BrowseActivity : AppCompatActivity() {
         when {
             // Season selected → overview page (description, IMDb, episodes list)
             AmazonApiService.isSeriesContentType(item.contentType) -> {
-                val intent = if (intent.getStringExtra(EXTRA_FILTER) == "seasons") {
+                val intent = if (currentFilter == "seasons") {
                     Intent(this, BrowseActivity::class.java).apply {
                         putExtra(EXTRA_ASIN, item.asin)
                         putExtra(EXTRA_TITLE, item.title)
