@@ -55,7 +55,7 @@ internal object ContentItemParser {
         // messagePresentationModel.entitlementMessageSlotCompact[].imageId == "ENTITLED_ICON"
         // The text must also mention "prime" — ENTITLED_ICON alone is used for channel subs/rentals too.
         val hasEntitledIcon = model.getAsJsonObject("messagePresentationModel")
-            ?.getAsJsonArray("entitlementMessageSlotCompact")
+            ?.safeArray("entitlementMessageSlotCompact")
             ?.any { el ->
                 el.isJsonObject &&
                 el.asJsonObject.safeString("imageId") == "ENTITLED_ICON" &&

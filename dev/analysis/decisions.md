@@ -484,3 +484,51 @@ hardware with a TEE; the gate is skipped and existing quality resolution logic r
 
 **SD preset added to `PlaybackQuality.kt`**: `PlaybackQuality("SD", "H264", "None")` —
 not exposed as a user-selectable option; only used by the L3 fallback path.
+
+---
+
+## Decision 23: Continue Watching row — server-side progress only, no local episode tracking
+
+**Date**: Phase 29
+
+**Goal**: Show a "Continue Watching" row at the top of the home screen with amber progress bars
+for in-progress titles.
+
+**Data source investigation (via smali analysis)**:
+- Amazon's official Prime Video app populates its CW carousel from a local SQLite
+  `UserActivityHistory` database (class `ContinueWatchingCarouselProvider`). This database is
+  written **during playback** via the `UpdateStream` / PES V2 APIs — there is **no server read
+  endpoint** that returns in-progress episode data.
+- The watchlist API (`dv-android/watchlist/initial/v1.kt`) returns movies and series saved by
+  the user but **never returns individual episodes** — episode-level items are skipped entirely
+  by the watchlist endpoint.
+- The v1 home page (`dv-android/landing/initial/v1.kt`) returns MOVIE / SEASON / LIVE_EVENT
+  items only; `remainingTimeInSeconds = 0` for all items on this account.
+- The v2 landing page (`dv-android/landing/initial/v2.kt`) returns structured editorial rails
+  with no "Continue Watching" section for this territory/account.
+
+**Decision**: Use **watchlist API progress only**. Items added to `inProgressItems` (and
+exposed in MainActivity as `watchlistInProgressItems`) must satisfy `watchProgressMs > 0 &&
+runtimeMs > 0` — both conditions verified in `getWatchlistData()`. No local SharedPreferences
+tracking; no episode-level CW tracking. The CW rail is purely server-sourced.
+
+**Additional items**: `buildContinueWatchingRail()` also scans `unfilteredRails` for any items
+with `watchProgressMs > 0` (merged from `watchlistProgress` in `showRails()`), picking up
+non-watchlist movies that still have server-side progress.
+
+**Filter bypass**: The CW rail is prepended to `displayList` *after* `applyAllFiltersToRails()`
+so it is always visible regardless of the source/type filter state.
+
+**Hero strip override**: `updateHomeFeaturedStrip()` detects `headerText == "Continue Watching"`
+and uses `UiMetadataFormatter.progressSubtitle(item)` instead of `featuredMeta()` for the meta
+line, showing "X% watched · Y min left".
+
+**`ContentItemParser` bug fixed**: `getAsJsonObject("messagePresentationModel")?.getAsJsonArray(...)`
+threw `ClassCastException` when the field was `JsonNull`. Replaced with `safeArray()` extension.
+
+**Nested RecyclerView adapter reuse**: `RailsAdapter` previously created a new `ContentAdapter`
+on every `onBindViewHolder` call. The new adapter started with 0 items; `submitList` is async,
+causing a brief empty frame before items appeared. Fix: store `contentAdapter` in `RailViewHolder`
+and reuse it when `presentation` is unchanged — only call `submitList` with the updated list.
+Also added `getItemViewType()` override to `ContentAdapter` (returns `presentation.ordinal`) to
+prevent cross-presentation pool contamination via the shared `RecycledViewPool`.

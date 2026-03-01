@@ -81,7 +81,7 @@ internal object UiMetadataFormatter {
             .ifBlank { "Start playback, browse related titles, or manage watchlist status." }
     }
 
-    private fun progressSubtitle(item: ContentItem): String? {
+    fun progressSubtitle(item: ContentItem): String? {
         if (item.watchProgressMs == 0L || item.runtimeMs <= 0L) return null
         return when (item.watchProgressMs) {
             -1L -> "Finished recently"

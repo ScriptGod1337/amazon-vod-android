@@ -99,6 +99,7 @@ class MainActivity : AppCompatActivity() {
     private var currentNavPage: String = "home"
     private var watchlistAsins: MutableSet<String> = mutableSetOf()
     private var watchlistProgress: Map<String, Pair<Long, Long>> = emptyMap()
+    private var watchlistInProgressItems: List<ContentItem> = emptyList()
 
     // Phase 10: Library state
     private var libraryFilter: LibraryFilter = LibraryFilter.ALL
@@ -267,9 +268,10 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 apiService.detectTerritory()
-                val (asins, progress) = apiService.getWatchlistData()
+                val (asins, progress, inProgressItems) = apiService.getWatchlistData()
                 watchlistAsins = asins.toMutableSet()
                 watchlistProgress = progress
+                watchlistInProgressItems = inProgressItems
                 Log.i(TAG, "Watchlist loaded: ${watchlistAsins.size} items, ${watchlistProgress.size} with progress")
             }
             loadHomeRails()
@@ -654,11 +656,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 if (newItems.isNotEmpty()) {
                     libraryNextIndex += newItems.size
-                    val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
-                    val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
                     val markedItems = newItems.map { it.copy(
                         isInWatchlist = watchlistAsins.contains(it.asin),
-                        watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs
+                        watchProgressMs = watchlistProgress[it.asin]?.first ?: it.watchProgressMs
                     ) }
                     val combined = adapter.currentList + markedItems
                     adapter.submitList(combined)
@@ -781,15 +781,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 homeNextPageParams = nextParams
                 if (newRails.isNotEmpty()) {
-                    val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
-                    val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
                     val markedRails = newRails.map { rail ->
                         rail.copy(items = rail.items.map { item ->
-                            val localProgress = resumeMap[item.asin]
                             val serverProgress = watchlistProgress[item.asin]
-                            val progressMs = localProgress
-                                ?: serverProgress?.first
-                                ?: item.watchProgressMs
+                            val progressMs = serverProgress?.first ?: item.watchProgressMs
                             val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
                                 serverProgress.second else item.runtimeMs
                             item.copy(
@@ -801,8 +796,10 @@ class MainActivity : AppCompatActivity() {
                     }
                     unfilteredRails = unfilteredRails + markedRails
                     val filtered = applyAllFiltersToRails(unfilteredRails)
-                    updateHomeFeaturedStrip(filtered)
-                    railsAdapter.submitList(filtered)
+                    val cwRail = buildContinueWatchingRail()
+                    val displayList = if (cwRail != null) listOf(cwRail) + filtered else filtered
+                    updateHomeFeaturedStrip(displayList)
+                    railsAdapter.submitList(displayList)
                     Log.i(TAG, "Appended ${newRails.size} rails, total unfiltered=${unfilteredRails.size}")
                 } else {
                     homeNextPageParams = ""
@@ -816,6 +813,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun buildContinueWatchingRail(): ContentRail? {
+        val cwItems = watchlistInProgressItems.toMutableList()
+        val seenAsins = cwItems.mapTo(HashSet()) { it.asin }
+
+        // Also pick up in-progress episodes from the server rails.
+        // Episodes can't be added to the watchlist individually, so they won't appear in
+        // watchlistInProgressItems. Their watchProgressMs is set by the server (timecodeSeconds)
+        // and is never locally sourced.
+        for (rail in unfilteredRails) {
+            for (item in rail.items) {
+                if (item.watchProgressMs > 0 &&
+                    AmazonApiService.isPlayableType(item.contentType) &&
+                    item.asin !in seenAsins
+                ) {
+                    cwItems.add(item)
+                    seenAsins.add(item.asin)
+                }
+            }
+        }
+
+        return if (cwItems.isEmpty()) null else ContentRail("Continue Watching", cwItems)
+    }
+
     private fun showRails(rails: List<ContentRail>) {
         progressBar.visibility = View.GONE
         shimmerRecyclerView.visibility = View.GONE
@@ -826,16 +846,11 @@ class MainActivity : AppCompatActivity() {
         } else {
             recyclerView.visibility = View.VISIBLE
             tvError.visibility = View.GONE
-            val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
-            val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
-            // Merge watchlist flags, server-side watch progress, and local resume into rail items
+            // Merge watchlist flags and server-side watch progress into rail items
             val markedRails = rails.map { rail ->
                 rail.copy(items = rail.items.map { item ->
-                    val localProgress = resumeMap[item.asin]
                     val serverProgress = watchlistProgress[item.asin]
-                    val progressMs = localProgress
-                        ?: serverProgress?.first
-                        ?: item.watchProgressMs
+                    val progressMs = serverProgress?.first ?: item.watchProgressMs
                     val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
                         serverProgress.second else item.runtimeMs
                     item.copy(
@@ -847,8 +862,10 @@ class MainActivity : AppCompatActivity() {
             }
             unfilteredRails = markedRails
             val filtered = applyAllFiltersToRails(markedRails)
-            updateHomeFeaturedStrip(filtered)
-            railsAdapter.submitList(filtered)
+            val cwRail = buildContinueWatchingRail()
+            val displayList = if (cwRail != null) listOf(cwRail) + filtered else filtered
+            updateHomeFeaturedStrip(displayList)
+            railsAdapter.submitList(displayList)
             val animatedViews = mutableListOf<View>()
             if (searchStateCard.visibility == View.VISIBLE) animatedViews += searchStateCard
             if (categoryFilterRow.visibility == View.VISIBLE) animatedViews += categoryFilterRow
@@ -866,14 +883,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyRailsFilters() {
         val filtered = applyAllFiltersToRails(unfilteredRails)
-        updateHomeFeaturedStrip(filtered)
+        val cwRail = buildContinueWatchingRail()
+        val displayList = if (cwRail != null) listOf(cwRail) + filtered else filtered
+        updateHomeFeaturedStrip(displayList)
         if (filtered.isEmpty()) {
             tvError.text = "No content found"
             tvError.visibility = View.VISIBLE
         } else {
             tvError.visibility = View.GONE
         }
-        railsAdapter.submitList(filtered)
+        railsAdapter.submitList(displayList)
     }
 
     private fun applyAllFiltersToRails(rails: List<ContentRail>): List<ContentRail> {
@@ -918,25 +937,18 @@ class MainActivity : AppCompatActivity() {
             recyclerView.visibility = View.VISIBLE
             tvError.visibility = View.GONE
             homeFeaturedStrip.visibility = View.GONE
-            // Merge watchlist flags and watch progress into items
-            val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
-            val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
-            val markedItems = items
-                .map { item ->
-                    val localProgress = resumeMap[item.asin]
-                    val serverProgress = watchlistProgress[item.asin]
-                    val progressMs = localProgress
-                        ?: serverProgress?.first
-                        ?: item.watchProgressMs
-                    val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
-                        serverProgress.second else item.runtimeMs
-                    item.copy(
-                        isPrime = item.isPrime,
-                        isInWatchlist = watchlistAsins.contains(item.asin),
-                        watchProgressMs = progressMs,
-                        runtimeMs = runtimeMs
-                    )
-                }
+            // Merge watchlist flags and server-side watch progress into items
+            val markedItems = items.map { item ->
+                val serverProgress = watchlistProgress[item.asin]
+                val progressMs = serverProgress?.first ?: item.watchProgressMs
+                val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
+                    serverProgress.second else item.runtimeMs
+                item.copy(
+                    isInWatchlist = watchlistAsins.contains(item.asin),
+                    watchProgressMs = progressMs,
+                    runtimeMs = runtimeMs
+                )
+            }
             adapter.submitList(markedItems)
             val animatedViews = mutableListOf<View>()
             if (searchStateCard.visibility == View.VISIBLE) animatedViews += searchStateCard
@@ -975,6 +987,7 @@ class MainActivity : AppCompatActivity() {
             featuredRail != null &&
             featuredItem != null
         if (!shouldShow) {
+            syncFeaturedStripFocus(false)
             homeFeaturedStrip.visibility = View.GONE
             return
         }
@@ -988,7 +1001,10 @@ class MainActivity : AppCompatActivity() {
             else -> "Featured Now"
         }
         tvHomeFeaturedTitle.text = nonNullFeaturedItem.title
-        tvHomeFeaturedMeta.text = UiMetadataFormatter.featuredMeta(nonNullFeaturedRail.headerText, nonNullFeaturedItem)
+        tvHomeFeaturedMeta.text = if (nonNullFeaturedRail.headerText == "Continue Watching")
+            UiMetadataFormatter.progressSubtitle(nonNullFeaturedItem) ?: UiMetadataFormatter.featuredMeta(nonNullFeaturedRail.headerText, nonNullFeaturedItem)
+        else
+            UiMetadataFormatter.featuredMeta(nonNullFeaturedRail.headerText, nonNullFeaturedItem)
         if (nonNullFeaturedItem.imageUrl.isNotEmpty()) {
             homeFeaturedImage.load(nonNullFeaturedItem.imageUrl) {
                 crossfade(true)
@@ -997,7 +1013,24 @@ class MainActivity : AppCompatActivity() {
             homeFeaturedImage.setImageDrawable(null)
             homeFeaturedImage.setBackgroundColor(Color.parseColor("#1A1A1A"))
         }
+        homeFeaturedStrip.setOnClickListener { onItemSelected(nonNullFeaturedItem) }
+        syncFeaturedStripFocus(true)
         homeFeaturedStrip.visibility = View.VISIBLE
+    }
+
+    private fun syncFeaturedStripFocus(visible: Boolean) {
+        val filterButtons = listOf(btnCatAll, btnCatPrime, btnTypeAll, btnCatMovies, btnCatSeries)
+        if (visible) {
+            homeFeaturedStrip.nextFocusUpId = R.id.btn_cat_all
+            homeFeaturedStrip.nextFocusDownId = R.id.recycler_view
+            filterButtons.forEach { it.nextFocusDownId = R.id.home_featured_strip }
+            recyclerView.nextFocusUpId = R.id.home_featured_strip
+            railsAdapter.itemNextFocusUpId = R.id.home_featured_strip
+        } else {
+            filterButtons.forEach { it.nextFocusDownId = R.id.recycler_view }
+            recyclerView.nextFocusUpId = R.id.btn_home
+            railsAdapter.itemNextFocusUpId = R.id.btn_home
+        }
     }
 
     private fun updateSearchState(query: String, resultCount: Int?) {
@@ -1054,28 +1087,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
-        val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
-
-        if (isRailsMode) {
-            // Refresh watch progress within unfiltered cache and re-filter
-            if (unfilteredRails.isNotEmpty()) {
-                unfilteredRails = unfilteredRails.map { rail ->
-                    rail.copy(items = rail.items.map { it.copy(
-                        watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs
-                    ) })
-                }
-                val filtered = applyAllFiltersToRails(unfilteredRails)
-                updateHomeFeaturedStrip(filtered)
-                railsAdapter.submitList(filtered)
-            }
-        } else {
-            // Refresh watch progress on flat grid cards
-            val currentList = adapter.currentList
-            if (currentList.isNotEmpty()) {
-                val updated = currentList.map { it.copy(watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs) }
-                adapter.submitList(updated)
-            }
+        // Rebuild display list from cached data when returning from another activity.
+        // Progress is server-sourced and refreshed on next full home load.
+        if (isRailsMode && unfilteredRails.isNotEmpty()) {
+            val filtered = applyAllFiltersToRails(unfilteredRails)
+            val cwRail = buildContinueWatchingRail()
+            val displayList = if (cwRail != null) listOf(cwRail) + filtered else filtered
+            updateHomeFeaturedStrip(displayList)
+            railsAdapter.submitList(displayList)
         }
         // Re-focus when returning from another activity
         recyclerView.post {

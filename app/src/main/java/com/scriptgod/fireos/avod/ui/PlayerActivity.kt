@@ -76,7 +76,6 @@ class PlayerActivity : AppCompatActivity() {
         private const val PREF_AUDIO_PASSTHROUGH        = "audio_passthrough"
         private const val PREF_AUDIO_PASSTHROUGH_WARNED = "audio_passthrough_warned"
         private const val PREF_WIDEVINE_L3_WARNED       = "widevine_l3_warned"
-
     }
 
     private lateinit var playerView: PlayerView
@@ -673,7 +672,6 @@ class PlayerActivity : AppCompatActivity() {
         val durMs = p.duration
         if (posMs < 10_000) return // too early, don't save
         if (durMs > 0 && posMs >= durMs * 9 / 10) {
-            // >= 90% watched — save sentinel so cards show "fully watched"
             resumePrefs.edit().putLong(currentAsin, -1L).apply()
         } else {
             resumePrefs.edit().putLong(currentAsin, posMs).apply()

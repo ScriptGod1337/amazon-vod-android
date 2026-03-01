@@ -1192,10 +1192,11 @@ class AmazonApiService(private val authService: AmazonAuthService) {
      * Fetches watchlist ASINs and watch progress map.
      * Returns Pair(asins, progressMap) where progressMap is ASIN → Pair(watchProgressMs, runtimeMs).
      */
-    fun getWatchlistData(): Pair<Set<String>, Map<String, Pair<Long, Long>>> {
+    fun getWatchlistData(): Triple<Set<String>, Map<String, Pair<Long, Long>>, List<com.scriptgod.fireos.avod.model.ContentItem>> {
         return try {
             val allAsins = mutableSetOf<String>()
             val progressMap = mutableMapOf<String, Pair<Long, Long>>()
+            val inProgressItems = mutableListOf<com.scriptgod.fireos.avod.model.ContentItem>()
             var nextParams = ""
             var pageCount = 0
             val maxPages = 25 // safety limit: 25 * 20 = 500 items max
@@ -1206,8 +1207,9 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                     allAsins.add(item.asin)
                     if (item.watchProgressMs > 0 && item.runtimeMs > 0) {
                         progressMap[item.asin] = Pair(item.watchProgressMs, item.runtimeMs)
+                        if (inProgressItems.none { it.asin == item.asin }) inProgressItems.add(item)
                     }
-                }
+}
                 pageCount++
                 // Stop if no new items were added (server returning same page)
                 if (allAsins.size == prevSize && page.isNotEmpty()) {
@@ -1217,10 +1219,35 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                 nextParams = newNextParams
             } while (nextParams.isNotEmpty() && pageCount < maxPages)
             Log.w(TAG, "Watchlist loaded: ${allAsins.size} ASINs, ${progressMap.size} with progress, in $pageCount pages")
-            Pair(allAsins, progressMap)
+            // Supplement with home page (v1 switchblade) which covers:
+            //  - in-progress episodes (watchlist API never returns episodes)
+            //  - non-watchlist items that still have server-side progress (e.g. removed from watchlist)
+            try {
+                val homeItems = getHomePage()
+                Log.w(TAG, "Home page v1: ${homeItems.size} items, episodes=${homeItems.count { isEpisodeContentType(it.contentType) }}")
+                for (item in homeItems) {
+                    if (item.watchProgressMs > 0 && item.runtimeMs > 0) {
+                        // Update progressMap for all items — covers non-watchlist items too
+                        if (!progressMap.containsKey(item.asin)) {
+                            progressMap[item.asin] = Pair(item.watchProgressMs, item.runtimeMs)
+                        }
+                        // Add episodes to inProgressItems (CW row) since watchlist API skips them
+                        if (isEpisodeContentType(item.contentType) &&
+                            inProgressItems.none { it.asin == item.asin }
+                        ) {
+                            allAsins.add(item.asin)
+                            inProgressItems.add(item)
+                        }
+                    }
+                }
+                Log.w(TAG, "After home-page merge: progressMap=${progressMap.size}, cwItems=${inProgressItems.size}")
+            } catch (e: Exception) {
+                Log.w(TAG, "Home page merge failed (non-fatal)", e)
+            }
+            Triple(allAsins, progressMap, inProgressItems)
         } catch (e: Exception) {
             Log.w(TAG, "Failed to fetch watchlist data", e)
-            Pair(emptySet(), emptyMap())
+            Triple(emptySet(), emptyMap(), emptyList())
         }
     }
 

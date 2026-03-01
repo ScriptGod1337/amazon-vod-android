@@ -41,6 +41,8 @@ class ContentAdapter(
         val surface: View? = itemView.findViewById(R.id.card_surface)
     }
 
+    override fun getItemViewType(position: Int) = presentation.ordinal
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(

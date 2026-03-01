@@ -1420,3 +1420,41 @@ A one-time Toast informs the user on first L3 detection; subsequent plays are si
 - **Fire TV (L1)**: unaffected — L3 gate passes immediately, existing quality logic runs
 - **Decision 22** added to `decisions.md`
 
+## Phase 29: COMPLETE — Continue Watching row
+
+### What was built
+
+A **Continue Watching** rail prepended to the home screen rails list, built entirely from
+server-side watchlist progress data (no local tracking).
+
+### Data source investigation
+
+Smali analysis of the decompiled Prime Video APK (`ContinueWatchingCarouselProvider`) confirmed:
+- Amazon's own CW row reads from a local SQLite `UserActivityHistory` database populated during
+  playback — **no server read endpoint** exists for in-progress item data.
+- The watchlist API never returns episode-level items.
+- The v1/v2 home page APIs return editorial content, not personalised in-progress data.
+
+**Decision**: Use watchlist API progress only (`watchProgressMs > 0 && runtimeMs > 0`).
+
+### Changes
+
+- **`AmazonApiService.getWatchlistData()`**: returns a `Triple<Set<String>, Map<String, Pair<Long,Long>>, List<ContentItem>>` — the third element is `watchlistInProgressItems` (movies/series with server-confirmed watch progress). Also calls `getHomePage()` to supplement `progressMap` for non-watchlist items.
+- **`ContentItemParser.kt`**: fixed `ClassCastException` — `getAsJsonArray("entitlementMessageSlotCompact")` crashed on `JsonNull` fields; replaced with `safeArray()`.
+- **`MainActivity.kt`**:
+  - Added `watchlistInProgressItems: List<ContentItem>` field
+  - Added `buildContinueWatchingRail()` — combines `watchlistInProgressItems` + in-progress items from `unfilteredRails`
+  - CW rail prepended to `displayList` in `showRails()`, `loadHomeRailsNextPage()`, `applyRailsFilters()`, and `onResume()` — after `applyAllFiltersToRails()` so the row bypasses filters
+  - `updateHomeFeaturedStrip()` overrides meta line to `progressSubtitle()` when CW is the first rail
+  - Removed all `SharedPreferences("resume_positions")` reads from MainActivity (5 locations) — progress is now server-sourced only
+- **`RailsAdapter.kt`**: store `contentAdapter` + `boundPresentation` in `RailViewHolder`; reuse the adapter on rebind if presentation matches (eliminates async-diff empty-frame flicker); added `onViewRecycled()` to clear the inner adapter list; pool contamination fix applied in `ContentAdapter`.
+- **`ContentAdapter.kt`**: added `getItemViewType()` returning `presentation.ordinal` — prevents cross-presentation holder reuse via the shared `RecycledViewPool`.
+
+### Result
+
+- Home screen shows "Continue Watching" as the first rail with amber progress bars on all cards
+- Hero strip shows "CONTINUE WATCHING" eyebrow + "X% watched · Y min left" meta line
+- Source/type filters do not hide the CW row
+- Progress bars render correctly on all cards including position 0 (first item)
+- **Decision 23** added to `decisions.md`
+

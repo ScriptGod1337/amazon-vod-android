@@ -27,6 +27,8 @@ class RailsAdapter(
         val header: TextView = itemView.findViewById(R.id.tv_rail_header)
         val seeAll: TextView = itemView.findViewById(R.id.tv_see_all)
         val innerRecycler: RecyclerView = itemView.findViewById(R.id.rv_rail_items)
+        var boundPresentation: CardPresentation? = null
+        var contentAdapter: ContentAdapter? = null
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
@@ -70,17 +72,34 @@ class RailsAdapter(
         holder.seeAll.setOnClickListener(null)
 
         val presentation = resolvePresentation(rail, position, isProgressRail)
-        val innerAdapter = ContentAdapter(
-            onItemClick = onItemClick,
-            onMenuKey = onMenuKey,
-            nextFocusUpId = itemNextFocusUpId,
-            presentation = presentation,
-            onVerticalFocusMove = { itemPosition, direction ->
-                moveFocusBetweenRails(holder.bindingAdapterPosition, itemPosition, direction)
-            }
-        )
-        holder.innerRecycler.adapter = innerAdapter
+        // Reuse the existing ContentAdapter if the presentation hasn't changed.
+        // Creating a new adapter each bind causes a brief empty-frame flicker because
+        // ListAdapter.submitList() is asynchronous, so the RecyclerView sees 0 items
+        // between adapter swap and the first DiffUtil result.
+        val innerAdapter = if (holder.boundPresentation == presentation && holder.contentAdapter != null) {
+            holder.contentAdapter!!
+        } else {
+            val newAdapter = ContentAdapter(
+                onItemClick = onItemClick,
+                onMenuKey = onMenuKey,
+                nextFocusUpId = itemNextFocusUpId,
+                presentation = presentation,
+                onVerticalFocusMove = { itemPosition, direction ->
+                    moveFocusBetweenRails(holder.bindingAdapterPosition, itemPosition, direction)
+                }
+            )
+            holder.boundPresentation = presentation
+            holder.contentAdapter = newAdapter
+            holder.innerRecycler.adapter = newAdapter
+            newAdapter
+        }
+        innerAdapter.nextFocusUpId = itemNextFocusUpId
         innerAdapter.submitList(displayItems)
+    }
+
+    override fun onViewRecycled(holder: RailViewHolder) {
+        holder.contentAdapter?.submitList(null)
+        super.onViewRecycled(holder)
     }
 
     private fun resolvePresentation(rail: ContentRail, position: Int, isProgressRail: Boolean): CardPresentation {

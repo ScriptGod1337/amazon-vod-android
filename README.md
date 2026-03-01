@@ -6,6 +6,7 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 
 - **In-app login** with Amazon email/password + MFA support (PKCE OAuth device registration)
 - **Sign Out** via About screen (⚙ gear button) — clears tokens and returns to login
+- **Continue Watching row** — first rail on the home screen, built from server-side watchlist progress; shows amber progress bars and remaining-time subtitles; hero strip overrides to "X% watched · Y min left" when CW is active; bypasses source/type filters
 - **Home page horizontal carousels** — categorised rails (Featured, Trending, Top 10, etc.) matching the real Prime Video home layout, with page-level infinite scroll for more rails
 - **Content overview / detail page** — selecting any movie or series opens a full detail screen before playback: hero backdrop image, poster, year/runtime/age rating, quality badges (4K/HDR/5.1), IMDb rating, genres, synopsis, director credit
   - **▶ Play** button for movies
