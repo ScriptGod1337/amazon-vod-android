@@ -29,9 +29,13 @@ object UiMotion {
     }
 
     fun revealFresh(vararg views: View?) {
-        views.filterNotNull().forEach {
-            it.alpha = 0f
-            it.translationY = 0f
+        views.filterNotNull().forEach { view ->
+            // Only reset views that are not already fully visible and settled.
+            // Hard-resetting an already-visible view causes a flash (alpha 1→0→1).
+            if (!view.isVisible || view.alpha < 0.98f) {
+                view.alpha = 0f
+                view.translationY = 0f
+            }
         }
         reveal(*views)
     }

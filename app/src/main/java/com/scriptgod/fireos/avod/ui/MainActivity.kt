@@ -413,7 +413,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun performSearch() {
         val query = etSearch.text.toString().trim()
-        Log.i(TAG, "performSearch query='$query'")
+        Log.i(TAG, "performSearch (${query.length} chars)")
         if (query.isEmpty() && currentNavPage == "home") {
             // Search cleared — reload rails
             updateSearchState("", null)

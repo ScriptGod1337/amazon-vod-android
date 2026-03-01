@@ -158,6 +158,12 @@ class ContentAdapter(
         if (nextFocusUpId != View.NO_ID) {
             holder.itemView.nextFocusUpId = nextFocusUpId
         }
+        // Reset any scale / elevation that may have been left by a previous focused binding.
+        // Without this a recycled holder can reappear oversized after fast scrolling.
+        holder.itemView.animate().cancel()
+        holder.itemView.scaleX = 1f
+        holder.itemView.scaleY = 1f
+        holder.itemView.elevation = 0f
         val isCurrentlyFocused = holder.itemView.isFocused
         holder.focusGlow?.alpha = if (isCurrentlyFocused) 1f else 0f
         holder.focusRing?.alpha = if (isCurrentlyFocused) 1f else 0f
@@ -211,6 +217,14 @@ class ContentAdapter(
                 else -> false
             }
         }
+    }
+
+    override fun onViewRecycled(holder: ViewHolder) {
+        holder.itemView.animate().cancel()
+        holder.itemView.scaleX = 1f
+        holder.itemView.scaleY = 1f
+        holder.itemView.elevation = 0f
+        super.onViewRecycled(holder)
     }
 
     companion object {

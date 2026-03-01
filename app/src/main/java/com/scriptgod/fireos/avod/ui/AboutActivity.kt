@@ -16,6 +16,11 @@ import java.io.File
 
 class AboutActivity : AppCompatActivity() {
 
+    companion object {
+        // Must match PlayerActivity.PREF_AUDIO_PASSTHROUGH
+        private const val PREF_AUDIO_PASSTHROUGH = "audio_passthrough"
+    }
+
     private lateinit var btnBack: Button
     private var appliedInitialButtonFocus: Boolean = false
 
@@ -186,7 +191,7 @@ class AboutActivity : AppCompatActivity() {
             btnOn.isSelected  = on
         }
 
-        val initial = prefs.getBoolean("audio_passthrough", false) && supportsAny
+        val initial = prefs.getBoolean(PREF_AUDIO_PASSTHROUGH, false) && supportsAny
         updateButtons(initial)
 
         tvNote.text = if (!supportsAny)
@@ -196,8 +201,9 @@ class AboutActivity : AppCompatActivity() {
             "Volume control moves to the receiver. Takes effect on next playback session."
 
         fun save(on: Boolean) {
-            prefs.edit().putBoolean("audio_passthrough", on).apply()
-            updateButtons(on)
+            val valueToSave = on && supportsAny
+            prefs.edit().putBoolean(PREF_AUDIO_PASSTHROUGH, valueToSave).apply()
+            updateButtons(valueToSave)
             Toast.makeText(
                 this,
                 if (on) "Passthrough on — takes effect on next playback"

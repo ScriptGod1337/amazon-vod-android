@@ -31,4 +31,9 @@ class ShimmerAdapter : RecyclerView.Adapter<ShimmerAdapter.ShimmerViewHolder>() 
         holder.shimmerLayout.stopShimmer()
         super.onViewDetachedFromWindow(holder)
     }
+
+    override fun onViewRecycled(holder: ShimmerViewHolder) {
+        holder.shimmerLayout.stopShimmer()
+        super.onViewRecycled(holder)
+    }
 }

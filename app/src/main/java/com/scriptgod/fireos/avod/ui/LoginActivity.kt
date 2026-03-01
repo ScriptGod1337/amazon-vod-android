@@ -470,10 +470,7 @@ class LoginActivity : AppCompatActivity() {
 
         val credBody = credResp.body?.string() ?: ""
         val location = credResp.header("Location")
-        Log.w(TAG, "Credential POST: HTTP ${credResp.code}, location=${location?.take(120)}, body=${credBody.length}")
-        if (credBody.length < 5000) {
-            Log.w(TAG, "Short response body: $credBody")
-        }
+        Log.w(TAG, "Credential POST: HTTP ${credResp.code}, location=${location?.take(120)}, body=${credBody.length} chars")
 
         // Follow redirect chain to find auth code
         if (location != null) {
@@ -634,13 +631,15 @@ class LoginActivity : AppCompatActivity() {
         showLoading(true)
         scope.launch {
             try {
-                val tokenData = withContext(Dispatchers.IO) { performDeviceRegistration(authCode) }
-                val tokenJson = gson.toJson(tokenData)
-                // Write to app-internal storage (always writable)
-                tokenFile.writeText(tokenJson)
-                Log.w(TAG, "Token saved to ${tokenFile.path}")
-                // Also try legacy path for backward compatibility
-                try { LEGACY_TOKEN_FILE.writeText(tokenJson) } catch (_: Exception) {}
+                withContext(Dispatchers.IO) {
+                    val tokenData = performDeviceRegistration(authCode)
+                    val tokenJson = gson.toJson(tokenData)
+                    // Write to app-internal storage (always writable)
+                    tokenFile.writeText(tokenJson)
+                    Log.w(TAG, "Token saved to ${tokenFile.path}")
+                    // Also try legacy path for backward compatibility
+                    try { LEGACY_TOKEN_FILE.writeText(tokenJson) } catch (_: Exception) {}
+                }
                 Log.w(TAG, "Device registered and token saved")
                 showStatus("Login successful!")
                 tvStatus.setTextColor(0xFF00CC00.toInt())

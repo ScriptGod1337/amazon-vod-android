@@ -56,7 +56,7 @@
                     android:textSize="@dimen/page_supporting_size" />
             </LinearLayout>
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_about_back"
                 android:layout_width="wrap_content"
                 android:layout_height="44dp"
@@ -68,8 +68,6 @@
                 android:textColor="@color/button_secondary_text"
                 android:textSize="@dimen/action_text_size"
                 android:background="@drawable/button_pill_secondary"
-                android:backgroundTint="@null"
-                app:backgroundTint="@null"
                 android:stateListAnimator="@null" />
         </LinearLayout>
 

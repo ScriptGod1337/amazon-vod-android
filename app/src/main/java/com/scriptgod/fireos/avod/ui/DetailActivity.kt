@@ -90,7 +90,9 @@ class DetailActivity : AppCompatActivity() {
         val tokenFile = LoginActivity.findTokenFile(this) ?: run { finish(); return }
         apiService = AmazonApiService(AmazonAuthService(tokenFile))
 
-        currentAsin = intent.getStringExtra(EXTRA_ASIN) ?: run { finish(); return }
+        currentAsin = intent.getStringExtra(EXTRA_ASIN)
+            ?.takeIf { it.isNotBlank() }
+            ?: run { finish(); return }
         currentContentType = intent.getStringExtra(EXTRA_CONTENT_TYPE) ?: ""
         fallbackImageUrl = intent.getStringExtra(EXTRA_IMAGE_URL) ?: ""
         watchlistAsins = (intent.getStringArrayListExtra(EXTRA_WATCHLIST_ASINS) ?: ArrayList()).toMutableSet()
@@ -112,7 +114,7 @@ class DetailActivity : AppCompatActivity() {
                     apiService.detectTerritory()
                     apiService.getDetailInfo(currentAsin)
                 } catch (e: Exception) {
-                    Log.w(TAG, "loadDetail failed", e)
+                    Log.w(TAG, "loadDetail failed for $currentAsin: ${e.message}", e)
                     null
                 }
             }
@@ -120,7 +122,7 @@ class DetailActivity : AppCompatActivity() {
             progressBar.visibility = View.GONE
 
             if (info == null) {
-                tvError.text = "Could not load details"
+                tvError.text = "Could not load details — check your connection and try again"
                 tvError.visibility = View.VISIBLE
                 return@launch
             }

@@ -99,6 +99,7 @@ class PlayerActivity : AppCompatActivity() {
     private val scopeJob = Job()
     private val scope = CoroutineScope(Dispatchers.Main + scopeJob)
     private var heartbeatJob: Job? = null
+    private var playbackJob: Job? = null
     private var currentAsin: String = ""
     private var currentMaterialType: String = "Feature"
     private var currentQuality: PlaybackQuality = PlaybackQuality.HD
@@ -256,8 +257,13 @@ class PlayerActivity : AppCompatActivity() {
      */
     private fun widevineSecurityLevel(): String = try {
         MediaDrm(WIDEVINE_UUID).use { it.getPropertyString("securityLevel") }
+    } catch (e: android.media.UnsupportedSchemeException) {
+        // Expected on devices with no Widevine CDM (rare) or certain emulator configurations.
+        Log.w(TAG, "Widevine DRM not supported on this device — assuming L3")
+        "L3"
     } catch (e: Exception) {
-        Log.w(TAG, "Failed to query Widevine security level — assuming L3: ${e.message}")
+        // Unexpected failure — log at ERROR so it is visible in release logcat.
+        Log.e(TAG, "Unexpected MediaDrm error querying security level — safe-failing to L3: ${e.message}")
         "L3"
     }
 
@@ -330,7 +336,8 @@ class PlayerActivity : AppCompatActivity() {
         if (qualityOverride == null) h265FallbackAttempted = false  // fresh start resets guard
         Log.i(TAG, "Playback quality: ${quality.videoQuality} codec=${quality.codecOverride} hdr=${quality.hdrOverride}")
 
-        scope.launch {
+        playbackJob?.cancel()
+        playbackJob = scope.launch {
             try {
                 val (info, detailAudioTracks) = withContext(Dispatchers.IO) {
                     apiService.detectTerritory()
@@ -577,10 +584,10 @@ class PlayerActivity : AppCompatActivity() {
                 h265FallbackAttempted = true
                 val lastPos = player?.currentPosition ?: 0L
                 Log.w(TAG, "H265 CDN returned 400 — re-fetching H264 manifest, resume at ${lastPos}ms")
-                android.widget.Toast.makeText(
+                Toast.makeText(
                     this@PlayerActivity,
                     "H265 not available for this title — switching to H264",
-                    android.widget.Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT
                 ).show()
                 // Save position so setupPlayer() can seek to it via resumePrefs
                 if (lastPos > 10_000) resumePrefs.edit().putLong(currentAsin, lastPos).apply()
