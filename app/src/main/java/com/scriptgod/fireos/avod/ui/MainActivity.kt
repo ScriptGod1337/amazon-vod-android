@@ -42,9 +42,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var tvError: TextView
     private lateinit var searchRow: LinearLayout
+    private lateinit var searchStateCard: LinearLayout
     private lateinit var etSearch: DpadEditText
     private lateinit var btnSearch: Button
     private lateinit var btnSearchIcon: Button
+    private lateinit var tvSearchQuery: TextView
+    private lateinit var tvSearchHint: TextView
+    private lateinit var tvSearchCount: TextView
     private lateinit var btnHome: Button
     private lateinit var btnFreevee: Button
     private lateinit var btnWatchlist: Button
@@ -102,9 +106,13 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progress_bar)
         tvError = findViewById(R.id.tv_error)
         searchRow = findViewById(R.id.search_row)
+        searchStateCard = findViewById(R.id.search_state_card)
         etSearch = findViewById(R.id.et_search)
         btnSearch = findViewById(R.id.btn_search)
         btnSearchIcon = findViewById(R.id.btn_search_icon)
+        tvSearchQuery = findViewById(R.id.tv_search_query)
+        tvSearchHint = findViewById(R.id.tv_search_hint)
+        tvSearchCount = findViewById(R.id.tv_search_count)
         btnHome = findViewById(R.id.btn_home)
         btnFreevee = findViewById(R.id.btn_freevee)
         btnWatchlist = findViewById(R.id.btn_watchlist)
@@ -165,7 +173,7 @@ class MainActivity : AppCompatActivity() {
         // Handle back press while keyboard is showing (onKeyPreIme intercepts before IME)
         etSearch.onBackPressedWhileFocused = {
             Log.i(TAG, "Back pressed while search focused — collapsing search")
-            hideSearchRow()
+            closeSearchAndRestorePage()
             recyclerView.requestFocus()
         }
 
@@ -262,7 +270,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toggleSearchRow() {
-        if (searchRow.visibility == View.VISIBLE) hideSearchRow()
+        if (searchRow.visibility == View.VISIBLE) closeSearchAndRestorePage()
         else showSearchRow()
     }
 
@@ -276,6 +284,32 @@ class MainActivity : AppCompatActivity() {
         hideKeyboard()
         searchRow.visibility = View.GONE
         etSearch.clearFocus()
+    }
+
+    private fun resetSearchUi(clearQuery: Boolean) {
+        hideSearchRow()
+        if (clearQuery) {
+            etSearch.text?.clear()
+        }
+        updateSearchState("", null)
+    }
+
+    private fun closeSearchAndRestorePage() {
+        val hadQuery = etSearch.text.toString().trim().isNotEmpty()
+        resetSearchUi(clearQuery = true)
+        if (!hadQuery) return
+
+        when (currentNavPage) {
+            "home" -> loadHomeRails()
+            "library" -> {
+                switchToGridMode()
+                loadLibraryInitial()
+            }
+            else -> {
+                switchToGridMode()
+                loadFilteredContent("")
+            }
+        }
     }
 
     private fun showKeyboard() {
@@ -326,6 +360,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadFilteredContent(query: String = "") {
         showLoading()
+        updateSearchState(query, null)
         lifecycleScope.launch {
             try {
                 val items = withContext(Dispatchers.IO) {
@@ -363,6 +398,7 @@ class MainActivity : AppCompatActivity() {
         Log.i(TAG, "performSearch query='$query'")
         if (query.isEmpty() && currentNavPage == "home") {
             // Search cleared — reload rails
+            updateSearchState("", null)
             loadHomeRails()
         } else {
             if (query.isNotEmpty()) switchToGridMode()
@@ -373,6 +409,7 @@ class MainActivity : AppCompatActivity() {
     // --- Nav pages (Home / Watchlist / Library) ---
 
     private fun loadNav(page: String) {
+        resetSearchUi(clearQuery = true)
         currentNavPage = page
         sourceFilter = "all"
         typeFilter = "all"
@@ -432,6 +469,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateFilterRowVisibility() {
+        val isSearchActive = etSearch.text.toString().trim().isNotEmpty()
+        searchStateCard.visibility = if (isSearchActive) View.VISIBLE else View.GONE
         when (currentNavPage) {
             "library" -> {
                 categoryFilterRow.visibility = View.GONE
@@ -786,6 +825,12 @@ class MainActivity : AppCompatActivity() {
             unfilteredRails = markedRails
             val filtered = applyTypeFilterToRails(markedRails)
             railsAdapter.submitList(filtered)
+            val animatedViews = mutableListOf<View>()
+            if (searchStateCard.visibility == View.VISIBLE) animatedViews += searchStateCard
+            if (categoryFilterRow.visibility == View.VISIBLE) animatedViews += categoryFilterRow
+            if (libraryFilterRow.visibility == View.VISIBLE) animatedViews += libraryFilterRow
+            animatedViews += recyclerView
+            UiMotion.revealFresh(*animatedViews.toTypedArray())
             recyclerView.post {
                 val firstChild = recyclerView.getChildAt(0)
                 if (firstChild != null) firstChild.requestFocus()
@@ -834,6 +879,7 @@ class MainActivity : AppCompatActivity() {
     private fun showItems(items: List<ContentItem>) {
         progressBar.visibility = View.GONE
         shimmerRecyclerView.visibility = View.GONE
+        updateSearchState(etSearch.text.toString().trim(), items.size)
         if (items.isEmpty()) {
             recyclerView.visibility = View.GONE
             tvError.text = "No content found"
@@ -865,6 +911,12 @@ class MainActivity : AppCompatActivity() {
                     )
                 }
             adapter.submitList(markedItems)
+            val animatedViews = mutableListOf<View>()
+            if (searchStateCard.visibility == View.VISIBLE) animatedViews += searchStateCard
+            if (categoryFilterRow.visibility == View.VISIBLE) animatedViews += categoryFilterRow
+            if (libraryFilterRow.visibility == View.VISIBLE) animatedViews += libraryFilterRow
+            animatedViews += recyclerView
+            UiMotion.revealFresh(*animatedViews.toTypedArray())
             // After items are submitted, request focus on first grid item for D-pad navigation
             recyclerView.post {
                 val firstChild = recyclerView.getChildAt(0)
@@ -883,11 +935,36 @@ class MainActivity : AppCompatActivity() {
         recyclerView.visibility = View.GONE
         tvError.text = msg
         tvError.visibility = View.VISIBLE
+        updateSearchState(etSearch.text.toString().trim(), null)
+    }
+
+    private fun updateSearchState(query: String, resultCount: Int?) {
+        val active = query.isNotBlank()
+        searchStateCard.visibility = if (active) View.VISIBLE else View.GONE
+        if (!active) return
+        tvSearchQuery.text = "Results for \"$query\""
+        tvSearchHint.text = buildSearchHint()
+        tvSearchCount.text = when (resultCount) {
+            null -> "Searching..."
+            1 -> "1 Title"
+            else -> "$resultCount Titles"
+        }
+    }
+
+    private fun buildSearchHint(): String {
+        val facets = mutableListOf<String>()
+        if (sourceFilter == "prime") facets += "Prime only"
+        facets += when (typeFilter) {
+            "movies" -> "Movies only"
+            "series" -> "Series only"
+            else -> "All types"
+        }
+        return listOf("Global catalog search", *facets.toTypedArray()).joinToString("  ·  ")
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK && searchRow.visibility == View.VISIBLE) {
-            hideSearchRow()
+            closeSearchAndRestorePage()
             recyclerView.requestFocus()
             return true
         }

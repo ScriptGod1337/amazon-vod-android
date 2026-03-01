@@ -554,7 +554,7 @@ class AmazonApiService(private val authService: AmazonAuthService) {
     }
 
     /**
-     * Fetches rich metadata for a content item (synopsis, IMDB rating, genres, hero image, etc.)
+     * Fetches rich metadata for a content item (synopsis, IMDb rating, genres, hero image, etc.)
      * using the android/atf/v3.jstl detail endpoint.
      *
      * For MOVIE: data is in resource.*

@@ -1,6 +1,7 @@
 package com.scriptgod.fireos.avod.ui
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -37,10 +38,13 @@ class DetailActivity : AppCompatActivity() {
     private lateinit var ivHero: ImageView
     private lateinit var ivPoster: ImageView
     private lateinit var tvTitle: TextView
+    private lateinit var tvDetailEyebrow: TextView
+    private lateinit var tvDetailSupport: TextView
     private lateinit var tvMetadata: TextView
     private lateinit var tvImdb: TextView
-    private lateinit var tvGenres: TextView
     private lateinit var tvSynopsis: TextView
+    private lateinit var tvSynopsisLabel: TextView
+    private lateinit var tvDirectorsLabel: TextView
     private lateinit var tvDirectors: TextView
     private lateinit var btnPlay: Button
     private lateinit var btnTrailer: Button
@@ -65,10 +69,13 @@ class DetailActivity : AppCompatActivity() {
         ivHero = findViewById(R.id.iv_hero)
         ivPoster = findViewById(R.id.iv_poster)
         tvTitle = findViewById(R.id.tv_title)
+        tvDetailEyebrow = findViewById(R.id.tv_detail_eyebrow)
+        tvDetailSupport = findViewById(R.id.tv_detail_support)
         tvMetadata = findViewById(R.id.tv_metadata)
         tvImdb = findViewById(R.id.tv_imdb)
-        tvGenres = findViewById(R.id.tv_genres)
         tvSynopsis = findViewById(R.id.tv_synopsis)
+        tvSynopsisLabel = findViewById(R.id.tv_synopsis_label)
+        tvDirectorsLabel = findViewById(R.id.tv_directors_label)
         tvDirectors = findViewById(R.id.tv_directors)
         btnPlay = findViewById(R.id.btn_play)
         btnTrailer = findViewById(R.id.btn_trailer)
@@ -136,6 +143,8 @@ class DetailActivity : AppCompatActivity() {
         // Title
         tvTitle.text = if (info.showTitle.isNotEmpty()) "${info.showTitle}: ${info.title}"
                        else info.title
+        tvDetailEyebrow.text = detailEyebrow(info.contentType)
+        tvDetailSupport.text = buildSupportLine(info)
 
         // Metadata row: year · runtime · age rating · quality
         val meta = buildString {
@@ -162,28 +171,32 @@ class DetailActivity : AppCompatActivity() {
         }
         tvMetadata.text = meta
 
-        // IMDb
         if (info.imdbRating > 0f) {
             tvImdb.text = "\u2605 IMDb %.1f / 10".format(info.imdbRating)
+            tvImdb.setTextColor(imdbColorFor(info.imdbRating))
             tvImdb.visibility = View.VISIBLE
-        }
-
-        // Genres
-        if (info.genres.isNotEmpty()) {
-            tvGenres.text = info.genres.joinToString("  ·  ")
-            tvGenres.visibility = View.VISIBLE
+        } else {
+            tvImdb.visibility = View.GONE
         }
 
         // Synopsis
         if (info.synopsis.isNotEmpty()) {
             tvSynopsis.text = info.synopsis
             tvSynopsis.visibility = View.VISIBLE
+            tvSynopsisLabel.visibility = View.VISIBLE
+        } else {
+            tvSynopsis.visibility = View.GONE
+            tvSynopsisLabel.visibility = View.GONE
         }
 
         // Directors
         if (info.directors.isNotEmpty()) {
             tvDirectors.text = "Director: " + info.directors.joinToString(", ")
             tvDirectors.visibility = View.VISIBLE
+            tvDirectorsLabel.visibility = View.VISIBLE
+        } else {
+            tvDirectors.visibility = View.GONE
+            tvDirectorsLabel.visibility = View.GONE
         }
 
         // Watchlist button
@@ -223,6 +236,10 @@ class DetailActivity : AppCompatActivity() {
         }
 
         layoutContent.visibility = View.VISIBLE
+        UiMotion.revealFresh(
+            findViewById(R.id.detail_hero_section),
+            findViewById(R.id.detail_body_section)
+        )
 
         // Focus the primary action button
         layoutContent.post {
@@ -236,6 +253,40 @@ class DetailActivity : AppCompatActivity() {
 
     private fun updateWatchlistButton(isIn: Boolean) {
         btnWatchlist.text = if (isIn) "★  Watchlist" else "☆  Watchlist"
+    }
+
+    private fun detailEyebrow(contentType: String): String {
+        val upper = contentType.uppercase()
+        return when {
+            upper.contains("SEASON") -> "SEASON"
+            upper.contains("EPISODE") -> "EPISODE"
+            AmazonApiService.isSeriesContentType(contentType) -> "SERIES"
+            else -> "MOVIE"
+        }
+    }
+
+    private fun imdbColorFor(rating: Float): Int {
+        return when {
+            rating >= 8.5f -> Color.parseColor("#4FD1C5")
+            rating >= 7.0f -> Color.parseColor("#9FD36A")
+            rating >= 6.0f -> Color.parseColor("#F3C85F")
+            rating >= 5.0f -> Color.parseColor("#F29D52")
+            else -> Color.parseColor("#E06B6B")
+        }
+    }
+
+    private fun buildSupportLine(info: DetailInfo): String {
+        val parts = mutableListOf<String>()
+        if (info.genres.isNotEmpty()) {
+            parts += info.genres.joinToString("  ·  ")
+        }
+        if (info.showTitle.isNotEmpty()) {
+            parts += "From ${info.showTitle}"
+        }
+        if (info.isTrailerAvailable) {
+            parts += "Trailer available"
+        }
+        return parts.joinToString("  ·  ").ifEmpty { "Start playback, browse related titles, or manage watchlist status." }
     }
 
     private fun onPlayClicked(info: DetailInfo) {

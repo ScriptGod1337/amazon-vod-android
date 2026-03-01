@@ -3,16 +3,16 @@
     <item android:state_focused="true">
         <shape>
             <corners android:radius="24dp" />
-            <solid android:color="#19B8EC" />
+            <solid android:color="@color/accent_cyan_bright" />
             <stroke
                 android:width="2dp"
-                android:color="#FFFFFF" />
+                android:color="@color/accent_outline" />
         </shape>
     </item>
     <item>
         <shape>
             <corners android:radius="24dp" />
-            <solid android:color="#00A8E0" />
+            <solid android:color="@color/accent_cyan" />
         </shape>
     </item>
 </selector>

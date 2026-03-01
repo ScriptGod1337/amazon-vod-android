@@ -1,7 +1,7 @@
 # UI Review Report
 
 **Reviewed by**: Codex acting as UI Reviewer
-**Date**: 2026-02-28
+**Date**: 2026-03-01
 **Screenshots reviewed**: `current.png`, `home_rails.png`, `search.png`, `watchlist.png`, `library.png`, `browse.png`, `about.png`, `detail.png`, `player_overlay.png`
 
 ## Summary
@@ -48,10 +48,13 @@
 ## Visual Assessment
 
 - `current.png` and `home_rails.png` show the current Home treatment without the oversized hero. The compact header and filter stack leave more space for content and remain visually stable during focus changes.
+- The latest header-spacing pass pushes the Home nav fully to the top edge and compresses the nav/filter stack, reclaiming vertical space without reintroducing overlap with emulator chrome.
 - `watchlist.png` confirms the grouped `Availability` and `Type` controls make the Watchlist filters more readable than the earlier stacked layout.
 - `search.png`, `library.png`, and `browse.png` confirm the redesigned header language carries across secondary states without falling back under the emulator banner.
+- The latest search-close pass removes the stale search summary card once search is dismissed, so Home and Watchlist return to their normal state instead of looking like lingering search views.
+- The compact Home density pass shortens landscape rails, tightens inter-rail spacing, and removes redundant Prime subtitle copy so lower rows get more headroom on the emulator.
 - `browse.png` specifically confirms Browse now reads as a dedicated destination with its own header panel, contextual chips, and framed grid surface instead of a bare recycler screen.
-- `about.png` confirms the old plain settings page has been replaced with a proper TV status/settings layout, with grouped app, token, playback, and session panels.
+- `about.png` confirms the old plain settings page has been replaced with a proper TV status/settings layout, with grouped app, token, playback, and session panels, and the header now names the app as `ScriptGod's AmazonVOD for FireOS`.
 - `detail.png` confirms the detail action buttons now present their intended focus styling instead of default Material tint.
 - `player_overlay.png` confirms the redesigned audio/subtitle controls match the newer control language used elsewhere in the UI.
 - The latest consistency pass keeps the page-title/supporting-text hierarchy aligned between Browse, About, Detail, and Player-adjacent UI, and removes the last obvious timing mismatch in card focus animation.
@@ -59,8 +62,12 @@
 ## Device Validation Notes
 
 - Emulator validation on `emulator-5554` covered the full visual pass and D-pad behavior checks.
+- Emulator validation on March 1, 2026 confirmed the Home nav bar moved higher again while remaining clear of the emulator banner.
+- Emulator validation on March 1, 2026 confirmed the final compact Home stack at `nav_bar [0,0][1920,96]`, `category_filter_row [64,104][1856,200]`, and `recycler_view [0,208][1920,1080]`.
 - Browse-page emulator validation confirmed `UP` from the first grid card lands on `Back`, preserving a clean escape route from the grid to the page header.
 - About-page emulator validation confirmed `Back` takes first focus in non-touch mode, the playback quality row is focusable and stateful, and the lower `Sign Out` action remains reachable through the scroll view.
+- Search-state emulator validation confirmed `Results for ...` is shown only while search is active and disappears once search is dismissed.
+- Emulator validation also confirmed `Included with Prime` no longer appears in card subtitles after the metadata cleanup.
 - Consistency-pass emulator validation confirmed About still returns cleanly to Home through the new close transition helper, and Home/Browse/About all render with the updated shared type scale.
-- Fire TV validation on `192.168.0.12:5555` confirmed login bypass via `.device-token`, successful entry to `MainActivity`, working detail-screen focus, and successful launch into `PlayerActivity`.
-- Fire TV `uiautomator` output remained too limited to authoritatively inspect the transient player overlay controls there, so emulator screenshots remain the review source for that part of the UI.
+- Fire TV validation on `192.168.0.12:5555` confirmed login bypass via `.device-token`, successful entry to `MainActivity`, and a targeted overlay-validation attempt against `PlayerActivity`.
+- If Fire TV `uiautomator` still remains too limited to authoritatively inspect the transient player overlay controls, emulator screenshots remain the review source for that part of the UI.

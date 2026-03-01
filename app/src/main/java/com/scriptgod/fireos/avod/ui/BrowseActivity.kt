@@ -46,10 +46,13 @@ class BrowseActivity : AppCompatActivity() {
     private lateinit var tvContextChip: TextView
     private lateinit var tvCountChip: TextView
     private lateinit var btnBack: Button
+    private lateinit var headerCard: View
+    private lateinit var gridPanel: View
     private lateinit var apiService: AmazonApiService
     private lateinit var adapter: ContentAdapter
     private var parentImageUrl: String = ""
     private var watchlistAsins: MutableSet<String> = mutableSetOf()
+    private var preferHeaderFocus: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,6 +68,8 @@ class BrowseActivity : AppCompatActivity() {
         tvContextChip = findViewById(R.id.tv_browse_context_chip)
         tvCountChip = findViewById(R.id.tv_browse_count_chip)
         btnBack = findViewById(R.id.btn_browse_back)
+        headerCard = findViewById(R.id.browse_header_card)
+        gridPanel = findViewById(R.id.browse_grid_panel)
 
         val tokenFile = LoginActivity.findTokenFile(this)
             ?: run { finish(); return }
@@ -76,7 +81,8 @@ class BrowseActivity : AppCompatActivity() {
         adapter = ContentAdapter(
             onItemClick = { item -> onItemSelected(item) },
             onMenuKey = { item -> showItemMenu(item) },
-            nextFocusUpId = R.id.btn_browse_back
+            nextFocusUpId = R.id.btn_browse_back,
+            onVerticalFocusMove = { position, direction -> handleGridVerticalMove(position, direction) }
         )
         recyclerView.layoutManager = GridLayoutManager(this, 4)
         recyclerView.adapter = adapter
@@ -95,11 +101,14 @@ class BrowseActivity : AppCompatActivity() {
         // Determine filter: explicit extra overrides content type inference
         val filter = intent.getStringExtra(EXTRA_FILTER)
             ?: if (AmazonApiService.isSeriesContentType(contentType)) "seasons" else null
+        preferHeaderFocus = filter == "seasons"
 
         applyBrowseHeader(filter, contentType)
         loadDetails(asin, filterType = filter, fallbackImage = parentImageUrl)
 
-        btnBack.requestFocus()
+        if (preferHeaderFocus) {
+            btnBack.requestFocus()
+        }
     }
 
     private fun loadDetails(asin: String, filterType: String? = null, fallbackImage: String = "") {
@@ -156,12 +165,8 @@ class BrowseActivity : AppCompatActivity() {
                     adapter.submitList(withWatchlist)
                     val itemLabel = if (withWatchlist.size == 1) "1 Item" else "${withWatchlist.size} Items"
                     tvCountChip.text = itemLabel
-                    // Focus first grid item for D-pad navigation
-                    recyclerView.post {
-                        val firstChild = recyclerView.getChildAt(0)
-                        if (firstChild != null) firstChild.requestFocus()
-                        else recyclerView.requestFocus()
-                    }
+                    UiMotion.revealFresh(headerCard, gridPanel)
+                    recyclerView.post { requestPreferredFocus() }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading details for $asin", e)
@@ -249,10 +254,49 @@ class BrowseActivity : AppCompatActivity() {
             adapter.submitList(updated)
         }
         recyclerView.post {
-            val firstChild = recyclerView.getChildAt(0)
-            if (firstChild != null) firstChild.requestFocus()
-            else recyclerView.requestFocus()
+            UiMotion.reveal(headerCard, gridPanel)
+            requestPreferredFocus()
         }
+    }
+
+    private fun requestPreferredFocus() {
+        if (preferHeaderFocus) {
+            btnBack.requestFocus()
+            return
+        }
+        val firstChild = recyclerView.getChildAt(0)
+        if (firstChild != null) firstChild.requestFocus()
+        else recyclerView.requestFocus()
+    }
+
+    private fun handleGridVerticalMove(position: Int, direction: Int): Boolean {
+        val layoutManager = recyclerView.layoutManager as? GridLayoutManager ?: return false
+        val spanCount = layoutManager.spanCount
+        if (direction < 0) {
+            val targetPosition = position - spanCount
+            if (targetPosition < 0) {
+                btnBack.requestFocus()
+                return true
+            }
+            return requestGridPosition(targetPosition)
+        }
+
+        val targetPosition = position + spanCount
+        if (targetPosition >= adapter.itemCount) return false
+        return requestGridPosition(targetPosition)
+    }
+
+    private fun requestGridPosition(position: Int): Boolean {
+        val holder = recyclerView.findViewHolderForAdapterPosition(position)
+        if (holder?.itemView != null) {
+            holder.itemView.requestFocus()
+            return true
+        }
+        recyclerView.scrollToPosition(position)
+        recyclerView.post {
+            recyclerView.findViewHolderForAdapterPosition(position)?.itemView?.requestFocus()
+        }
+        return true
     }
 
     // --- Watchlist context menu (MENU key) ---
@@ -293,7 +337,7 @@ class BrowseActivity : AppCompatActivity() {
     private fun onItemSelected(item: ContentItem) {
         Log.i(TAG, "Selected: ${item.asin} — ${item.title} (type=${item.contentType})")
         when {
-            // Season selected → overview page (description, IMDB, episodes list)
+            // Season selected → overview page (description, IMDb, episodes list)
             AmazonApiService.isSeriesContentType(item.contentType) -> {
                 val intent = Intent(this, DetailActivity::class.java).apply {
                     putExtra(DetailActivity.EXTRA_ASIN, item.asin)

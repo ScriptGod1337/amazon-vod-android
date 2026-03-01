@@ -6,7 +6,7 @@
             <solid android:color="#52BDD9" />
             <stroke
                 android:width="2dp"
-                android:color="#F2FBFF" />
+                android:color="@color/accent_outline" />
         </shape>
     </item>
 
@@ -23,10 +23,10 @@
     <item android:state_focused="true">
         <shape>
             <corners android:radius="20dp" />
-            <solid android:color="#11181D" />
+            <solid android:color="@color/surface_panel_soft" />
             <stroke
                 android:width="2dp"
-                android:color="#8BE2F7" />
+                android:color="@color/accent_outline" />
         </shape>
     </item>
 
@@ -36,7 +36,7 @@
             <solid android:color="#1C2328" />
             <stroke
                 android:width="1dp"
-                android:color="#334048" />
+                android:color="@color/surface_outline" />
         </shape>
     </item>
 </selector>

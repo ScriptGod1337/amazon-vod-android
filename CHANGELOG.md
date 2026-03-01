@@ -107,7 +107,7 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 - **Content Overview / Detail Page** (`DetailActivity`) — selecting any movie or season/series now opens a full detail screen before playback:
   - **Hero backdrop image** (16:9) loaded from Amazon's `detailPageHeroImageUrl` field
   - **Poster thumbnail**, title, year, runtime, age rating, quality badges (4K / HDR / 5.1)
-  - **IMDb rating** displayed in gold when available (from `imdbRating` field — e.g. `IMDb  5.7 / 10`)
+  - **IMDb rating** displayed in gold when available (from `imdbRating` field — e.g. `IMDb 5.7 / 10`)
   - **Genres** (sub-genre entries containing `>` are suppressed)
   - **Synopsis** (full description text)
   - **Director** credit line

@@ -1,22 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="page_padding">32dp</dimen>
-    <dimen name="safe_top_inset">72dp</dimen>
+    <dimen name="safe_top_inset">0dp</dimen>
     <dimen name="section_eyebrow_size">12sp</dimen>
-    <dimen name="page_title_size">32sp</dimen>
-    <dimen name="page_supporting_size">16sp</dimen>
-    <dimen name="panel_title_size">24sp</dimen>
-    <dimen name="meta_text_size">13sp</dimen>
-    <dimen name="body_text_size">14sp</dimen>
-    <dimen name="action_text_size">15sp</dimen>
-    <dimen name="status_chip_text_size">13sp</dimen>
+    <dimen name="page_title_size">30sp</dimen>
+    <dimen name="page_supporting_size">15sp</dimen>
+    <dimen name="panel_title_size">22sp</dimen>
+    <dimen name="meta_text_size">12sp</dimen>
+    <dimen name="body_text_size">13sp</dimen>
+    <dimen name="action_text_size">14sp</dimen>
+    <dimen name="status_chip_text_size">12sp</dimen>
     <dimen name="compact_control_text_size">11sp</dimen>
+    <dimen name="card_overline_size">10sp</dimen>
+    <dimen name="search_state_title_size">24sp</dimen>
     <dimen name="card_width">200dp</dimen>
-    <dimen name="card_image_height">240dp</dimen>
+    <dimen name="card_image_height">220dp</dimen>
+    <dimen name="landscape_card_width">296dp</dimen>
+    <dimen name="landscape_card_height">184dp</dimen>
+    <dimen name="landscape_card_image_height">128dp</dimen>
     <dimen name="card_corner_radius">6dp</dimen>
     <dimen name="card_spacing">8dp</dimen>
-    <dimen name="nav_bar_height">56dp</dimen>
+    <dimen name="nav_bar_height">48dp</dimen>
     <dimen name="hero_height">176dp</dimen>
-    <dimen name="rail_header_size">18sp</dimen>
-    <dimen name="rail_vertical_spacing">28dp</dimen>
+    <dimen name="rail_header_size">16sp</dimen>
+    <dimen name="rail_vertical_spacing">10dp</dimen>
+    <dimen name="page_motion_offset">18dp</dimen>
 </resources>

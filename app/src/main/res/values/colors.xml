@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="surface_canvas">#0D0F11</color>
+    <color name="surface_panel">#13202A</color>
+    <color name="surface_panel_strong">#10202A</color>
+    <color name="surface_panel_soft">#18262F</color>
+    <color name="surface_panel_alt">#1D2B35</color>
+    <color name="surface_button_dark">#22313A</color>
+    <color name="surface_button_neutral">#2A3137</color>
+    <color name="surface_button_ghost">#2C2A29</color>
+    <color name="surface_outline">#304550</color>
+    <color name="surface_outline_strong">#496475</color>
+    <color name="accent_cyan">#00A8E0</color>
+    <color name="accent_cyan_bright">#26C2F5</color>
+    <color name="accent_outline">#8FE5FF</color>
+    <color name="accent_good">#4FD1C5</color>
+    <color name="accent_better">#9FD36A</color>
+    <color name="accent_warn">#F3C85F</color>
+    <color name="accent_warn_strong">#F29D52</color>
+    <color name="accent_bad">#E06B6B</color>
+    <color name="text_primary">#F5FAFD</color>
+    <color name="text_secondary">#C7D4DB</color>
+    <color name="text_tertiary">#8FA5B0</color>
+    <color name="text_quiet">#7E9CAA</color>
+    <color name="text_dark_on_accent">#04131A</color>
+</resources>

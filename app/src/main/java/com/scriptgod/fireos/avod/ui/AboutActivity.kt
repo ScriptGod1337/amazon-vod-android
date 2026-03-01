@@ -25,7 +25,7 @@ class AboutActivity : AppCompatActivity() {
 
         // Version
         val versionName = packageManager.getPackageInfo(packageName, 0).versionName ?: "unknown"
-        findViewById<TextView>(R.id.tv_version).text = "Inspect app status, playback capability, and the active device token."
+        findViewById<TextView>(R.id.tv_version).text = "Inspect ScriptGod's AmazonVOD for FireOS, playback capability, and the active device token."
         findViewById<TextView>(R.id.tv_version_value).text = versionName
         findViewById<TextView>(R.id.tv_package).text = packageName
         findViewById<TextView>(R.id.tv_version_chip).text = "Version $versionName"
@@ -65,6 +65,12 @@ class AboutActivity : AppCompatActivity() {
                 .setNegativeButton("Cancel", null)
                 .show()
         }
+
+        UiMotion.revealFresh(
+            findViewById(R.id.about_header),
+            findViewById(R.id.about_chip_row),
+            findViewById(R.id.about_panel_columns)
+        )
     }
 
     @Suppress("DEPRECATION")

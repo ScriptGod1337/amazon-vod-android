@@ -23,6 +23,7 @@ class RailsAdapter(
     private var outerRecyclerView: RecyclerView? = null
 
     class RailViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val eyebrow: TextView = itemView.findViewById(R.id.tv_rail_eyebrow)
         val header: TextView = itemView.findViewById(R.id.tv_rail_header)
         val seeAll: TextView = itemView.findViewById(R.id.tv_see_all)
         val innerRecycler: RecyclerView = itemView.findViewById(R.id.rv_rail_items)
@@ -54,20 +55,40 @@ class RailsAdapter(
 
     override fun onBindViewHolder(holder: RailViewHolder, position: Int) {
         val rail = getItem(position)
+        val hasProgressItems = rail.items.any { it.watchProgressMs > 0 || it.watchProgressMs == -1L }
+        holder.eyebrow.visibility = if (hasProgressItems) View.VISIBLE else View.GONE
+        holder.eyebrow.text = if (hasProgressItems) "Continue Watching" else ""
         holder.header.text = rail.headerText
         holder.seeAll.visibility = View.GONE
         holder.seeAll.setOnClickListener(null)
 
+        val presentation = resolvePresentation(rail, position, hasProgressItems)
         val innerAdapter = ContentAdapter(
             onItemClick = onItemClick,
             onMenuKey = onMenuKey,
             nextFocusUpId = itemNextFocusUpId,
+            presentation = presentation,
             onVerticalFocusMove = { itemPosition, direction ->
                 moveFocusBetweenRails(holder.bindingAdapterPosition, itemPosition, direction)
             }
         )
         holder.innerRecycler.adapter = innerAdapter
         innerAdapter.submitList(rail.items)
+    }
+
+    private fun resolvePresentation(rail: ContentRail, position: Int, hasProgressItems: Boolean): CardPresentation {
+        val header = rail.headerText.lowercase()
+        return when {
+            hasProgressItems -> CardPresentation.LANDSCAPE
+            position == 0 -> CardPresentation.LANDSCAPE
+            header.contains("continue") -> CardPresentation.LANDSCAPE
+            header.contains("watch next") -> CardPresentation.LANDSCAPE
+            header.contains("because") -> CardPresentation.LANDSCAPE
+            header.contains("episode") -> CardPresentation.LANDSCAPE
+            header.contains("season") -> CardPresentation.LANDSCAPE
+            header.contains("live") -> CardPresentation.LANDSCAPE
+            else -> CardPresentation.POSTER
+        }
     }
 
     private fun moveFocusBetweenRails(currentRailPosition: Int, itemPosition: Int, direction: Int): Boolean {

@@ -7,21 +7,40 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="@dimen/page_padding"
-        android:paddingEnd="@dimen/page_padding">
+        android:paddingTop="2dp"
+        android:paddingEnd="@dimen/page_padding"
+        android:paddingBottom="4dp">
 
-        <TextView
-            android:id="@+id/tv_rail_header"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:focusable="false"
-            android:textColor="@android:color/white"
-            android:textSize="@dimen/rail_header_size"
-            android:textStyle="bold" />
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_rail_eyebrow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp"
+                android:letterSpacing="0.16"
+                android:textAllCaps="true"
+                android:textColor="#7E9CAA"
+                android:textSize="@dimen/section_eyebrow_size"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tv_rail_header"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:focusable="false"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/rail_header_size"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/tv_see_all"

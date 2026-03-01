@@ -18,8 +18,8 @@
             android:background="@drawable/header_nav_bar_background"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingStart="20dp"
-            android:paddingEnd="20dp">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
 
             <Button
                 android:id="@+id/btn_home"
@@ -96,9 +96,11 @@
 
             <Button
                 android:id="@+id/btn_search_icon"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
                 android:background="@drawable/header_icon_button_background"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null"
                 android:minWidth="0dp"
                 android:stateListAnimator="@null"
                 android:text="🔍"
@@ -108,9 +110,11 @@
 
             <Button
                 android:id="@+id/btn_about"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
                 android:background="@drawable/header_icon_button_background"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null"
                 android:minWidth="0dp"
                 android:stateListAnimator="@null"
                 android:text="⚙"
@@ -123,22 +127,22 @@
             android:id="@+id/search_row"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:layout_marginStart="@dimen/page_padding"
             android:layout_marginEnd="@dimen/page_padding"
             android:background="@drawable/header_secondary_row_background"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="16dp"
-            android:paddingTop="12dp"
+            android:paddingTop="8dp"
             android:paddingEnd="16dp"
-            android:paddingBottom="12dp"
+            android:paddingBottom="8dp"
             android:visibility="gone">
 
             <com.scriptgod.fireos.avod.ui.DpadEditText
                 android:id="@+id/et_search"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="44dp"
                 android:layout_weight="1"
                 android:background="@drawable/search_field_background"
                 android:focusable="true"
@@ -156,15 +160,82 @@
             <Button
                 android:id="@+id/btn_search"
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_height="44dp"
                 android:layout_marginStart="10dp"
                 android:background="@drawable/button_pill_primary"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null"
                 android:nextFocusDown="@id/recycler_view"
                 android:paddingStart="20dp"
                 android:paddingEnd="20dp"
                 android:text="Search"
                 android:textAllCaps="false"
-                android:textColor="@android:color/white" />
+                android:textColor="@color/button_primary_text" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/search_state_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/page_padding"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="@dimen/page_padding"
+            android:layout_marginBottom="4dp"
+            android:background="@drawable/search_state_background"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="18dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="10dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:letterSpacing="0.14"
+                    android:text="SEARCH"
+                    android:textAllCaps="true"
+                    android:textColor="#7E9CAA"
+                    android:textSize="@dimen/section_eyebrow_size" />
+
+                <TextView
+                    android:id="@+id/tv_search_query"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/search_state_title_size"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_search_hint"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Refine the query or use type filters to narrow the grid."
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="@dimen/body_text_size" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_search_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/settings_badge_background"
+                android:paddingStart="14dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="8dp"
+                android:textColor="#E9F6FB"
+                android:textSize="@dimen/status_chip_text_size"
+                android:textStyle="bold" />
         </LinearLayout>
 
         <LinearLayout
@@ -172,15 +243,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/page_padding"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:layout_marginEnd="@dimen/page_padding"
-            android:layout_marginBottom="6dp"
+            android:layout_marginBottom="4dp"
             android:background="@drawable/header_secondary_row_background"
             android:orientation="horizontal"
             android:paddingStart="12dp"
-            android:paddingTop="8dp"
+            android:paddingTop="6dp"
             android:paddingEnd="12dp"
-            android:paddingBottom="8dp"
+            android:paddingBottom="6dp"
             android:visibility="gone">
 
             <Button
@@ -189,6 +260,8 @@
                 android:layout_height="36dp"
                 android:layout_marginEnd="8dp"
                 android:background="@drawable/filter_chip_background"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
                 android:stateListAnimator="@null"
@@ -204,6 +277,8 @@
                 android:layout_height="36dp"
                 android:layout_marginEnd="8dp"
                 android:background="@drawable/filter_chip_background"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
                 android:stateListAnimator="@null"
@@ -219,6 +294,8 @@
                 android:layout_height="36dp"
                 android:layout_marginEnd="12dp"
                 android:background="@drawable/filter_chip_background"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
                 android:stateListAnimator="@null"
@@ -233,6 +310,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
                 android:background="@drawable/filter_chip_background"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
                 android:stateListAnimator="@null"
@@ -248,16 +327,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/page_padding"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:layout_marginEnd="@dimen/page_padding"
-            android:layout_marginBottom="6dp"
+            android:layout_marginBottom="4dp"
             android:background="@drawable/header_secondary_row_background"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="12dp"
-            android:paddingTop="8dp"
+            android:paddingTop="6dp"
             android:paddingEnd="12dp"
-            android:paddingBottom="8dp"
+            android:paddingBottom="6dp"
             android:visibility="gone">
 
             <LinearLayout
@@ -291,6 +370,8 @@
                         android:layout_height="36dp"
                         android:layout_marginEnd="8dp"
                         android:background="@drawable/filter_chip_background"
+                        android:backgroundTint="@null"
+                        app:backgroundTint="@null"
                         android:nextFocusDown="@id/recycler_view"
                         android:paddingStart="14dp"
                         android:paddingEnd="14dp"
@@ -306,6 +387,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="36dp"
                         android:background="@drawable/filter_chip_background"
+                        android:backgroundTint="@null"
+                        app:backgroundTint="@null"
                         android:nextFocusDown="@id/recycler_view"
                         android:paddingStart="14dp"
                         android:paddingEnd="14dp"
@@ -348,6 +431,8 @@
                         android:layout_height="36dp"
                         android:layout_marginEnd="8dp"
                         android:background="@drawable/filter_chip_background"
+                        android:backgroundTint="@null"
+                        app:backgroundTint="@null"
                         android:nextFocusDown="@id/recycler_view"
                         android:paddingStart="14dp"
                         android:paddingEnd="14dp"
@@ -364,6 +449,8 @@
                         android:layout_height="36dp"
                         android:layout_marginEnd="8dp"
                         android:background="@drawable/filter_chip_background"
+                        android:backgroundTint="@null"
+                        app:backgroundTint="@null"
                         android:nextFocusDown="@id/recycler_view"
                         android:paddingStart="14dp"
                         android:paddingEnd="14dp"
@@ -379,6 +466,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="36dp"
                         android:background="@drawable/filter_chip_background"
+                        android:backgroundTint="@null"
+                        app:backgroundTint="@null"
                         android:nextFocusDown="@id/recycler_view"
                         android:paddingStart="14dp"
                         android:paddingEnd="14dp"
@@ -420,7 +509,7 @@
                 android:clipToPadding="false"
                 android:focusable="false"
                 android:paddingStart="@dimen/page_padding"
-                android:paddingTop="12dp"
+                android:paddingTop="8dp"
                 android:paddingEnd="@dimen/page_padding"
                 android:visibility="gone" />
 
@@ -433,8 +522,8 @@
                 android:focusable="true"
                 android:focusableInTouchMode="true"
                 android:nextFocusUp="@id/btn_home"
-                android:paddingTop="8dp"
-                android:paddingBottom="24dp" />
+            android:paddingTop="2dp"
+            android:paddingBottom="8dp" />
         </FrameLayout>
     </LinearLayout>
 </FrameLayout>

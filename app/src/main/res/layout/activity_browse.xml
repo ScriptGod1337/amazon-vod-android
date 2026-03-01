@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/browse_screen_background">
@@ -14,6 +15,7 @@
         android:paddingBottom="32dp">
 
         <LinearLayout
+            android:id="@+id/browse_header_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
@@ -78,8 +80,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="44dp"
                     android:layout_gravity="end"
-                    android:background="@drawable/button_pill_tertiary"
+                    android:background="@drawable/button_pill_secondary"
                     android:backgroundTint="@null"
+                    app:backgroundTint="@null"
                     android:minWidth="0dp"
                     android:nextFocusDown="@id/recycler_view"
                     android:paddingStart="24dp"
@@ -87,7 +90,7 @@
                     android:stateListAnimator="@null"
                     android:text="Back"
                     android:textAllCaps="false"
-                    android:textColor="@android:color/white"
+                    android:textColor="@color/button_secondary_text"
                     android:textSize="@dimen/action_text_size" />
 
                 <LinearLayout
@@ -128,6 +131,7 @@
         </LinearLayout>
 
         <FrameLayout
+            android:id="@+id/browse_grid_panel"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
@@ -172,6 +176,7 @@
                 android:descendantFocusability="afterDescendants"
                 android:focusable="true"
                 android:focusableInTouchMode="true"
+                android:nextFocusUp="@id/btn_browse_back"
                 android:paddingStart="4dp"
                 android:paddingTop="4dp"
                 android:paddingEnd="4dp"

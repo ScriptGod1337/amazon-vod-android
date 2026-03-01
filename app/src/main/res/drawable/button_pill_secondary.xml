@@ -3,16 +3,19 @@
     <item android:state_focused="true">
         <shape>
             <corners android:radius="24dp" />
-            <solid android:color="#383838" />
+            <solid android:color="@color/surface_panel_soft" />
             <stroke
                 android:width="2dp"
-                android:color="#00A8E0" />
+                android:color="@color/accent_outline" />
         </shape>
     </item>
     <item>
         <shape>
             <corners android:radius="24dp" />
-            <solid android:color="#2A2A2A" />
+            <solid android:color="@color/surface_panel_alt" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/surface_outline" />
         </shape>
     </item>
 </selector>

@@ -69,7 +69,10 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var tvError: TextView
     private lateinit var trackButtons: LinearLayout
+    private lateinit var tvPlaybackTitle: TextView
+    private lateinit var tvPlaybackStatus: TextView
     private lateinit var tvVideoFormat: TextView
+    private lateinit var tvPlaybackHint: TextView
     private lateinit var btnAudio: Button
     private lateinit var btnSubtitle: Button
 
@@ -115,9 +118,14 @@ class PlayerActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progress_bar)
         tvError = findViewById(R.id.tv_error)
         trackButtons = findViewById(R.id.track_buttons)
+        tvPlaybackTitle = findViewById(R.id.tv_playback_title)
+        tvPlaybackStatus = findViewById(R.id.tv_playback_status)
         tvVideoFormat = findViewById(R.id.tv_video_format)
+        tvPlaybackHint = findViewById(R.id.tv_playback_hint)
         btnAudio = findViewById(R.id.btn_audio)
         btnSubtitle = findViewById(R.id.btn_subtitle)
+        tvPlaybackTitle.text = intent.getStringExtra(EXTRA_TITLE) ?: "Now Playing"
+        tvPlaybackHint.text = "Press MENU for controls. Press Back to leave playback."
 
         // Fix D-pad seek increment: default is duration/20 (~6 min on a 2h film).
         // 10 s per key press matches standard TV remote behaviour.
@@ -129,7 +137,22 @@ class PlayerActivity : AppCompatActivity() {
         // always appear and disappear together.
         playerView.setControllerVisibilityListener(
             androidx.media3.ui.PlayerView.ControllerVisibilityListener { visibility ->
-                trackButtons.visibility = visibility
+                if (visibility == View.VISIBLE) {
+                    trackButtons.visibility = View.VISIBLE
+                    UiMotion.revealFresh(trackButtons)
+                } else {
+                    trackButtons.animate().cancel()
+                    trackButtons.animate()
+                        .alpha(0f)
+                        .translationY(-trackButtons.resources.getDimension(R.dimen.page_motion_offset) / 2f)
+                        .setDuration(140L)
+                        .withEndAction {
+                            trackButtons.visibility = View.GONE
+                            trackButtons.alpha = 1f
+                            trackButtons.translationY = 0f
+                        }
+                        .start()
+                }
             }
         )
 
@@ -197,10 +220,12 @@ class PlayerActivity : AppCompatActivity() {
         progressBar.visibility = View.VISIBLE
         tvError.visibility = View.GONE
         tvVideoFormat.text = ""   // clear stale label until new player reports its format
+        playerView.useController = true
 
         val quality = qualityOverride ?: resolveQuality()
         currentMaterialType = materialType
         currentQuality = quality
+        updatePlaybackStatus()
         if (qualityOverride == null) h265FallbackAttempted = false  // fresh start resets guard
         Log.i(TAG, "Playback quality: ${quality.videoQuality} codec=${quality.codecOverride} hdr=${quality.hdrOverride}")
 
@@ -332,12 +357,25 @@ class PlayerActivity : AppCompatActivity() {
         tvVideoFormat.text = listOf(res, codec, hdr).filter { it.isNotEmpty() }.joinToString(" · ")
     }
 
+    private fun updatePlaybackStatus() {
+        val materialLabel = if (currentMaterialType == "Trailer") "Trailer" else "Playback"
+        val qualityLabel = when (currentQuality) {
+            PlaybackQuality.UHD_HDR -> "4K HDR preset"
+            PlaybackQuality.HD_H265 -> "HD H265 preset"
+            PlaybackQuality.HD -> "HD H264 preset"
+            else -> "Playback preset"
+        }
+        tvPlaybackStatus.text = "$materialLabel  ·  $qualityLabel"
+    }
+
     private val playerListener = object : Player.Listener {
         override fun onPlaybackStateChanged(state: Int) {
             when (state) {
                 Player.STATE_BUFFERING -> progressBar.visibility = View.VISIBLE
                 Player.STATE_READY -> {
                     progressBar.visibility = View.GONE
+                    tvError.visibility = View.GONE
+                    playerView.useController = true
                     updateVideoFormatLabel()
                     if (!streamReportingStarted) {
                         streamReportingStarted = true
@@ -616,8 +654,21 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun showError(message: String) {
         progressBar.visibility = View.GONE
-        tvError.text = message
+        playerView.hideController()
+        playerView.useController = false
+        trackButtons.visibility = View.GONE
+        tvError.text = "Playback unavailable\n${friendlyError(message)}"
         tvError.visibility = View.VISIBLE
+    }
+
+    private fun friendlyError(message: String): String {
+        return when {
+            message.contains("DRM_LICENSE_ACQUISITION_FAILED") ->
+                "The current stream could not retrieve a playback license. Go back and try another title or retry later."
+            message.contains("No widevine2License.license field") ->
+                "The service returned an incomplete license response for this title."
+            else -> message
+        }
     }
 
     override fun onPause() {
