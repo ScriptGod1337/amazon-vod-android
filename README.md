@@ -71,21 +71,23 @@ com.scriptgod.fireos.avod
 
 ## Screenshots
 
-| Home — Featured Rail | Home — Multiple Rails |
+Current redesigned UI, captured from the Android TV emulator:
+
+| Home | Search Results |
 |:---:|:---:|
-| ![Home Featured](screenshots/02_home.png) | ![Home Multiple Rails](screenshots/02b_home_multi.png) |
+| ![Home](screenshots/01_home_emulator.png) | ![Search Results](screenshots/02_search_emulator.png) |
 
-| Login | Search Suggestions | Watchlist (with progress bar) |
-|:---:|:---:|:---:|
-| ![Login](screenshots/01_login.png) | ![Search](screenshots/03_search.png) | ![Watchlist](screenshots/04_watchlist.png) |
-
-| Movie Detail Page | Series / Season Detail Page |
+| Watchlist | Library |
 |:---:|:---:|
-| ![Movie Detail](screenshots/09_detail_movie.png) | ![Series Detail](screenshots/10_detail_series.png) |
+| ![Watchlist](screenshots/03_watchlist_emulator.png) | ![Library](screenshots/04_library_emulator.png) |
 
-| My Library | Season Selection | Episode List |
-|:---:|:---:|:---:|
-| ![Library](screenshots/05_library.png) | ![Seasons](screenshots/07_series_drilldown.png) | ![Episodes](screenshots/08_episodes.png) |
+| About / Settings | Season Detail |
+|:---:|:---:|
+| ![About](screenshots/05_about_emulator.png) | ![Season Detail](screenshots/06_detail_season_emulator.png) |
+
+| Season Picker | Episode Browse |
+|:---:|:---:|
+| ![Season Picker](screenshots/07_browse_seasons_emulator.png) | ![Episode Browse](screenshots/08_browse_episodes_emulator.png) |
 
 ## Roadmap
 
