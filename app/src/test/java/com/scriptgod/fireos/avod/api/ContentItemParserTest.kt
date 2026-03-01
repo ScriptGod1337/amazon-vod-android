@@ -1,6 +1,8 @@
 package com.scriptgod.fireos.avod.api
 
 import com.google.gson.JsonParser
+import com.scriptgod.fireos.avod.model.Availability
+import com.scriptgod.fireos.avod.model.ContentKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -45,6 +47,7 @@ class ContentItemParserTest {
 
         assertTrue(item.isPrime)
         assertFalse(item.isFreeWithAds)
+        assertEquals(Availability.PRIME, item.availability)
     }
 
     @Test
@@ -88,6 +91,7 @@ class ContentItemParserTest {
 
         assertEquals("Fallout - Staffel 2", item.title)
         assertTrue(item.isPrime)
+        assertEquals(ContentKind.SEASON, item.kind)
     }
 
     @Test
@@ -107,6 +111,7 @@ class ContentItemParserTest {
 
         assertFalse(item.isPrime)
         assertTrue(item.isFreeWithAds)
+        assertEquals(Availability.FREEVEE, item.availability)
     }
 
     @Test
@@ -127,6 +132,7 @@ class ContentItemParserTest {
 
         assertTrue(item.isLive)
         assertFalse(item.isPrime)
+        assertEquals(ContentKind.LIVE, item.kind)
     }
 
     @Test
@@ -150,6 +156,9 @@ class ContentItemParserTest {
         assertEquals("E1: Baby, Baby, Baby", item.title)
         assertEquals("S7 E1", item.subtitle)
         assertEquals(900_000L, item.watchProgressMs)
+        assertEquals(ContentKind.EPISODE, item.kind)
+        assertEquals(7, item.seasonNumber)
+        assertEquals(1, item.episodeNumber)
     }
 
     private fun parse(json: String) =

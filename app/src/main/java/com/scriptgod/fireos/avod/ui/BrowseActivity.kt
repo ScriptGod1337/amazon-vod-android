@@ -18,6 +18,8 @@ import com.scriptgod.fireos.avod.R
 import com.scriptgod.fireos.avod.api.AmazonApiService
 import com.scriptgod.fireos.avod.auth.AmazonAuthService
 import com.scriptgod.fireos.avod.model.ContentItem
+import com.scriptgod.fireos.avod.model.isEpisode
+import com.scriptgod.fireos.avod.model.isSeriesContainer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -119,11 +121,11 @@ class BrowseActivity : AppCompatActivity() {
                 val filtered = when (filterType) {
                     "seasons" -> {
                         // Show seasons first; if none, show episodes directly
-                        val seasons = items.filter { AmazonApiService.isSeriesContentType(it.contentType) }
+                        val seasons = items.filter { it.kind == com.scriptgod.fireos.avod.model.ContentKind.SEASON }
                         if (seasons.isNotEmpty()) seasons
                         else {
                             // No seasons — might be episodes directly
-                            val episodes = items.filter { AmazonApiService.isEpisodeContentType(it.contentType) }
+                            val episodes = items.filter { it.isEpisode() }
                             if (episodes.isNotEmpty()) {
                                 currentFilter = "episodes"
                                 applyBrowseHeader("episodes", "EPISODE")
@@ -133,7 +135,7 @@ class BrowseActivity : AppCompatActivity() {
                         }
                     }
                     "episodes" -> {
-                        val episodes = items.filter { AmazonApiService.isEpisodeContentType(it.contentType) }
+                        val episodes = items.filter { it.isEpisode() }
                         if (episodes.isNotEmpty()) episodes else items
                     }
                     else -> items
@@ -357,10 +359,10 @@ class BrowseActivity : AppCompatActivity() {
         Log.i(TAG, "Selected: ${item.asin} — ${item.title} (type=${item.contentType})")
         when {
             // Season selected → overview page (description, IMDb, episodes list)
-            AmazonApiService.isSeriesContentType(item.contentType) -> {
+            item.isSeriesContainer() -> {
                 val intent = if (currentFilter == "seasons") {
                     Intent(this, BrowseActivity::class.java).apply {
-                        putExtra(EXTRA_ASIN, item.asin)
+                        putExtra(EXTRA_ASIN, item.seasonId.ifEmpty { item.contentId })
                         putExtra(EXTRA_TITLE, item.title)
                         putExtra(EXTRA_CONTENT_TYPE, item.contentType)
                         putExtra(EXTRA_FILTER, "episodes")

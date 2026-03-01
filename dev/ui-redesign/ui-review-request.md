@@ -38,6 +38,7 @@
 - [x] Continue Watching progress fix: Home progress cards now keep a visible progress indicator even when only local resume data exists, and the bar is anchored over the artwork so it remains visible in the lower viewport
 - [x] Fallout browse parser fix: episode/season browse now tolerates object-shaped `badges` payloads instead of failing with a parser exception and showing `No content found`
 - [x] Watched-state scope fix: green fully-watched progress is now limited to fully watched episodes and movies, not season/series shells
+- [x] Normalized metadata layer: internal content kind, availability, season/episode numbering, and hierarchy IDs are now mapped explicitly so Browse and metadata formatting no longer depend on raw payload strings alone
 
 ## Known issues / deviations from spec
 - `See All` remains intentionally hidden. The current app still has no safe full-collection browse contract for `collectionId` without API/model work.
@@ -78,6 +79,7 @@
 - Home `Continue Watching` cards now use the shared metadata layer and keep a visible progress indicator for resumed titles such as `Borderlands`.
 - Emulator log validation confirmed the `Fallout - Staffel 2` browse failure was caused by a `ClassCastException` in the badge parser, and the parser now accepts object-shaped `badges` payloads instead of crashing the browse load.
 - Fully watched state is now intentionally scoped away from season and series containers, so green completion bars remain reserved for fully watched episodes and movies.
+- Browse and metadata formatting now consume normalized internal fields (`kind`, `availability`, `seasonNumber`, `episodeNumber`, hierarchy IDs) while keeping those IDs fully internal and out of the user-visible UI.
 - Detail metadata now collapses empty rows cleanly and keeps season/episode support text more relevant to the current content type.
 - Player overlay audio/subtitle controls use the updated redesign styling.
 - Player overlay now uses a denser track panel with shorter hint copy, smaller buttons, and conditional video-format visibility.

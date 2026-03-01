@@ -1,9 +1,12 @@
 package com.scriptgod.fireos.avod.ui
 
-import com.scriptgod.fireos.avod.api.AmazonApiService
 import com.scriptgod.fireos.avod.model.ContentItem
 import com.scriptgod.fireos.avod.model.DetailInfo
 import com.scriptgod.fireos.avod.model.isFullyWatched
+import com.scriptgod.fireos.avod.model.isEpisode
+import com.scriptgod.fireos.avod.model.isLiveChannel
+import com.scriptgod.fireos.avod.model.isMovie
+import com.scriptgod.fireos.avod.model.isSeriesContainer
 import com.scriptgod.fireos.avod.model.primaryAvailabilityBadge
 
 internal object UiMetadataFormatter {
@@ -95,20 +98,20 @@ internal object UiMetadataFormatter {
     private fun defaultOverline(item: ContentItem, hasProgress: Boolean): String {
         if (hasProgress) return "Continue Watching"
         return when {
-            item.isLive -> "Live"
-            AmazonApiService.isEpisodeContentType(item.contentType) -> "Episode"
-            AmazonApiService.isSeriesContentType(item.contentType) -> "Series"
-            AmazonApiService.isMovieContentType(item.contentType) -> "Movie"
+            item.isLiveChannel() -> "Live"
+            item.isEpisode() -> "Episode"
+            item.isSeriesContainer() -> "Series"
+            item.isMovie() -> "Movie"
             else -> "Featured"
         }
     }
 
     private fun contentLabel(item: ContentItem): String {
         return when {
-            item.isLive -> "Live"
-            AmazonApiService.isEpisodeContentType(item.contentType) -> "Episode"
-            AmazonApiService.isSeriesContentType(item.contentType) -> "Series"
-            AmazonApiService.isMovieContentType(item.contentType) -> "Movie"
+            item.isLiveChannel() -> "Live"
+            item.isEpisode() -> "Episode"
+            item.isSeriesContainer() -> "Series"
+            item.isMovie() -> "Movie"
             else -> "Featured"
         }
     }
@@ -119,9 +122,9 @@ internal object UiMetadataFormatter {
 
         val parts = mutableListOf<String>()
         when {
-            AmazonApiService.isEpisodeContentType(item.contentType) -> parts += "Playable episode"
-            AmazonApiService.isSeriesContentType(item.contentType) -> parts += "Series overview"
-            AmazonApiService.isMovieContentType(item.contentType) -> parts += "Feature film"
+            item.isEpisode() -> parts += "Playable episode"
+            item.isSeriesContainer() -> parts += "Series overview"
+            item.isMovie() -> parts += "Feature film"
         }
         when (item.primaryAvailabilityBadge()) {
             "Freevee" -> parts += "Ad-supported"
@@ -131,7 +134,7 @@ internal object UiMetadataFormatter {
     }
 
     private fun landscapeSubtitle(item: ContentItem): String {
-        return if (AmazonApiService.isSeriesContentType(item.contentType)) "Open season overview"
+        return if (item.isSeriesContainer()) "Open season overview"
         else secondaryLine(item)
     }
 

@@ -1,6 +1,7 @@
 package com.scriptgod.fireos.avod.ui
 
 import com.scriptgod.fireos.avod.model.ContentItem
+import com.scriptgod.fireos.avod.model.ContentKind
 import com.scriptgod.fireos.avod.model.DetailInfo
 import com.scriptgod.fireos.avod.model.isFullyWatched
 import org.junit.Assert.assertEquals
@@ -27,6 +28,7 @@ class UiMetadataFormatterTest {
             asin = "a",
             title = "Title",
             contentType = "Series",
+            kind = ContentKind.SERIES,
             isPrime = false
         )
 
@@ -122,7 +124,8 @@ class UiMetadataFormatterTest {
             asin = "dup",
             title = "Borderlands",
             subtitle = "Borderlands",
-            contentType = "Feature"
+            contentType = "Feature",
+            kind = ContentKind.MOVIE
         )
 
         val metadata = UiMetadataFormatter.cardMetadata(item, CardPresentation.POSTER)

@@ -1,7 +1,9 @@
 package com.scriptgod.fireos.avod.api
 
 import com.google.gson.JsonObject
+import com.scriptgod.fireos.avod.model.Availability
 import com.scriptgod.fireos.avod.model.ContentItem
+import com.scriptgod.fireos.avod.model.ContentKind
 
 internal object ContentItemParser {
 
@@ -21,8 +23,9 @@ internal object ContentItemParser {
             ?: model.safeString("number")
         val episodeNumber = model.safeString("episodeNumber")
         val contentType = resolveContentType(model, seasonNumber, episodeNumber)
-        val title = resolveTitle(model.safeString("title") ?: return null, contentType, seasonNumber, episodeNumber)
-        val subtitle = resolveSubtitle(model, seasonNumber, episodeNumber)
+        val kind = resolveKind(contentType)
+        val title = resolveTitle(model.safeString("title") ?: return null, kind, seasonNumber, episodeNumber)
+        val subtitle = resolveSubtitle(model, kind, seasonNumber, episodeNumber)
         val imageUrl = resolveImageUrl(model)
         val badgeText = listOfNotNull(
             model.safeString("badgeInfo"),
@@ -55,6 +58,22 @@ internal object ContentItemParser {
             ?: badgeText.contains("PRIME", ignoreCase = true))
             && !isFreeWithAds
             && !isLive
+        val availability = when {
+            isLive -> Availability.LIVE
+            isFreeWithAds -> Availability.FREEVEE
+            isPrime -> Availability.PRIME
+            else -> Availability.UNKNOWN
+        }
+
+        val showId = model.safeString("showId")
+            ?: model.safeString("seriesId")
+            ?: model.safeString("showTitleId")
+            ?: model.getAsJsonObject("show")?.safeString("titleId")
+            ?: model.getAsJsonObject("linkAction")?.safeString("seriesTitleId")
+            ?: ""
+        val seasonId = model.safeString("seasonId")
+            ?: model.safeString("seasonTitleId")
+            ?: if (kind == ContentKind.SEASON) asin else ""
 
         val channelId = model.getAsJsonObject("playbackAction")
             ?.safeString("channelId")
@@ -73,6 +92,14 @@ internal object ContentItemParser {
             subtitle = subtitle,
             imageUrl = imageUrl,
             contentType = contentType,
+            contentId = asin,
+            showId = showId,
+            seasonId = seasonId,
+            seasonNumber = seasonNumber?.toIntOrNull(),
+            episodeNumber = episodeNumber?.toIntOrNull(),
+            kind = kind,
+            availability = availability,
+            seriesAsin = showId,
             isPrime = isPrime,
             isFreeWithAds = isFreeWithAds,
             isLive = isLive,
@@ -82,6 +109,21 @@ internal object ContentItemParser {
         )
     }
 
+    private fun resolveKind(contentType: String): ContentKind {
+        return when {
+            contentType.equals("live", ignoreCase = true) ||
+                contentType.equals("LiveStreaming", ignoreCase = true) -> ContentKind.LIVE
+            AmazonApiService.isEpisodeContentType(contentType) -> ContentKind.EPISODE
+            contentType.equals("Season", ignoreCase = true) ||
+                contentType.equals("TVSeason", ignoreCase = true) -> ContentKind.SEASON
+            contentType.equals("Series", ignoreCase = true) ||
+                contentType.equals("Show", ignoreCase = true) ||
+                contentType.equals("TVSeries", ignoreCase = true) -> ContentKind.SERIES
+            AmazonApiService.isMovieContentType(contentType) -> ContentKind.MOVIE
+            else -> ContentKind.OTHER
+        }
+    }
+
     private fun resolveContentType(model: JsonObject, seasonNumber: String?, episodeNumber: String?): String {
         return model.safeString("contentType")
             ?: if (seasonNumber != null && episodeNumber == null) "SEASON"
@@ -89,19 +131,19 @@ internal object ContentItemParser {
             else "Feature"
     }
 
-    private fun resolveTitle(rawTitle: String, contentType: String, seasonNumber: String?, episodeNumber: String?): String {
+    private fun resolveTitle(rawTitle: String, kind: ContentKind, seasonNumber: String?, episodeNumber: String?): String {
         return when {
-            contentType.equals("SEASON", ignoreCase = true) && seasonNumber != null -> "Season $seasonNumber"
-            contentType.equals("EPISODE", ignoreCase = true) && episodeNumber != null -> "E$episodeNumber: $rawTitle"
+            kind == ContentKind.SEASON && seasonNumber != null -> "Season $seasonNumber"
+            kind == ContentKind.EPISODE && episodeNumber != null -> "E$episodeNumber: $rawTitle"
             else -> rawTitle
         }
     }
 
-    private fun resolveSubtitle(model: JsonObject, seasonNumber: String?, episodeNumber: String?): String {
+    private fun resolveSubtitle(model: JsonObject, kind: ContentKind, seasonNumber: String?, episodeNumber: String?): String {
         return model.safeString("ratingsBadge")
-            ?: if (seasonNumber != null && episodeNumber != null) "S${seasonNumber} E${episodeNumber}"
-            else if (seasonNumber != null) "Season $seasonNumber"
-            else if (episodeNumber != null) "Episode $episodeNumber"
+            ?: if (kind == ContentKind.EPISODE && seasonNumber != null && episodeNumber != null) "S${seasonNumber} E${episodeNumber}"
+            else if (kind == ContentKind.SEASON && seasonNumber != null) "Season $seasonNumber"
+            else if (kind == ContentKind.EPISODE && episodeNumber != null) "Episode $episodeNumber"
             else ""
     }
 

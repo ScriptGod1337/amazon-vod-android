@@ -5,6 +5,8 @@ import com.scriptgod.fireos.avod.auth.AmazonAuthService
 import com.scriptgod.fireos.avod.model.ContentItem
 import com.scriptgod.fireos.avod.model.ContentRail
 import com.scriptgod.fireos.avod.model.DetailInfo
+import com.scriptgod.fireos.avod.model.Availability
+import com.scriptgod.fireos.avod.model.ContentKind
 import com.scriptgod.fireos.avod.model.PlaybackInfo
 import com.scriptgod.fireos.avod.model.PlaybackQuality
 import com.scriptgod.fireos.avod.model.SubtitleTrack
@@ -360,6 +362,14 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                     subtitle = subtitle,
                     imageUrl = imageUrl,
                     contentType = contentType,
+                    contentId = asin,
+                    kind = when {
+                        isMovieContentType(contentType) -> ContentKind.MOVIE
+                        isSeriesContentType(contentType) -> ContentKind.SERIES
+                        isEpisodeContentType(contentType) -> ContentKind.EPISODE
+                        else -> ContentKind.OTHER
+                    },
+                    availability = Availability.FREEVEE,
                     isPrime = false,
                     isFreeWithAds = true,
                     isLive = false,
