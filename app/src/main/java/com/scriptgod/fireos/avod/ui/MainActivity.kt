@@ -24,11 +24,14 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.scriptgod.fireos.avod.R
 import com.scriptgod.fireos.avod.api.AmazonApiService
+import com.scriptgod.fireos.avod.data.ProgressRepository
 import com.scriptgod.fireos.avod.model.ContentRail
 import com.scriptgod.fireos.avod.api.AmazonApiService.LibraryFilter
 import com.scriptgod.fireos.avod.api.AmazonApiService.LibrarySort
 import com.scriptgod.fireos.avod.auth.AmazonAuthService
 import com.scriptgod.fireos.avod.model.ContentItem
+import com.scriptgod.fireos.avod.model.ContentKind
+import com.scriptgod.fireos.avod.model.DetailInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -92,14 +95,13 @@ class MainActivity : AppCompatActivity() {
     private var homePageLoading: Boolean = false
     private var unfilteredRails: List<ContentRail> = emptyList()
     private var featuredHomeItem: ContentItem? = null
+    private var localOnlyContinueWatchingItems: List<ContentItem> = emptyList()
 
     // Two independent filter dimensions
     private var sourceFilter: String = "all"   // "all" or "prime"
     private var typeFilter: String = "all"     // "all", "movies", or "series"
     private var currentNavPage: String = "home"
     private var watchlistAsins: MutableSet<String> = mutableSetOf()
-    private var watchlistProgress: Map<String, Pair<Long, Long>> = emptyMap()
-    private var watchlistInProgressItems: List<ContentItem> = emptyList()
 
     // Phase 10: Library state
     private var libraryFilter: LibraryFilter = LibraryFilter.ALL
@@ -158,6 +160,7 @@ class MainActivity : AppCompatActivity() {
             }
         authService = AmazonAuthService(tokenFile)
         apiService = AmazonApiService(authService)
+        ProgressRepository.init(applicationContext)
 
         adapter = ContentAdapter(
             onItemClick = { item -> onItemSelected(item) },
@@ -268,11 +271,9 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 apiService.detectTerritory()
-                val (asins, progress, inProgressItems) = apiService.getWatchlistData()
+                val asins = ProgressRepository.refresh(apiService)
                 watchlistAsins = asins.toMutableSet()
-                watchlistProgress = progress
-                watchlistInProgressItems = inProgressItems
-                Log.i(TAG, "Watchlist loaded: ${watchlistAsins.size} items, ${watchlistProgress.size} with progress")
+                Log.i(TAG, "Watchlist loaded: ${watchlistAsins.size} items, ${ProgressRepository.getInProgressItems().size} in progress")
             }
             loadHomeRails()
         }
@@ -656,10 +657,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 if (newItems.isNotEmpty()) {
                     libraryNextIndex += newItems.size
-                    val markedItems = newItems.map { it.copy(
-                        isInWatchlist = watchlistAsins.contains(it.asin),
-                        watchProgressMs = watchlistProgress[it.asin]?.first ?: it.watchProgressMs
-                    ) }
+                    val markedItems = newItems.map(::withRepositoryProgress)
                     val combined = adapter.currentList + markedItems
                     adapter.submitList(combined)
                     Log.i(TAG, "Library appended ${newItems.size} items, total=${combined.size}")
@@ -686,10 +684,6 @@ class MainActivity : AppCompatActivity() {
             putExtra(DetailActivity.EXTRA_CONTENT_TYPE, item.contentType)
             putExtra(DetailActivity.EXTRA_IMAGE_URL, item.imageUrl)
             putExtra(DetailActivity.EXTRA_IS_PRIME, item.isPrime)
-            putExtra(DetailActivity.EXTRA_RESUME_MS,
-                (watchlistProgress[item.asin]?.first ?: item.watchProgressMs).coerceAtLeast(0L))
-            putExtra(DetailActivity.EXTRA_PROGRESS_MAP,
-                HashMap(watchlistProgress.mapValues { it.value.first }))
             putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
         }
         UiTransitions.open(this, intent)
@@ -762,10 +756,13 @@ class MainActivity : AppCompatActivity() {
         homeNextPageParams = ""
         lifecycleScope.launch {
             try {
-                val (rails, nextParams) = withContext(Dispatchers.IO) {
-                    apiService.getHomePageRails()
+                val (rails, nextParams, localOnlyItems) = withContext(Dispatchers.IO) {
+                    val (loadedRails, loadedNextParams) = apiService.getHomePageRails()
+                    val existingAsins = loadedRails.flatMapTo(HashSet()) { rail -> rail.items.map { it.asin } }
+                    Triple(loadedRails, loadedNextParams, resolveLocalOnlyContinueWatchingItems(existingAsins))
                 }
                 homeNextPageParams = nextParams
+                localOnlyContinueWatchingItems = localOnlyItems
                 showRails(rails)
             } catch (e: Exception) {
                 Log.w(TAG, "Error loading home rails", e)
@@ -786,17 +783,7 @@ class MainActivity : AppCompatActivity() {
                 homeNextPageParams = nextParams
                 if (newRails.isNotEmpty()) {
                     val markedRails = newRails.map { rail ->
-                        rail.copy(items = rail.items.map { item ->
-                            val serverProgress = watchlistProgress[item.asin]
-                            val progressMs = serverProgress?.first ?: item.watchProgressMs
-                            val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
-                                serverProgress.second else item.runtimeMs
-                            item.copy(
-                                isInWatchlist = watchlistAsins.contains(item.asin),
-                                watchProgressMs = progressMs,
-                                runtimeMs = runtimeMs
-                            )
-                        })
+                        rail.copy(items = rail.items.map(::withRepositoryProgress))
                     }
                     unfilteredRails = unfilteredRails + markedRails
                     val filtered = applyAllFiltersToRails(unfilteredRails)
@@ -818,8 +805,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun buildContinueWatchingRail(): ContentRail? {
-        val cwItems = watchlistInProgressItems.toMutableList()
+        val cwItems = ProgressRepository.getInProgressItems().toMutableList()
         val seenAsins = cwItems.mapTo(HashSet()) { it.asin }
+
+        for (item in localOnlyContinueWatchingItems) {
+            if (item.asin !in seenAsins) {
+                cwItems.add(item)
+                seenAsins.add(item.asin)
+            }
+        }
 
         // Also pick up in-progress episodes from the server rails.
         // Episodes can't be added to the watchlist individually, so they won't appear in
@@ -840,6 +834,58 @@ class MainActivity : AppCompatActivity() {
         return if (cwItems.isEmpty()) null else ContentRail("Continue Watching", cwItems)
     }
 
+    private fun resolveLocalOnlyContinueWatchingItems(existingAsins: Set<String>): List<ContentItem> {
+        val candidateAsins = ProgressRepository.getInProgressEntries()
+            .keys
+            .filterNot { it in existingAsins }
+            .take(6)
+        if (candidateAsins.isEmpty()) return emptyList()
+
+        return candidateAsins.mapNotNull { asin ->
+            val progress = ProgressRepository.get(asin) ?: return@mapNotNull null
+            try {
+                val info = apiService.getDetailInfo(asin) ?: return@mapNotNull null
+                detailInfoToContentItem(info, progress)
+            } catch (e: Exception) {
+                Log.w(TAG, "Unable to resolve local-only CW item for $asin", e)
+                null
+            }
+        }
+    }
+
+    private fun detailInfoToContentItem(
+        info: DetailInfo,
+        progress: ProgressRepository.ProgressEntry
+    ): ContentItem {
+        val kind = when {
+            info.contentType.uppercase().contains("EPISODE") -> ContentKind.EPISODE
+            info.contentType.uppercase().contains("SEASON") -> ContentKind.SEASON
+            AmazonApiService.isSeriesContentType(info.contentType) -> ContentKind.SERIES
+            AmazonApiService.isMovieContentType(info.contentType) -> ContentKind.MOVIE
+            else -> ContentKind.OTHER
+        }
+        return ContentItem(
+            asin = info.asin,
+            title = info.title,
+            imageUrl = info.posterImageUrl.ifEmpty { info.heroImageUrl },
+            contentType = info.contentType,
+            kind = kind,
+            isPrime = info.isPrime,
+            isInWatchlist = watchlistAsins.contains(info.asin) || info.isInWatchlist,
+            runtimeMs = if (info.runtimeSeconds > 0) info.runtimeSeconds * 1000L else progress.runtimeMs,
+            watchProgressMs = progress.positionMs
+        )
+    }
+
+    private fun withRepositoryProgress(item: ContentItem): ContentItem {
+        val progress = ProgressRepository.get(item.asin)
+        return item.copy(
+            isInWatchlist = watchlistAsins.contains(item.asin),
+            watchProgressMs = progress?.positionMs ?: item.watchProgressMs,
+            runtimeMs = progress?.runtimeMs ?: item.runtimeMs
+        )
+    }
+
     private fun showRails(rails: List<ContentRail>) {
         progressBar.visibility = View.GONE
         shimmerRecyclerView.visibility = View.GONE
@@ -852,17 +898,7 @@ class MainActivity : AppCompatActivity() {
             tvError.visibility = View.GONE
             // Merge watchlist flags and server-side watch progress into rail items
             val markedRails = rails.map { rail ->
-                rail.copy(items = rail.items.map { item ->
-                    val serverProgress = watchlistProgress[item.asin]
-                    val progressMs = serverProgress?.first ?: item.watchProgressMs
-                    val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
-                        serverProgress.second else item.runtimeMs
-                    item.copy(
-                        isInWatchlist = watchlistAsins.contains(item.asin),
-                        watchProgressMs = progressMs,
-                        runtimeMs = runtimeMs
-                    )
-                })
+                rail.copy(items = rail.items.map(::withRepositoryProgress))
             }
             unfilteredRails = markedRails
             val filtered = applyAllFiltersToRails(markedRails)
@@ -942,17 +978,7 @@ class MainActivity : AppCompatActivity() {
             tvError.visibility = View.GONE
             homeFeaturedStrip.visibility = View.GONE
             // Merge watchlist flags and server-side watch progress into items
-            val markedItems = items.map { item ->
-                val serverProgress = watchlistProgress[item.asin]
-                val progressMs = serverProgress?.first ?: item.watchProgressMs
-                val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
-                    serverProgress.second else item.runtimeMs
-                item.copy(
-                    isInWatchlist = watchlistAsins.contains(item.asin),
-                    watchProgressMs = progressMs,
-                    runtimeMs = runtimeMs
-                )
-            }
+            val markedItems = items.map(::withRepositoryProgress)
             adapter.submitList(markedItems)
             val animatedViews = mutableListOf<View>()
             if (searchStateCard.visibility == View.VISIBLE) animatedViews += searchStateCard
@@ -1091,14 +1117,17 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Rebuild display list from cached data when returning from another activity.
-        // Progress is server-sourced and refreshed on next full home load.
+        // Rebuild visible content from the centralized progress repository when returning
+        // from playback so progress bars update without a server refresh.
         if (isRailsMode && unfilteredRails.isNotEmpty()) {
+            unfilteredRails = unfilteredRails.map { rail -> rail.copy(items = rail.items.map(::withRepositoryProgress)) }
             val filtered = applyAllFiltersToRails(unfilteredRails)
             val cwRail = buildContinueWatchingRail()
             val displayList = if (cwRail != null) listOf(cwRail) + filtered else filtered
             updateHomeFeaturedStrip(displayList)
             railsAdapter.submitList(displayList)
+        } else if (!isRailsMode && adapter.currentList.isNotEmpty()) {
+            adapter.submitList(adapter.currentList.map(::withRepositoryProgress))
         }
         // Re-focus when returning from another activity
         recyclerView.post {

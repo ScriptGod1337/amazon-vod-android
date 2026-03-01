@@ -10,6 +10,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.gson.Gson
 import com.scriptgod.fireos.avod.R
+import com.scriptgod.fireos.avod.data.ProgressRepository
 import com.scriptgod.fireos.avod.model.PlaybackQuality
 import com.scriptgod.fireos.avod.model.TokenData
 import java.io.File
@@ -223,6 +224,7 @@ class AboutActivity : AppCompatActivity() {
     }
 
     private fun performLogout() {
+        ProgressRepository.init(applicationContext)
         // Delete internal token
         File(filesDir, ".device-token").delete()
         // Delete legacy token if present (may silently fail — app lacks write permission on /data/local/tmp)
@@ -230,8 +232,8 @@ class AboutActivity : AppCompatActivity() {
         // Record logout time so findTokenFile() skips the legacy token that was present at
         // logout, but still accepts a fresh debug token pushed via adb after this timestamp.
         getSharedPreferences("auth", MODE_PRIVATE).edit().putLong("logged_out_at", System.currentTimeMillis()).apply()
-        // Clear local resume positions
-        getSharedPreferences("resume_positions", MODE_PRIVATE).edit().clear().apply()
+        // Clear local progress cache
+        ProgressRepository.clear()
 
         Toast.makeText(this, "Signed out", Toast.LENGTH_SHORT).show()
 

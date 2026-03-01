@@ -1535,68 +1535,68 @@ API skips episode-level items, but in-progress episodes appear in the v1 landing
 
 ---
 
-## Phase 30: PENDING — Centralized Progress Repository
+## Phase 30: COMPLETE — Centralized Progress Repository
 
-### Goal
+### What was built
 
-Replace the current ad-hoc intent-chain approach (passing `EXTRA_RESUME_MS` / `EXTRA_PROGRESS_MAP`
-through 3 activities) with a single `ProgressRepository` that any screen can read and write.
-Covers all content types (movies, series, episodes) and all entry points (home rails, watchlist,
-library, browse, detail, player).
+Phase 30 replaces the old progress intent chain with a single `ProgressRepository` used by
+Home, Browse, Detail, Player, and logout handling.
 
-### Requirements
+### Implementation
 
-1. **Primary source: server** — on app start, `ProgressRepository.refresh()` calls
-   `getWatchlistData()` and populates an in-memory map (ASIN → progressMs, runtimeMs).
-2. **Fallback: local** — when server data is absent (offline, not in watchlist), a local
-   `SharedPreferences("progress_cache")` store is used. This re-adds the local fallback removed
-   in Phase 29, but in a single controlled location.
-3. **Live updates during playback** — `PlayerActivity` calls `ProgressRepository.update(asin, posMs, durMs)`
-   on each heartbeat tick AND on pause/stop. This writes to the local cache immediately, so
-   returning to any screen shows the updated progress bar without a server round-trip.
-4. **Consistent read API** — all screens call `ProgressRepository.get(asin)` instead of:
-   - `watchlistProgress[asin]?.first` (MainActivity)
-   - `item.watchProgressMs` (BrowseActivity)
-   - `EXTRA_RESUME_MS` from intent (PlayerActivity)
-5. **Trailer isolation** — `update()` is a no-op when `materialType == "Trailer"`.
-6. **Lifecycle** — repository is scoped to the Application (or a `ViewModel` shared across the
-   back stack). Not tied to any single Activity lifecycle.
+**New singleton**:
+- `data/ProgressRepository.kt`
+  - in-memory ASIN → `(positionMs, runtimeMs)` map
+  - `SharedPreferences("progress_cache")` persistence
+  - `refresh()`, `update()`, `get()`, `getInProgressItems()`, `getInProgressEntries()`, `clear()`
 
-### Design
+**Player integration**:
+- `PlayerActivity` now:
+  - reads initial resume from `ProgressRepository.get(asin)`
+  - writes progress back via `ProgressRepository.update(...)`
+  - persists progress every 30 seconds during playback and on pause/stop/seek/error
 
-```
-ProgressRepository  (singleton, Application-scoped)
-  + progressMap: MutableMap<String, Pair<Long, Long>>   // in-memory, ASIN → (posMs, durMs)
-  + refresh()   // IO — calls getWatchlistData(), repopulates map, writes local cache
-  + update(asin, posMs, durMs)  // main/IO — writes map + local cache
-  + get(asin): Pair<Long, Long>?  // sync — returns in-memory value (server merged with local)
-  - prefs: SharedPreferences("progress_cache")
-```
+**Screen integration**:
+- `MainActivity`, `BrowseActivity`, and `DetailActivity` no longer pass progress through
+  `EXTRA_RESUME_MS` / `EXTRA_PROGRESS_MAP`
+- Home and Browse re-read progress directly from the repository
+- About/logout clears the repository cache
 
-### Files to create / change
+**Continue Watching expansion**:
+- CW still prefers server-backed in-progress items
+- Home now also resolves a small capped set of local-only in-progress ASINs by detail lookup and
+  can surface them in Continue Watching without introducing a full metadata repository
 
-| File | Change |
-|------|--------|
-| `data/ProgressRepository.kt` | New singleton — holds map, refresh(), update(), get() |
-| `ui/PlayerActivity.kt` | Call `ProgressRepository.update()` on heartbeat + pause + stop; read `ProgressRepository.get(asin)` for initial resume position instead of intent extra |
-| `ui/MainActivity.kt` | Call `ProgressRepository.get(asin)` when building rail items / CW row instead of `watchlistProgress` |
-| `ui/BrowseActivity.kt` | Read from `ProgressRepository.get(asin)` for episode progress — no more `EXTRA_PROGRESS_MAP` |
-| `ui/DetailActivity.kt` | Remove `EXTRA_RESUME_MS` / `EXTRA_PROGRESS_MAP` pass-through |
-| `api/AmazonApiService.kt` | `getWatchlistData()` result feeds into `ProgressRepository.refresh()` |
+### Merge behavior
 
-### Simplifications enabled
+**Refresh policy**:
+1. local cached entries are loaded from `SharedPreferences("progress_cache")`
+2. server progress from `getWatchlistData()` is applied over that map
+3. during active playback after refresh, local writes can become newer again
 
-- `EXTRA_RESUME_MS` and `EXTRA_PROGRESS_MAP` intent extras can be removed entirely
-- `watchlistProgress` field in `MainActivity` can be replaced by direct `ProgressRepository` reads
-- `BrowseActivity.onResume()` can re-read progress from repository after returning from player,
-  so progress bars update immediately (currently they are static from launch time)
-- `serverResumeMs` / `serverProgressMap` fields in `DetailActivity` and `BrowseActivity` removed
+**Effective rule**:
+- startup / explicit refresh: **server wins**
+- active playback after refresh: **local writes win until next refresh**
 
-### Definition of done
+### Result
 
-- All local `SharedPreferences("resume_positions")` references gone (already done)
-- `ProgressRepository` is the single source of truth for all ASIN progress
-- Progress bars on BrowseActivity episode cards update after returning from player without a
-  server refresh
-- Non-watchlist titles resume from last local position after the next heartbeat write
+- `ProgressRepository` is now the single progress source used by all main screens
+- resume no longer depends on intent pass-through
+- Browse/Home can pick up updated progress after returning from playback
+- non-watchlist titles with local progress can now appear in Continue Watching if their ASIN can
+  be resolved through the detail API
 
+### Validation
+
+- `./gradlew assembleRelease` passed
+- emulator smoke:
+  - `MainActivity` resumed cleanly after cold launch
+  - `ProgressRepository` refresh succeeded (`entries=6, inProgressItems=5`)
+  - `Continue Watching` rail rendered on Home
+  - repository contained at least one extra local-only entry beyond the server-backed in-progress
+    set, confirming the fallback path is meaningful for this account
+
+### Follow-up limitation kept
+
+- there is still no trustworthy backend `lastUpdatedAt`, so cross-device conflict resolution is
+  still server-first on refresh rather than true newest-wins

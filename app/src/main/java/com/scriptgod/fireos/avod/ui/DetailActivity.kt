@@ -16,6 +16,7 @@ import coil.load
 import com.scriptgod.fireos.avod.R
 import com.scriptgod.fireos.avod.api.AmazonApiService
 import com.scriptgod.fireos.avod.auth.AmazonAuthService
+import com.scriptgod.fireos.avod.data.ProgressRepository
 import com.scriptgod.fireos.avod.model.DetailInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,8 +32,6 @@ class DetailActivity : AppCompatActivity() {
         const val EXTRA_IMAGE_URL = "extra_image_url"
         const val EXTRA_WATCHLIST_ASINS = "extra_watchlist_asins"
         const val EXTRA_IS_PRIME = "extra_is_prime"
-        const val EXTRA_RESUME_MS = "extra_resume_ms"
-        const val EXTRA_PROGRESS_MAP = "extra_progress_map"
     }
 
     private lateinit var layoutContent: View
@@ -63,8 +62,6 @@ class DetailActivity : AppCompatActivity() {
     private var fallbackImageUrl: String = ""
     private var detailInfo: DetailInfo? = null
     private var isItemPrime: Boolean = false
-    private var serverResumeMs: Long = 0L
-    private var serverProgressMap: HashMap<String, Long> = hashMapOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,6 +90,7 @@ class DetailActivity : AppCompatActivity() {
 
         val tokenFile = LoginActivity.findTokenFile(this) ?: run { finish(); return }
         apiService = AmazonApiService(AmazonAuthService(tokenFile))
+        ProgressRepository.init(applicationContext)
 
         currentAsin = intent.getStringExtra(EXTRA_ASIN)
             ?.takeIf { it.isNotBlank() }
@@ -101,9 +99,6 @@ class DetailActivity : AppCompatActivity() {
         fallbackImageUrl = intent.getStringExtra(EXTRA_IMAGE_URL) ?: ""
         watchlistAsins = (intent.getStringArrayListExtra(EXTRA_WATCHLIST_ASINS) ?: ArrayList()).toMutableSet()
         isItemPrime = intent.getBooleanExtra(EXTRA_IS_PRIME, false)
-        serverResumeMs = intent.getLongExtra(EXTRA_RESUME_MS, 0L).coerceAtLeast(0L)
-        @Suppress("UNCHECKED_CAST")
-        serverProgressMap = (intent.getSerializableExtra(EXTRA_PROGRESS_MAP) as? HashMap<String, Long>) ?: hashMapOf()
 
         tvTitle.text = intent.getStringExtra(EXTRA_TITLE) ?: ""
 
@@ -305,7 +300,6 @@ class DetailActivity : AppCompatActivity() {
             putExtra(PlayerActivity.EXTRA_ASIN, info.asin)
             putExtra(PlayerActivity.EXTRA_TITLE, info.title)
             putExtra(PlayerActivity.EXTRA_CONTENT_TYPE, info.contentType)
-            putExtra(PlayerActivity.EXTRA_RESUME_MS, serverResumeMs)
         }
         UiTransitions.open(this, intent)
     }
@@ -329,7 +323,6 @@ class DetailActivity : AppCompatActivity() {
             putExtra(BrowseActivity.EXTRA_FILTER, filter)
             putExtra(BrowseActivity.EXTRA_IMAGE_URL, info.posterImageUrl.ifEmpty { fallbackImageUrl })
             putStringArrayListExtra(BrowseActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
-            putExtra(BrowseActivity.EXTRA_PROGRESS_MAP, serverProgressMap)
         }
         UiTransitions.open(this, intent)
     }
@@ -342,7 +335,6 @@ class DetailActivity : AppCompatActivity() {
             putExtra(BrowseActivity.EXTRA_FILTER, "seasons")
             putExtra(BrowseActivity.EXTRA_IMAGE_URL, info.posterImageUrl.ifEmpty { fallbackImageUrl })
             putStringArrayListExtra(BrowseActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
-            putExtra(BrowseActivity.EXTRA_PROGRESS_MAP, serverProgressMap)
         }
         UiTransitions.open(this, intent)
     }

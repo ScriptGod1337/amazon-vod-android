@@ -567,3 +567,71 @@ at read time.
 state. Phase 30 requires an Application-scoped singleton and changes to how `MainActivity`,
 `DetailActivity`, and `BrowseActivity` receive progress data — a broader refactor better done as
 its own phase after the current approach is validated on-device.
+
+---
+
+## Decision 25: ProgressRepository merge policy — server wins on refresh, local wins during active playback
+
+**Date**: Phase 30
+
+Phase 30 replaces the old progress intent chain with `ProgressRepository`, a single source of truth
+for ASIN progress across `MainActivity`, `BrowseActivity`, `DetailActivity`, and `PlayerActivity`.
+
+**Implementation**:
+- `ProgressRepository.refresh()` calls `getWatchlistData()`
+- local cached entries are loaded from `SharedPreferences("progress_cache")`
+- server progress from the watchlist API is then applied over the local map
+- `PlayerActivity` writes progress back through `ProgressRepository.update()` during playback, on
+  seek, on pause, and on stop
+
+**Effective merge rule**:
+1. startup / explicit refresh: **server wins**
+2. during the current playback session after refresh: **local writes win**
+
+This gives the app immediate local progress updates without waiting for a server round-trip, while
+still converging back to server state on the next refresh.
+
+**Why not use `lastUpdatedAt` conflict resolution?**
+The Amazon playback/watchlist APIs used here do not expose a trustworthy backend progress timestamp.
+Without a comparable server-side `lastUpdatedAt`, a strict “newest wins” policy would be guesswork.
+
+**Accepted limitation**:
+- if the same Amazon account is active in this app and the official Prime Video app (or another
+  device) at the same time, progress can temporarily diverge
+- this app may show its newer local progress until the next refresh
+- on the next refresh, the server value overwrites the locally cached value
+
+This limitation is documented in the README as a product-level sync constraint, not a code bug.
+
+---
+
+## Decision 26: Continue Watching uses `ProgressRepository` plus narrow ASIN backfill
+
+**Date**: Phase 30 completion
+
+Phase 30 made `ProgressRepository` the single source of truth for watch progress, which changes
+the earlier Phase 29 CW decision from “server-side progress only” to a broader but still narrow
+rule.
+
+**Current rule**:
+- Home builds Continue Watching from `ProgressRepository`
+- server-backed in-progress items still provide the primary source
+- if an ASIN has local in-progress state but is missing from the current home/watchlist data,
+  `MainActivity` may fetch detail metadata by ASIN and add a minimal `ContentItem` to the row
+
+**Why this shape**:
+- the user-facing need is simple: if the app knows a title is in progress locally, it should be
+  able to surface it in Continue Watching
+- a full content-metadata repository was intentionally deferred
+- the implemented fallback is therefore Home-only and session-scoped, not a new app-wide metadata
+  cache
+
+**Guardrails**:
+- local-only ASIN resolution is capped to a small number of items
+- it only runs for titles that already have local progress evidence
+- ASIN is treated as an internal fetch key only; no identifiers are exposed in the UI
+
+**Accepted limitation**:
+- this is not a general offline metadata cache
+- if a local-progress ASIN cannot be resolved by the detail API, it is skipped
+- broader metadata caching can be added later if multiple features need it

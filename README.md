@@ -6,7 +6,7 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 
 - **In-app login** with Amazon email/password + MFA support (PKCE OAuth device registration)
 - **Sign Out** via About screen (⚙ gear button) — clears tokens and returns to login
-- **Continue Watching row** — first rail on the home screen, built from server-side watchlist progress; shows amber progress bars and remaining-time subtitles; hero strip overrides to "X% watched · Y min left" when CW is active; bypasses source/type filters. **Limitation**: only titles in your watchlist report progress (Amazon's in-progress episode data is stored locally on the device in a private SQLite database that third-party apps cannot read; see [Known limitations](#known-limitations))
+- **Continue Watching row** — first rail on the home screen, built from centralized `ProgressRepository` data; shows amber progress bars and remaining-time subtitles; hero strip overrides to "X% watched · Y min left" when CW is active; bypasses source/type filters. Server watchlist progress is loaded on refresh, and local in-progress ASINs can be backfilled into the row by fetching detail metadata when needed (see [Known limitations](#known-limitations))
 - **Home page horizontal carousels** — categorised rails (Featured, Trending, Top 10, etc.) matching the real Prime Video home layout, with page-level infinite scroll for more rails
 - **Content overview / detail page** — selecting any movie or series opens a full detail screen before playback: hero backdrop image, poster, year/runtime/age rating, quality badges (4K/HDR/5.1), IMDb rating, genres, synopsis, director credit
   - **▶ Play** button for movies
@@ -14,7 +14,7 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
   - **Browse Episodes** + **All Seasons** buttons for series/seasons — All Seasons lets you jump to any other season without navigating back
   - **☆ / ★ Watchlist** toggle on every detail page
   - **Prime badge** — every detail page shows "✓ Included with Prime" (teal) or "✗ Not included with Prime" (grey), sourced from the ATF v3 detail API for accurate per-title, per-territory status
-- **Watch progress bars** on content cards — amber for in-progress, synced with server-side `remainingTimeInSeconds` from the watchlist API; progress set via the official app appears here automatically for watchlisted titles
+- **Watch progress bars** on content cards — amber for in-progress, sourced from centralized server-first progress state with immediate local updates during playback
 - Browse home catalog, watchlist, and personal library
 - Search with instant results
 - Filter by source (All / Prime) and type (Movies / Series) — filters combine independently
@@ -46,6 +46,8 @@ com.scriptgod.fireos.avod
  +-- api/
  |   +-- AmazonApiService.kt       Catalog, search, detail, watchlist, library, playback, stream reporting
  |   +-- ContentItemParser.kt      Parses catalog/rail JSON responses into ContentItem model objects
+ +-- data/
+ |   +-- ProgressRepository.kt     Centralized server-first progress store with local fallback cache
  +-- drm/
  |   +-- AmazonLicenseService.kt   Widevine license: wraps challenge as widevine2Challenge, unwraps widevine2License
  +-- model/
@@ -93,30 +95,52 @@ Current redesigned UI, captured from the Android TV emulator:
 
 | Player Controls Overlay | Continue Watching row |
 |:---:|:---:|
-| ![Player Controls](screenshots/09_player_overlay_emulator.png) | ![Continue Watching](dev/screenshots/phase29-continue-watching.png) |
+| ![Player Controls](screenshots/09_player_overlay_emulator.png) | ![Continue Watching](screenshots/10_continue_watching_emulator.png) |
 
 ## Known limitations
 
-### Watch progress — watchlist titles only
+### Watch progress — centralized cache with server-first refresh
 
-The **Continue Watching** row and amber progress bars are populated from the watchlist API
-(`remainingTimeInSeconds`). This means:
+The app now uses a centralized `ProgressRepository`:
+- on startup / refresh, server progress from the watchlist API is loaded first
+- local cached progress from `SharedPreferences("progress_cache")` is merged underneath it
+- during playback, local progress is updated every 30 seconds and on pause/stop/seek/error
+- the home screen can backfill missing Continue Watching items by resolving local-only ASINs through the detail API
+
+This means:
 
 | Scenario | Progress shown? |
 |---|---|
 | Title is in your watchlist **and** you have watched part of it via the official app | ✓ Yes |
-| Title is **not** in your watchlist but you started it in the official app | ✗ No |
-| In-progress **episode** (not the series) | ✗ No — the watchlist API only returns movies and series |
-| Progress set **within this app** (UpdateStream is sent) | ✗ Not reflected until the app re-reads the watchlist |
+| Title is **not** in your watchlist but you started it in this app and local progress exists | ✓ Yes — if the ASIN can be resolved through the detail API |
+| Title is **not** in your watchlist and you started it only in the official app on another device | ✗ No local signal in this app |
+| In-progress **episode** (not the series) started in this app | ✓ Yes — if the episode ASIN is in local progress and metadata resolves |
+| In-progress **episode** started only in the official app / another device | ✗ Usually no — Amazon does not expose a general server-side episode progress feed |
+| Progress set **within this app** during current session | ✓ Yes — local cache updates immediately |
+| Progress set in the official app or on another device after this app has already started | △ Not immediately — visible after the next repository refresh / app restart |
 
-**Why**: Amazon's official Prime Video app stores in-progress playback state in a private local
+**Why**: Amazon's official Prime Video app stores some in-progress playback state in a private local
 SQLite database (`UserActivityHistory`) that is written during playback and read by the
-`ContinueWatchingCarouselProvider`. There is no public server-side API that exposes this data to
-third-party clients. The only server-readable progress signal is `remainingTimeInSeconds` on
-watchlist items.
+`ContinueWatchingCarouselProvider`. Third-party clients cannot read that database. The only
+server-readable progress signal available here is `remainingTimeInSeconds` on watchlist items.
 
-**Workaround**: Add a title to your watchlist in the official app (or in this app) — once it is
-in the watchlist, the watchlist API returns `remainingTimeInSeconds` and progress is visible.
+**Current sync policy**:
+- server progress wins when the app refreshes the repository
+- local progress wins during the current playback session until the next refresh
+
+**Known limitation**: there is no trustworthy backend `lastUpdatedAt` timestamp exposed by the
+Amazon APIs used here. Because of that, the app cannot do true conflict resolution between:
+- local progress written by this app
+- newer progress written by the official app or another device on the same account
+
+If the same account is used in multiple apps/devices at the same time, short-lived progress
+differences can happen until this app refreshes from the server again.
+
+**Practical result**:
+- watchlisted titles are the most reliable cross-device source
+- local playback in this app is reflected immediately
+- local-only Continue Watching items can appear even when the title is not currently backed by the
+  server watchlist progress set, as long as the app has a resumable ASIN and can resolve metadata
 
 ### Speed control unavailable
 
@@ -132,11 +156,9 @@ See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history
   watchlist progress; amber progress bars + remaining-time subtitles; hero strip overrides to
   progress meta; bypasses source/type filters; `RailsAdapter` adapter-reuse fix eliminates
   first-item flicker; pool contamination fix in `ContentAdapter`
-- **Phase 29 post-fixes** — Server-sourced resume position: removed all local
-  `SharedPreferences("resume_positions")` writes from `PlayerActivity` and `BrowseActivity`;
-  resume position now flows from server `watchlistProgress` via `EXTRA_RESUME_MS` /
-  `EXTRA_PROGRESS_MAP` intent extras; server-side `UpdateStream` / PES V2 heartbeats unchanged;
-  episode resume works via the v1 home-page supplement in `getWatchlistData()`
+- **Phase 30** — Centralized `ProgressRepository`: single source of truth for all ASIN progress;
+  server-first refresh + local fallback cache; periodic local writes during playback; no more
+  progress intent chain; Home can backfill local-only Continue Watching items by ASIN
 - **Phase 28** — Widevine L3/SD fallback: emulator playback enabled; L3 device detected at
   player-creation time and forced to SD quality (mirrors official APK `ConfigurablePlaybackSupportEvaluator`)
 - **Phase 27** — AI code review (5 warnings + 4 info); all findings fixed — keep-screen-on flags,
@@ -146,9 +168,8 @@ See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history
   to AV receiver); live HDMI capability badge; `DefaultRenderersFactory.buildAudioSink()` override
 
 **Next up:**
-- **Phase 30** — Centralized `ProgressRepository`: single source of truth for all ASIN progress;
-  primary server, fallback local cache; updated on every heartbeat tick so progress bars refresh
-  immediately after returning from the player; eliminates the intent-chain extras added in Phase 29
+- Deeper cross-device progress conflict resolution if Amazon exposes a trustworthy backend
+  progress timestamp in a future API path
 
 ## Requirements
 

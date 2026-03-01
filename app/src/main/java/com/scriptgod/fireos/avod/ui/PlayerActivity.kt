@@ -2,7 +2,6 @@ package com.scriptgod.fireos.avod.ui
 
 import android.app.AlertDialog
 import android.content.Context
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.widget.Toast
 import android.util.Log
@@ -40,6 +39,7 @@ import androidx.media3.ui.PlayerView
 import com.scriptgod.fireos.avod.R
 import com.scriptgod.fireos.avod.api.AmazonApiService
 import com.scriptgod.fireos.avod.auth.AmazonAuthService
+import com.scriptgod.fireos.avod.data.ProgressRepository
 import com.scriptgod.fireos.avod.drm.AmazonLicenseService
 import com.scriptgod.fireos.avod.model.AudioTrack
 import com.scriptgod.fireos.avod.model.PlaybackInfo
@@ -68,7 +68,6 @@ class PlayerActivity : AppCompatActivity() {
         const val EXTRA_TITLE = "extra_title"
         const val EXTRA_CONTENT_TYPE = "extra_content_type"
         const val EXTRA_MATERIAL_TYPE = "extra_material_type"
-        const val EXTRA_RESUME_MS = "extra_resume_ms"
         private val CHANNEL_SUFFIX_REGEX = Regex("""\s+\d\.\d(\s*(surround|atmos))?""", RegexOption.IGNORE_CASE)
 
         // Widevine UUID
@@ -113,6 +112,7 @@ class PlayerActivity : AppCompatActivity() {
     private var availableAudioTracks: List<AudioTrack> = emptyList()
     private var lastLoggedAudioTrackSignature: String = ""
     private var h265FallbackPositionMs: Long = 0L
+    private var lastResumeSaveElapsedMs: Long = 0L
     private var seekResyncPending: Boolean = false
     private val hideTrackButtonsRunnable = Runnable {
         trackButtons.clearFocus()
@@ -129,6 +129,14 @@ class PlayerActivity : AppCompatActivity() {
                 trackButtons.postDelayed(this, 120L)
             } else {
                 hideTrackButtonsRunnable.run()
+            }
+        }
+    }
+    private val resumeProgressRunnable = object : Runnable {
+        override fun run() {
+            persistPlaybackProgress(force = false)
+            if (player?.isPlaying == true) {
+                playerView.postDelayed(this, 30_000L)
             }
         }
     }
@@ -234,6 +242,7 @@ class PlayerActivity : AppCompatActivity() {
             ?: run { finish(); return }
         authService = AmazonAuthService(tokenFile)
         apiService = AmazonApiService(authService)
+        ProgressRepository.init(applicationContext)
 
         // Default to "Feature"; caller may pass "Trailer" via EXTRA_MATERIAL_TYPE.
         // GTI-format ASINs (amzn1.dv.gti.*) reject "Episode" with PRSInvalidRequest.
@@ -426,10 +435,11 @@ class PlayerActivity : AppCompatActivity() {
         trackSelector = selector
         normalizedInitialAudioSelection = false
 
-        // Trailers always start from beginning. For real content prefer h265FallbackPositionMs
-        // (set when restarting after a CDN 400) then the server position passed via intent.
+        // Trailers always start from beginning. For real content prefer the h265 fallback
+        // position set during a manifest restart, then the shared ProgressRepository.
         val serverResumeMs = h265FallbackPositionMs.takeIf { it > 0L }
-            ?: intent.getLongExtra(EXTRA_RESUME_MS, 0L).coerceAtLeast(0L)
+            ?: ProgressRepository.get(currentAsin)?.positionMs?.coerceAtLeast(0L)
+            ?: 0L
         h265FallbackPositionMs = 0L
         val resumeMs = if (currentMaterialType == "Trailer") 0L else serverResumeMs
 
@@ -541,6 +551,7 @@ class PlayerActivity : AppCompatActivity() {
                 }
                 Player.STATE_ENDED -> {
                     stopStreamReporting()
+                    stopResumeProgressUpdates()
                     updatePlaybackWakeState(false)
                 }
                 Player.STATE_IDLE -> updatePlaybackWakeState(false)
@@ -552,10 +563,13 @@ class PlayerActivity : AppCompatActivity() {
             if (!streamReportingStarted) return
             if (isPlaying) {
                 startHeartbeat()
+                startResumeProgressUpdates()
             } else if (player?.playbackState == Player.STATE_READY) {
                 // Paused — PlayerView keeps its controller visible automatically
+                persistPlaybackProgress(force = true)
                 sendProgressEvent("PAUSE")
                 heartbeatJob?.cancel()
+                stopResumeProgressUpdates()
             }
         }
 
@@ -567,6 +581,7 @@ class PlayerActivity : AppCompatActivity() {
             if (reason == Player.DISCONTINUITY_REASON_SEEK) {
                 Log.i(TAG, "Seek discontinuity old=${oldPosition.positionMs} new=${newPosition.positionMs}")
                 beginSeekResync()
+                persistPlaybackProgress(force = true)
             }
         }
 
@@ -593,6 +608,7 @@ class PlayerActivity : AppCompatActivity() {
 
         override fun onPlayerError(error: PlaybackException) {
             Log.e(TAG, "Player error: ${error.errorCodeName}", error)
+            persistPlaybackProgress(force = true)
             stopStreamReporting()
             updatePlaybackWakeState(false)
             seekResyncPending = false
@@ -642,6 +658,7 @@ class PlayerActivity : AppCompatActivity() {
             Log.w(TAG, "Stream reporting started, heartbeat=${heartbeatIntervalMs}ms")
         }
         startHeartbeat()
+        startResumeProgressUpdates()
     }
 
     private fun startHeartbeat() {
@@ -655,8 +672,18 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    private fun startResumeProgressUpdates() {
+        playerView.removeCallbacks(resumeProgressRunnable)
+        playerView.postDelayed(resumeProgressRunnable, 30_000L)
+    }
+
+    private fun stopResumeProgressUpdates() {
+        playerView.removeCallbacks(resumeProgressRunnable)
+    }
+
     private fun sendProgressEvent(event: String) {
         val positionSecs = currentPositionSecs()
+        persistPlaybackProgress(force = event != "PLAY")
         scope.launch(Dispatchers.IO) {
             // UpdateStream
             val interval = apiService.updateStream(currentAsin, event, positionSecs, watchSessionId)
@@ -676,6 +703,7 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun stopStreamReporting() {
         heartbeatJob?.cancel()
+        stopResumeProgressUpdates()
         val positionSecs = currentPositionSecs()
         scope.launch(Dispatchers.IO) {
             apiService.updateStream(currentAsin, "STOP", positionSecs, watchSessionId)
@@ -687,6 +715,15 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun currentPositionSecs(): Long = (player?.currentPosition ?: 0) / 1000
+
+    private fun persistPlaybackProgress(force: Boolean) {
+        val p = player ?: return
+        val posMs = p.currentPosition
+        if (!force && posMs <= 0L) return
+        if (!force && posMs - lastResumeSaveElapsedMs < 25_000L) return
+        ProgressRepository.update(currentAsin, posMs, p.duration, currentMaterialType)
+        lastResumeSaveElapsedMs = posMs
+    }
 
     private fun updatePlaybackWakeState(isPlaying: Boolean) {
         playerView.keepScreenOn = isPlaying
@@ -1321,6 +1358,7 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        persistPlaybackProgress(force = true)
         player?.pause()
     }
 
@@ -1341,6 +1379,7 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
+        persistPlaybackProgress(force = true)
         if (streamReportingStarted) {
             stopStreamReporting()
             streamReportingStarted = false
@@ -1354,6 +1393,7 @@ class PlayerActivity : AppCompatActivity() {
         scopeJob.cancel()
         trackButtons.removeCallbacks(syncTrackButtonsRunnable)
         trackButtons.removeCallbacks(hideTrackButtonsRunnable)
+        stopResumeProgressUpdates()
         updatePlaybackWakeState(false)
         player?.release()
         player = null

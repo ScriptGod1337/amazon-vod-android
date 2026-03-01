@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.scriptgod.fireos.avod.R
 import com.scriptgod.fireos.avod.api.AmazonApiService
 import com.scriptgod.fireos.avod.auth.AmazonAuthService
+import com.scriptgod.fireos.avod.data.ProgressRepository
 import com.scriptgod.fireos.avod.model.ContentItem
 import com.scriptgod.fireos.avod.model.isEpisode
 import com.scriptgod.fireos.avod.model.isSeriesContainer
@@ -35,7 +36,6 @@ class BrowseActivity : AppCompatActivity() {
         const val EXTRA_FILTER = "extra_filter"  // "seasons" or "episodes"
         const val EXTRA_IMAGE_URL = "extra_image_url"  // fallback image for child items
         const val EXTRA_WATCHLIST_ASINS = "extra_watchlist_asins"
-        const val EXTRA_PROGRESS_MAP = "extra_progress_map"
     }
 
     private lateinit var recyclerView: RecyclerView
@@ -54,7 +54,6 @@ class BrowseActivity : AppCompatActivity() {
     private lateinit var adapter: ContentAdapter
     private var parentImageUrl: String = ""
     private var watchlistAsins: MutableSet<String> = mutableSetOf()
-    private var serverProgressMap: HashMap<String, Long> = hashMapOf()
     private var preferHeaderFocus: Boolean = false
     private var currentFilter: String? = null
 
@@ -79,10 +78,9 @@ class BrowseActivity : AppCompatActivity() {
             ?: run { finish(); return }
         val authService = AmazonAuthService(tokenFile)
         apiService = AmazonApiService(authService)
+        ProgressRepository.init(applicationContext)
 
         watchlistAsins = (intent.getStringArrayListExtra(EXTRA_WATCHLIST_ASINS) ?: ArrayList()).toMutableSet()
-        @Suppress("UNCHECKED_CAST")
-        serverProgressMap = (intent.getSerializableExtra(EXTRA_PROGRESS_MAP) as? HashMap<String, Long>) ?: hashMapOf()
 
         shimmerRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         shimmerRecyclerView.adapter = ShimmerAdapter()
@@ -160,8 +158,11 @@ class BrowseActivity : AppCompatActivity() {
                 } else {
                     recyclerView.visibility = View.VISIBLE
                     val withProgress = withImages.map { item ->
-                        val serverMs = serverProgressMap[item.asin]
-                        if (serverMs != null && serverMs > 0L) item.copy(watchProgressMs = serverMs) else item
+                        val progress = ProgressRepository.get(item.asin)
+                        if (progress != null) item.copy(
+                            watchProgressMs = progress.positionMs,
+                            runtimeMs = if (item.runtimeMs == 0L) progress.runtimeMs else item.runtimeMs
+                        ) else item
                     }
                     val withWatchlist = withProgress.map { it.copy(isInWatchlist = watchlistAsins.contains(it.asin)) }
                     adapter.submitList(withWatchlist)
@@ -274,7 +275,14 @@ class BrowseActivity : AppCompatActivity() {
         super.onResume()
         val currentList = adapter.currentList
         if (currentList.isNotEmpty()) {
-            val updated = currentList.map { it.copy(isInWatchlist = watchlistAsins.contains(it.asin)) }
+            val updated = currentList.map { item ->
+                val progress = ProgressRepository.get(item.asin)
+                item.copy(
+                    isInWatchlist = watchlistAsins.contains(item.asin),
+                    watchProgressMs = progress?.positionMs ?: item.watchProgressMs,
+                    runtimeMs = progress?.runtimeMs ?: item.runtimeMs
+                )
+            }
             adapter.submitList(updated)
         }
         recyclerView.post {
@@ -370,7 +378,6 @@ class BrowseActivity : AppCompatActivity() {
                         putExtra(EXTRA_FILTER, "episodes")
                         putExtra(EXTRA_IMAGE_URL, item.imageUrl.ifEmpty { parentImageUrl })
                         putStringArrayListExtra(EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
-                        putExtra(EXTRA_PROGRESS_MAP, serverProgressMap)
                     }
                 } else {
                     Intent(this, DetailActivity::class.java).apply {
@@ -380,7 +387,6 @@ class BrowseActivity : AppCompatActivity() {
                         putExtra(DetailActivity.EXTRA_IMAGE_URL, item.imageUrl.ifEmpty { parentImageUrl })
                         putExtra(DetailActivity.EXTRA_IS_PRIME, item.isPrime)
                         putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
-                        putExtra(DetailActivity.EXTRA_PROGRESS_MAP, serverProgressMap)
                     }
                 }
                 UiTransitions.open(this, intent)
@@ -391,7 +397,6 @@ class BrowseActivity : AppCompatActivity() {
                     putExtra(PlayerActivity.EXTRA_ASIN, item.asin)
                     putExtra(PlayerActivity.EXTRA_TITLE, item.title)
                     putExtra(PlayerActivity.EXTRA_CONTENT_TYPE, item.contentType)
-                    putExtra(PlayerActivity.EXTRA_RESUME_MS, item.watchProgressMs.coerceAtLeast(0L))
                 }
                 UiTransitions.open(this, intent)
             }
