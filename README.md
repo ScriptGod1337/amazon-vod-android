@@ -6,7 +6,7 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 
 - **In-app login** with Amazon email/password + MFA support (PKCE OAuth device registration)
 - **Sign Out** via About screen (⚙ gear button) — clears tokens and returns to login
-- **Continue Watching row** — first rail on the home screen, built from server-side watchlist progress; shows amber progress bars and remaining-time subtitles; hero strip overrides to "X% watched · Y min left" when CW is active; bypasses source/type filters
+- **Continue Watching row** — first rail on the home screen, built from server-side watchlist progress; shows amber progress bars and remaining-time subtitles; hero strip overrides to "X% watched · Y min left" when CW is active; bypasses source/type filters. **Limitation**: only titles in your watchlist report progress (Amazon's in-progress episode data is stored locally on the device in a private SQLite database that third-party apps cannot read; see [Known limitations](#known-limitations))
 - **Home page horizontal carousels** — categorised rails (Featured, Trending, Top 10, etc.) matching the real Prime Video home layout, with page-level infinite scroll for more rails
 - **Content overview / detail page** — selecting any movie or series opens a full detail screen before playback: hero backdrop image, poster, year/runtime/age rating, quality badges (4K/HDR/5.1), IMDb rating, genres, synopsis, director credit
   - **▶ Play** button for movies
@@ -14,7 +14,7 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
   - **Browse Episodes** + **All Seasons** buttons for series/seasons — All Seasons lets you jump to any other season without navigating back
   - **☆ / ★ Watchlist** toggle on every detail page
   - **Prime badge** — every detail page shows "✓ Included with Prime" (teal) or "✗ Not included with Prime" (grey), sourced from the ATF v3 detail API for accurate per-title, per-territory status
-- **Watch progress bars** on content cards — amber for in-progress, synced with server-side `remainingTimeInSeconds` so progress from the official app shows up here too
+- **Watch progress bars** on content cards — amber for in-progress, synced with server-side `remainingTimeInSeconds` from the watchlist API; progress set via the official app appears here automatically for watchlisted titles
 - Browse home catalog, watchlist, and personal library
 - Search with instant results
 - Filter by source (All / Prime) and type (Movies / Series) — filters combine independently
@@ -91,9 +91,37 @@ Current redesigned UI, captured from the Android TV emulator:
 |:---:|:---:|
 | ![Season Picker](screenshots/07_browse_seasons_emulator.png) | ![Episode Browse](screenshots/08_browse_episodes_emulator.png) |
 
-| Player Controls Overlay | |
+| Player Controls Overlay | Continue Watching row |
 |:---:|:---:|
-| ![Player Controls](screenshots/09_player_overlay_emulator.png) | |
+| ![Player Controls](screenshots/09_player_overlay_emulator.png) | ![Continue Watching](dev/screenshots/phase29-continue-watching.png) |
+
+## Known limitations
+
+### Watch progress — watchlist titles only
+
+The **Continue Watching** row and amber progress bars are populated from the watchlist API
+(`remainingTimeInSeconds`). This means:
+
+| Scenario | Progress shown? |
+|---|---|
+| Title is in your watchlist **and** you have watched part of it via the official app | ✓ Yes |
+| Title is **not** in your watchlist but you started it in the official app | ✗ No |
+| In-progress **episode** (not the series) | ✗ No — the watchlist API only returns movies and series |
+| Progress set **within this app** (UpdateStream is sent) | ✗ Not reflected until the app re-reads the watchlist |
+
+**Why**: Amazon's official Prime Video app stores in-progress playback state in a private local
+SQLite database (`UserActivityHistory`) that is written during playback and read by the
+`ContinueWatchingCarouselProvider`. There is no public server-side API that exposes this data to
+third-party clients. The only server-readable progress signal is `remainingTimeInSeconds` on
+watchlist items.
+
+**Workaround**: Add a title to your watchlist in the official app (or in this app) — once it is
+in the watchlist, the watchlist API returns `remainingTimeInSeconds` and progress is visible.
+
+### Speed control unavailable
+
+`player.setPlaybackSpeed()` is silently reset to 1.0× by Amazon's EMP (Extras Media Player)
+system service via a hidden MediaSession proxy on Fire OS. Not implemented.
 
 ## Roadmap
 
