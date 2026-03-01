@@ -774,23 +774,23 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                 ?: model.safeString("imagePack")
                 ?: ""
 
+            val badgeText = listOfNotNull(
+                model.safeString("badgeInfo"),
+                model.safeString("contentBadge"),
+                model.getAsJsonObject("badges")?.safeString("text")
+            ).joinToString(" ")
+
             val isPrime = model.getAsJsonObject("badges")
                 ?.safeBoolean("prime")
                 ?: model.safeBoolean("showPrimeEmblem")
                 ?: model.safeBoolean("isPrime")
                 ?: model.safeBoolean("primeOnly")
-                ?: run {
-                    val badge = model.safeString("badgeInfo")
-                        ?: model.safeString("contentBadge") ?: ""
-                    !badge.contains("FREE", ignoreCase = true)
-                }
+                ?: badgeText.contains("PRIME", ignoreCase = true)
 
             val isFreeWithAds = model.safeBoolean("isFreeWithAds")
                 ?: model.safeBoolean("freeWithAds")
                 ?: run {
-                    val badge = model.safeString("badgeInfo")
-                        ?: model.safeString("contentBadge") ?: ""
-                    badge.contains("FREE", ignoreCase = true) || badge.contains("AVOD", ignoreCase = true)
+                    badgeText.contains("FREE", ignoreCase = true) || badgeText.contains("AVOD", ignoreCase = true)
                 }
 
             val isLive = contentType.equals("live", ignoreCase = true)

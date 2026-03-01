@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -125,7 +126,8 @@ class PlayerActivity : AppCompatActivity() {
         btnAudio = findViewById(R.id.btn_audio)
         btnSubtitle = findViewById(R.id.btn_subtitle)
         tvPlaybackTitle.text = intent.getStringExtra(EXTRA_TITLE) ?: "Now Playing"
-        tvPlaybackHint.text = "Press MENU for controls. Press Back to leave playback."
+        tvPlaybackHint.text = "Press MENU for tracks. Press Back to leave playback."
+        applyDeviceOverlayTuning()
 
         // Fix D-pad seek increment: default is duration/20 (~6 min on a 2h film).
         // 10 s per key press matches standard TV remote behaviour.
@@ -140,6 +142,11 @@ class PlayerActivity : AppCompatActivity() {
                 if (visibility == View.VISIBLE) {
                     trackButtons.visibility = View.VISIBLE
                     UiMotion.revealFresh(trackButtons)
+                    trackButtons.post {
+                        if (!btnAudio.isFocused && !btnSubtitle.isFocused) {
+                            btnAudio.requestFocus()
+                        }
+                    }
                 } else {
                     trackButtons.animate().cancel()
                     trackButtons.animate()
@@ -158,6 +165,8 @@ class PlayerActivity : AppCompatActivity() {
 
         btnAudio.setOnClickListener { showTrackSelectionDialog(C.TRACK_TYPE_AUDIO) }
         btnSubtitle.setOnClickListener { showTrackSelectionDialog(C.TRACK_TYPE_TEXT) }
+        btnAudio.nextFocusDownId = R.id.btn_subtitle
+        btnSubtitle.nextFocusUpId = R.id.btn_audio
 
         val asin = intent.getStringExtra(EXTRA_ASIN)
             ?: run { showError("No ASIN provided"); return }
@@ -646,10 +655,30 @@ class PlayerActivity : AppCompatActivity() {
                 playerView.hideController()
             } else {
                 playerView.showController()
+                btnAudio.post { btnAudio.requestFocus() }
             }
             return true
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    private fun applyDeviceOverlayTuning() {
+        val isAmazonDevice = android.os.Build.MANUFACTURER.equals("Amazon", ignoreCase = true)
+        if (!isAmazonDevice) return
+
+        updateMargins(trackButtons, topDp = 20, endDp = 28)
+        updateMargins(tvError, startDp = 36, bottomDp = 44)
+        tvError.maxLines = 4
+    }
+
+    private fun updateMargins(view: View, startDp: Int? = null, topDp: Int? = null, endDp: Int? = null, bottomDp: Int? = null) {
+        val params = view.layoutParams as? ViewGroup.MarginLayoutParams ?: return
+        val density = resources.displayMetrics.density
+        startDp?.let { params.marginStart = (it * density).toInt() }
+        topDp?.let { params.topMargin = (it * density).toInt() }
+        endDp?.let { params.marginEnd = (it * density).toInt() }
+        bottomDp?.let { params.bottomMargin = (it * density).toInt() }
+        view.layoutParams = params
     }
 
     private fun showError(message: String) {

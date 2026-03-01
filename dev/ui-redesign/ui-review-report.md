@@ -65,6 +65,8 @@
 - `final_browse_all-seasons.png` confirms season cards now read as navigational containers distinct from the utilitarian episode cards.
 - `final_detail_watchlist-overlay.png` confirms Detail now uses the same custom watchlist overlay language as the rest of the redesign.
 - The latest consistency pass keeps the page-title/supporting-text hierarchy aligned between Browse, About, Detail, and Player-adjacent UI, and removes the last obvious timing mismatch in card focus animation.
+- The metadata truthfulness pass removes the last UI-side Prime inference. Card badges and the Home featured strip now rely on the same explicit availability rule, so Prime is only shown when the payload actually marks the title as Prime.
+- The latest Detail cleanup also tightens support text so seasons and episodes carry contextual `From ...` copy only where it adds value, while empty metadata rows collapse cleanly instead of leaving dead space.
 
 ## Device Validation Notes
 
@@ -82,4 +84,9 @@
 - Final emulator validation confirmed a visible `Continue Watching` rail on Home, the new season-card Browse treatment, and the Detail watchlist overlay capture set.
 - Consistency-pass emulator validation confirmed About still returns cleanly to Home through the new close transition helper, and Home/Browse/About all render with the updated shared type scale.
 - Fire TV validation on `192.168.0.12:5555` confirmed login bypass via `.device-token`, successful entry to `MainActivity`, and a targeted overlay-validation attempt against `PlayerActivity`.
+- Fire TV validation on `192.168.0.12:5555` also confirmed the compact Home geometry remains intact on-device, with `nav_bar [0,0][1920,96]` and `category_filter_row [64,104][1856,200]`.
 - If Fire TV `uiautomator` still remains too limited to authoritatively inspect the transient player overlay controls, emulator screenshots remain the review source for that part of the UI.
+- Emulator validation after the metadata pass confirmed:
+  - `Borderlands` still renders the movie-detail metadata stack cleanly with IMDb and synopsis
+  - `The Good Doctor - Staffel 7` renders the season-detail support line as `Drama  ·  From The Good Doctor`
+  - Home still exposes the dedicated `Continue Watching` presentation with watchlist iconography and the shared badge rules

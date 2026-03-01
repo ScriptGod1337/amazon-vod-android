@@ -170,6 +170,7 @@ class DetailActivity : AppCompatActivity() {
             }
         }
         tvMetadata.text = meta
+        tvMetadata.visibility = if (meta.isNotBlank()) View.VISIBLE else View.GONE
 
         if (info.imdbRating > 0f) {
             tvImdb.text = "\u2605 IMDb %.1f / 10".format(info.imdbRating)
@@ -278,10 +279,13 @@ class DetailActivity : AppCompatActivity() {
 
     private fun buildSupportLine(info: DetailInfo): String {
         val parts = mutableListOf<String>()
+        if (info.showTitle.isNotEmpty() && info.contentType.uppercase().contains("SEASON")) {
+            parts += "From ${info.showTitle}"
+        }
         if (info.genres.isNotEmpty()) {
             parts += info.genres.joinToString("  ·  ")
         }
-        if (info.showTitle.isNotEmpty()) {
+        if (info.showTitle.isNotEmpty() && info.contentType.uppercase().contains("EPISODE")) {
             parts += "From ${info.showTitle}"
         }
         if (info.isTrailerAvailable) {

@@ -1,7 +1,7 @@
 # UI Review Request
 
 ## Build version
-`1b2b6fc` plus local redesign changes through 2026-03-01
+`8a7b6a8` plus local redesign changes through 2026-03-01
 
 ## What was implemented
 - [x] Dependencies (`material`, `shimmer`)
@@ -29,6 +29,10 @@
 - [x] Episode card legibility pass: episode cards now preserve the bottom subtitle line in Browse
 - [x] Prime badge rule fix: Prime badges are no longer inferred for every non-Freevee / non-live title
 - [x] Final visual pass: Continue Watching is now visually verified on Home, season cards have their own Browse treatment, and Detail uses the same watchlist overlay system as Home/Browse
+- [x] Metadata truthfulness pass: Prime detection now requires an explicit Prime signal from the payload instead of being inferred from `not Freevee`
+- [x] Shared availability helpers: card badges and featured-strip metadata now use one `included with Prime / Freevee / Live` rule across Home, Browse, and Watchlist
+- [x] Detail metadata cleanup: empty metadata rows now collapse cleanly, and support text is more context-aware for seasons and episodes
+- [x] Player overlay tuning pass: Fire TV-safe overlay margins were tightened and MENU now routes track focus to `Audio`
 
 ## Known issues / deviations from spec
 - `See All` remains intentionally hidden. The current app still has no safe full-collection browse contract for `collectionId` without API/model work.
@@ -62,9 +66,13 @@
 - Home rail eyebrows now distinguish editorial groups like `Featured Now`, `Top 10`, `Just Added`, and `Award Picks`.
 - Prime titles no longer repeat `Included with Prime` in card subtitles when the Prime badge is already shown.
 - Prime badges are now only shown when a title is actually marked Prime in the returned data, not simply because it is not ad-supported.
+- Home featured metadata now follows the same availability truthfulness rules as card badges instead of using a separate Prime heuristic.
 - MENU on cards now opens a custom watchlist action overlay with explicit `Add/Remove` and `Cancel` actions.
 - The final Home state now includes a verified `Continue Watching` rail using the dedicated progress-first card presentation.
+- Detail metadata now collapses empty rows cleanly and keeps season/episode support text more relevant to the current content type.
 - Player overlay audio/subtitle controls use the updated redesign styling.
+- Fire TV validation confirms Home still renders with the compact top-aligned geometry on `192.168.0.12:5555` (`nav_bar [0,0][1920,96]`, `category_filter_row [64,104][1856,200]`).
+- Emulator validation confirms the metadata/badge pass on `Borderlands` and `The Good Doctor - Staffel 7`, and Home still exposes the dedicated `Continue Watching` treatment.
 
 ## Screenshots
 - Captured under `dev/ui-redesign/review-screenshots/`:

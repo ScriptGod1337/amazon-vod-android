@@ -17,6 +17,8 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.scriptgod.fireos.avod.R
 import com.scriptgod.fireos.avod.model.ContentItem
+import com.scriptgod.fireos.avod.model.isIncludedWithPrime
+import com.scriptgod.fireos.avod.model.primaryAvailabilityBadge
 import kotlin.math.roundToInt
 
 class ContentAdapter(
@@ -88,11 +90,10 @@ class ContentAdapter(
         )
 
         holder.badges.removeAllViews()
-        val badgeValues = listOfNotNull(
-            "Prime".takeIf { item.isPrime && !item.isFreeWithAds && !item.isLive },
-            "Freevee".takeIf { item.isFreeWithAds },
-            "Live".takeIf { item.isLive }
-        ).take(3)
+        val badgeValues = buildList {
+            item.primaryAvailabilityBadge()?.let(::add)
+            if (item.watchProgressMs == -1L) add("Watched")
+        }.take(3)
         holder.badges.visibility = if (presentation == CardPresentation.SEASON && badgeValues.isEmpty()) {
             View.GONE
         } else {
@@ -239,7 +240,7 @@ class ContentAdapter(
             CardPresentation.SEASON -> CardMetadata(
                 overline = "Season",
                 title = item.title,
-                subtitle = sanitizeSubtitle(item.subtitle).ifBlank { "Open season overview" }
+                subtitle = sanitizeSubtitle(item.subtitle).ifBlank { "Open episode list" }
             )
             CardPresentation.PROGRESS -> CardMetadata(
                 overline = "Continue Watching",
@@ -279,16 +280,17 @@ class ContentAdapter(
     }
 
     private fun secondaryLine(item: ContentItem): String {
-        if (item.subtitle.isNotBlank()) {
-            return sanitizeSubtitle(item.subtitle)
+        val cleanedSubtitle = sanitizeSubtitle(item.subtitle)
+        if (cleanedSubtitle.isNotBlank()) {
+            return cleanedSubtitle
         }
         val parts = mutableListOf<String>()
         if (ContentTypeMatcher.isEpisode(item.contentType)) parts += "Playable episode"
         else if (ContentTypeMatcher.isSeries(item.contentType)) parts += "Series overview"
         else if (ContentTypeMatcher.isMovie(item.contentType)) parts += "Feature film"
-        when {
-            item.isFreeWithAds -> parts += "Ad-supported"
-            item.isLive -> parts += "Live channel"
+        item.primaryAvailabilityBadge()?.let { badge ->
+            if (badge == "Freevee") parts += "Ad-supported"
+            if (badge == "Live") parts += "Live channel"
         }
         return parts.joinToString("  ·  ")
     }

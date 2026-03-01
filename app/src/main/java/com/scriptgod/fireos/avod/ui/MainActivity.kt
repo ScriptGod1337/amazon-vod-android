@@ -32,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import com.scriptgod.fireos.avod.model.primaryAvailabilityBadge
 
 class MainActivity : AppCompatActivity() {
 
@@ -922,7 +923,7 @@ class MainActivity : AppCompatActivity() {
                     val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
                         serverProgress.second else item.runtimeMs
                     item.copy(
-                        isPrime = item.isPrime && !item.isFreeWithAds && !item.isLive,
+                        isPrime = item.isPrime,
                         isInWatchlist = watchlistAsins.contains(item.asin),
                         watchProgressMs = progressMs,
                         runtimeMs = runtimeMs
@@ -1000,8 +1001,7 @@ class MainActivity : AppCompatActivity() {
             AmazonApiService.isMovieContentType(item.contentType) -> "Movie"
             else -> "Featured"
         }
-        if (item.isFreeWithAds) parts += "Freevee"
-        else if (item.isPrime && !item.isLive) parts += "Prime"
+        item.primaryAvailabilityBadge()?.let(parts::add)
         if (rail.headerText.isNotBlank()) parts += rail.headerText
         return parts.joinToString("  ·  ")
     }

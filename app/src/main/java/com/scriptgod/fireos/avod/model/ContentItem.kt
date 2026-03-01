@@ -16,6 +16,15 @@ data class ContentItem(
     val watchProgressMs: Long = 0  // 0 = not started, -1 = fully watched, >0 = position ms
 )
 
+fun ContentItem.isIncludedWithPrime(): Boolean = isPrime && !isFreeWithAds && !isLive
+
+fun ContentItem.primaryAvailabilityBadge(): String? = when {
+    isFreeWithAds -> "Freevee"
+    isLive -> "Live"
+    isIncludedWithPrime() -> "Prime"
+    else -> null
+}
+
 data class SubtitleTrack(
     val url: String,
     val languageCode: String,
