@@ -252,7 +252,8 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun updateWatchlistButton(isIn: Boolean) {
-        btnWatchlist.text = if (isIn) "★  Watchlist" else "☆  Watchlist"
+        btnWatchlist.text = if (isIn) "In Watchlist" else "Add to Watchlist"
+        btnWatchlist.isSelected = isIn
     }
 
     private fun detailEyebrow(contentType: String): String {
@@ -335,19 +336,30 @@ class DetailActivity : AppCompatActivity() {
 
     private fun onWatchlistClicked() {
         val isIn = watchlistAsins.contains(currentAsin)
-        lifecycleScope.launch {
-            val success = withContext(Dispatchers.IO) {
-                if (isIn) apiService.removeFromWatchlist(currentAsin)
-                else apiService.addToWatchlist(currentAsin)
-            }
-            if (success) {
-                if (isIn) watchlistAsins.remove(currentAsin)
-                else watchlistAsins.add(currentAsin)
-                updateWatchlistButton(watchlistAsins.contains(currentAsin))
-                val msg = if (isIn) "Removed from watchlist" else "Added to watchlist"
-                Toast.makeText(this@DetailActivity, msg, Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this@DetailActivity, "Watchlist update failed", Toast.LENGTH_SHORT).show()
+        val overlayItem = com.scriptgod.fireos.avod.model.ContentItem(
+            asin = currentAsin,
+            title = detailInfo?.title ?: (intent.getStringExtra(EXTRA_TITLE) ?: ""),
+            contentType = detailInfo?.contentType ?: currentContentType
+        )
+        WatchlistActionOverlay.show(
+            activity = this,
+            item = overlayItem,
+            isInWatchlist = isIn
+        ) {
+            lifecycleScope.launch {
+                val success = withContext(Dispatchers.IO) {
+                    if (isIn) apiService.removeFromWatchlist(currentAsin)
+                    else apiService.addToWatchlist(currentAsin)
+                }
+                if (success) {
+                    if (isIn) watchlistAsins.remove(currentAsin)
+                    else watchlistAsins.add(currentAsin)
+                    updateWatchlistButton(watchlistAsins.contains(currentAsin))
+                    val msg = if (isIn) "Removed from watchlist" else "Added to watchlist"
+                    Toast.makeText(this@DetailActivity, msg, Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@DetailActivity, "Watchlist update failed", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }

@@ -688,12 +688,11 @@ class MainActivity : AppCompatActivity() {
     // --- Watchlist context menu (MENU key) ---
 
     private fun showItemMenu(item: ContentItem) {
-        val isIn = watchlistAsins.contains(item.asin)
-        val label = if (isIn) "Remove from Watchlist" else "Add to Watchlist"
-        AlertDialog.Builder(this)
-            .setTitle(item.title)
-            .setItems(arrayOf(label)) { _, _ -> toggleWatchlist(item) }
-            .show()
+        WatchlistActionOverlay.show(
+            activity = this,
+            item = item,
+            isInWatchlist = watchlistAsins.contains(item.asin)
+        ) { toggleWatchlist(item) }
     }
 
     private fun toggleWatchlist(item: ContentItem) {
@@ -923,11 +922,7 @@ class MainActivity : AppCompatActivity() {
                     val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
                         serverProgress.second else item.runtimeMs
                     item.copy(
-                        isPrime = if (currentNavPage == "watchlist") {
-                            item.isPrime || (!item.isFreeWithAds && !item.isLive)
-                        } else {
-                            item.isPrime
-                        },
+                        isPrime = item.isPrime && !item.isFreeWithAds && !item.isLive,
                         isInWatchlist = watchlistAsins.contains(item.asin),
                         watchProgressMs = progressMs,
                         runtimeMs = runtimeMs

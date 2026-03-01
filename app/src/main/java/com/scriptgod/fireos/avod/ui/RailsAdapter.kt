@@ -80,7 +80,7 @@ class RailsAdapter(
     private fun resolvePresentation(rail: ContentRail, position: Int, hasProgressItems: Boolean): CardPresentation {
         val header = rail.headerText.lowercase()
         return when {
-            hasProgressItems -> CardPresentation.LANDSCAPE
+            hasProgressItems -> CardPresentation.PROGRESS
             position == 0 -> CardPresentation.LANDSCAPE
             header.contains("top 10") -> CardPresentation.LANDSCAPE
             header.contains("continue") -> CardPresentation.LANDSCAPE

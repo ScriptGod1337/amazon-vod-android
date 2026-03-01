@@ -43,8 +43,13 @@ class ContentAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(
-                if (presentation == CardPresentation.LANDSCAPE) R.layout.item_content_landscape
-                else R.layout.item_content,
+                when (presentation) {
+                    CardPresentation.SEASON -> R.layout.item_content_season
+                    CardPresentation.LANDSCAPE -> R.layout.item_content_landscape
+                    CardPresentation.EPISODE -> R.layout.item_content_episode
+                    CardPresentation.PROGRESS -> R.layout.item_content_progress
+                    CardPresentation.POSTER -> R.layout.item_content
+                },
                 parent,
                 false
             )
@@ -54,12 +59,18 @@ class ContentAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = getItem(position)
         val progressSubtitle = progressSubtitle(item)
-        holder.overline.text = overlineText(item, progressSubtitle != null)
-        holder.title.text = item.title
-        val displaySubtitle = progressSubtitle ?: secondaryLine(item)
+        val metadata = metadataForPresentation(item, progressSubtitle)
+        holder.overline.text = metadata.overline
+        holder.overline.visibility = if (metadata.overline.isBlank()) View.GONE else View.VISIBLE
+        holder.title.text = metadata.title
+        val displaySubtitle = metadata.subtitle
         holder.subtitle.text = displaySubtitle
         holder.subtitle.visibility = if (displaySubtitle.isBlank()) View.GONE else View.VISIBLE
-        holder.subtitle.maxLines = if (presentation == CardPresentation.LANDSCAPE) 1 else 2
+        holder.subtitle.maxLines = when (presentation) {
+            CardPresentation.POSTER -> 2
+            CardPresentation.PROGRESS -> 2
+            else -> 1
+        }
         if (item.imageUrl.isNotEmpty()) {
             holder.poster.load(item.imageUrl) {
                 crossfade(true)
@@ -77,11 +88,17 @@ class ContentAdapter(
         )
 
         holder.badges.removeAllViews()
-        listOfNotNull(
-            "Prime".takeIf { item.isPrime },
+        val badgeValues = listOfNotNull(
+            "Prime".takeIf { item.isPrime && !item.isFreeWithAds && !item.isLive },
             "Freevee".takeIf { item.isFreeWithAds },
             "Live".takeIf { item.isLive }
-        ).take(3).forEach { badge ->
+        ).take(3)
+        holder.badges.visibility = if (presentation == CardPresentation.SEASON && badgeValues.isEmpty()) {
+            View.GONE
+        } else {
+            View.VISIBLE
+        }
+        badgeValues.forEach { badge ->
             val density = holder.itemView.resources.displayMetrics.density
             val chip = TextView(holder.itemView.context).apply {
                 text = badge
@@ -139,7 +156,12 @@ class ContentAdapter(
         holder.surface?.alpha = if (isCurrentlyFocused) 1f else 0.96f
         holder.itemView.setOnFocusChangeListener { view, hasFocus ->
             val scale = if (hasFocus) {
-                if (presentation == CardPresentation.LANDSCAPE) 1.035f else 1.055f
+                when (presentation) {
+                    CardPresentation.POSTER -> 1.055f
+                    CardPresentation.SEASON -> 1.025f
+                    CardPresentation.EPISODE -> 1.02f
+                    else -> 1.035f
+                }
             } else {
                 1.0f
             }
@@ -206,6 +228,45 @@ class ContentAdapter(
         }
     }
 
+    private data class CardMetadata(
+        val overline: String,
+        val title: String,
+        val subtitle: String
+    )
+
+    private fun metadataForPresentation(item: ContentItem, progressSubtitle: String?): CardMetadata {
+        return when (presentation) {
+            CardPresentation.SEASON -> CardMetadata(
+                overline = "Season",
+                title = item.title,
+                subtitle = sanitizeSubtitle(item.subtitle).ifBlank { "Open season overview" }
+            )
+            CardPresentation.PROGRESS -> CardMetadata(
+                overline = "Continue Watching",
+                title = item.title,
+                subtitle = progressSubtitle ?: "Resume playback"
+            )
+            CardPresentation.EPISODE -> {
+                val (episodeOverline, episodeTitle) = episodeLabelParts(item.title)
+                CardMetadata(
+                    overline = episodeOverline.ifBlank { overlineText(item, progressSubtitle != null) },
+                    title = episodeTitle,
+                    subtitle = sanitizeSubtitle(item.subtitle).ifBlank { "Start playback" }
+                )
+            }
+            CardPresentation.LANDSCAPE -> CardMetadata(
+                overline = overlineText(item, progressSubtitle != null),
+                title = item.title,
+                subtitle = progressSubtitle ?: landscapeSubtitle(item)
+            )
+            CardPresentation.POSTER -> CardMetadata(
+                overline = overlineText(item, progressSubtitle != null),
+                title = item.title,
+                subtitle = progressSubtitle ?: secondaryLine(item)
+            )
+        }
+    }
+
     private fun overlineText(item: ContentItem, isProgress: Boolean): String {
         if (isProgress) return "Continue Watching"
         return when {
@@ -232,6 +293,13 @@ class ContentAdapter(
         return parts.joinToString("  ·  ")
     }
 
+    private fun landscapeSubtitle(item: ContentItem): String {
+        return when {
+            ContentTypeMatcher.isSeries(item.contentType) -> "Open season overview"
+            else -> secondaryLine(item)
+        }
+    }
+
     private fun sanitizeSubtitle(subtitle: String): String {
         return subtitle
             .replace("Included with Prime", "", ignoreCase = true)
@@ -242,6 +310,16 @@ class ContentAdapter(
             .replace(Regex("^\\s*·\\s+"), "")
             .replace(Regex("\\s{2,}"), " ")
             .trim()
+    }
+
+    private fun episodeLabelParts(rawTitle: String): Pair<String, String> {
+        val match = Regex("^E(\\d+):\\s*(.+)$", RegexOption.IGNORE_CASE).matchEntire(rawTitle.trim())
+        if (match != null) {
+            val episodeNumber = match.groupValues[1]
+            val episodeTitle = match.groupValues[2]
+            return "Episode $episodeNumber" to episodeTitle
+        }
+        return "" to rawTitle
     }
 
     private object ContentTypeMatcher {

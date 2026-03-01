@@ -9,7 +9,6 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
@@ -217,10 +216,16 @@ class BrowseActivity : AppCompatActivity() {
 
     private fun configureGridForFilter(filter: String?) {
         val presentation = when (filter) {
-            "seasons", "episodes" -> CardPresentation.LANDSCAPE
+            "seasons" -> CardPresentation.SEASON
+            "episodes" -> CardPresentation.EPISODE
             else -> CardPresentation.POSTER
         }
-        val spanCount = if (presentation == CardPresentation.LANDSCAPE) 5 else 4
+        val spanCount = when (presentation) {
+            CardPresentation.EPISODE -> 5
+            CardPresentation.SEASON -> 4
+            CardPresentation.LANDSCAPE -> 4
+            else -> 4
+        }
         adapter = ContentAdapter(
             onItemClick = { item -> onItemSelected(item) },
             onMenuKey = { item -> showItemMenu(item) },
@@ -313,12 +318,11 @@ class BrowseActivity : AppCompatActivity() {
     // --- Watchlist context menu (MENU key) ---
 
     private fun showItemMenu(item: ContentItem) {
-        val isIn = watchlistAsins.contains(item.asin)
-        val label = if (isIn) "Remove from Watchlist" else "Add to Watchlist"
-        AlertDialog.Builder(this)
-            .setTitle(item.title)
-            .setItems(arrayOf(label)) { _, _ -> toggleWatchlist(item) }
-            .show()
+        WatchlistActionOverlay.show(
+            activity = this,
+            item = item,
+            isInWatchlist = watchlistAsins.contains(item.asin)
+        ) { toggleWatchlist(item) }
     }
 
     private fun toggleWatchlist(item: ContentItem) {
@@ -350,12 +354,23 @@ class BrowseActivity : AppCompatActivity() {
         when {
             // Season selected → overview page (description, IMDb, episodes list)
             AmazonApiService.isSeriesContentType(item.contentType) -> {
-                val intent = Intent(this, DetailActivity::class.java).apply {
-                    putExtra(DetailActivity.EXTRA_ASIN, item.asin)
-                    putExtra(DetailActivity.EXTRA_TITLE, item.title)
-                    putExtra(DetailActivity.EXTRA_CONTENT_TYPE, item.contentType)
-                    putExtra(DetailActivity.EXTRA_IMAGE_URL, item.imageUrl.ifEmpty { parentImageUrl })
-                    putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
+                val intent = if (intent.getStringExtra(EXTRA_FILTER) == "seasons") {
+                    Intent(this, BrowseActivity::class.java).apply {
+                        putExtra(EXTRA_ASIN, item.asin)
+                        putExtra(EXTRA_TITLE, item.title)
+                        putExtra(EXTRA_CONTENT_TYPE, item.contentType)
+                        putExtra(EXTRA_FILTER, "episodes")
+                        putExtra(EXTRA_IMAGE_URL, item.imageUrl.ifEmpty { parentImageUrl })
+                        putStringArrayListExtra(EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
+                    }
+                } else {
+                    Intent(this, DetailActivity::class.java).apply {
+                        putExtra(DetailActivity.EXTRA_ASIN, item.asin)
+                        putExtra(DetailActivity.EXTRA_TITLE, item.title)
+                        putExtra(DetailActivity.EXTRA_CONTENT_TYPE, item.contentType)
+                        putExtra(DetailActivity.EXTRA_IMAGE_URL, item.imageUrl.ifEmpty { parentImageUrl })
+                        putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
+                    }
                 }
                 UiTransitions.open(this, intent)
             }

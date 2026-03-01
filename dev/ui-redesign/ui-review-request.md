@@ -23,6 +23,12 @@
 - [x] Card metadata cleanup: redundant `Included with Prime` subtitle text was removed in favor of badge-only Prime signaling
 - [x] Home editorial pass: added a compact featured strip and stronger rail eyebrow taxonomy without reintroducing the oversized hero
 - [x] Browse density pass: season and episode browse now use a shorter header and a denser 5-column landscape grid so cards are fully visible
+- [x] Browse routing pass: selecting a season from `All Seasons` now opens that season's episode list directly, and Back returns to the season list
+- [x] About focus fix: `Back` now takes initial focus reliably on About entry
+- [x] Watchlist overlay redesign: MENU now opens a custom TV-style watchlist action overlay instead of the stock dialog
+- [x] Episode card legibility pass: episode cards now preserve the bottom subtitle line in Browse
+- [x] Prime badge rule fix: Prime badges are no longer inferred for every non-Freevee / non-live title
+- [x] Final visual pass: Continue Watching is now visually verified on Home, season cards have their own Browse treatment, and Detail uses the same watchlist overlay system as Home/Browse
 
 ## Known issues / deviations from spec
 - `See All` remains intentionally hidden. The current app still has no safe full-collection browse contract for `collectionId` without API/model work.
@@ -42,6 +48,7 @@
 - Focus states are differentiated for selected vs focused nav and filter controls.
 - Browse uses a dedicated page header with `Back`, context chips, and item count, and `UP` from the first grid item returns to `Back`.
 - Season and episode browse use a denser landscape grid, giving more visible card height and fitting five episode cards across on the emulator.
+- Selecting a season from `All Seasons` now opens that season's episode list directly, and pressing Back from that list returns to `All Seasons`.
 - Non-home surfaces now share the same page-title, supporting-text, panel-title, and compact-control scale.
 - Detail, Browse, and About now use the same page transition helper for open/close navigation, and content-card focus animation timing is normalized.
 - `UP` from the Home grid returns to `All Types`.
@@ -50,19 +57,17 @@
 - About uses the redesigned settings/status layout, enters non-touch focus cleanly on `Back`, and keeps both the playback quality row and `Sign Out` reachable via D-pad scroll.
 - Closing search now removes the search summary card and restores the underlying page instead of leaving stale search state visible in Home or Watchlist.
 - About now uses the explicit app title `ScriptGod's AmazonVOD for FireOS` in the header copy.
+- About now takes initial non-touch focus on the `Back` button reliably.
 - Home rails use a denser layout so lower sections like `Die Top 10 in Deutschland` and `Kürzlich hinzugefügt` have more room to remain visible on the emulator.
 - Home rail eyebrows now distinguish editorial groups like `Featured Now`, `Top 10`, `Just Added`, and `Award Picks`.
 - Prime titles no longer repeat `Included with Prime` in card subtitles when the Prime badge is already shown.
+- Prime badges are now only shown when a title is actually marked Prime in the returned data, not simply because it is not ad-supported.
+- MENU on cards now opens a custom watchlist action overlay with explicit `Add/Remove` and `Cancel` actions.
+- The final Home state now includes a verified `Continue Watching` rail using the dedicated progress-first card presentation.
 - Player overlay audio/subtitle controls use the updated redesign styling.
 
 ## Screenshots
 - Captured under `dev/ui-redesign/review-screenshots/`:
-  - `current.png`
-  - `home_rails.png`
-  - `search.png`
-  - `watchlist.png`
-  - `library.png`
-  - `browse.png`
-  - `about.png`
-  - `detail.png`
-  - `player_overlay.png`
+  - `final_home_continue-watching.png`
+  - `final_browse_all-seasons.png`
+  - `final_detail_watchlist-overlay.png`

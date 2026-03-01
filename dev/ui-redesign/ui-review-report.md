@@ -2,7 +2,7 @@
 
 **Reviewed by**: Codex acting as UI Reviewer
 **Date**: 2026-03-01
-**Screenshots reviewed**: `current.png`, `home_rails.png`, `search.png`, `watchlist.png`, `library.png`, `browse.png`, `about.png`, `detail.png`, `player_overlay.png`
+**Screenshots reviewed**: `final_home_continue-watching.png`, `final_browse_all-seasons.png`, `final_detail_watchlist-overlay.png`
 
 ## Summary
 
@@ -56,9 +56,14 @@
 - The compact Home density pass shortens landscape rails, tightens inter-rail spacing, and removes redundant Prime subtitle copy so lower rows get more headroom on the emulator.
 - `browse.png` specifically confirms Browse now reads as a dedicated destination with its own header panel, contextual chips, and framed grid surface instead of a bare recycler screen.
 - The latest Browse density pass shortens the header and uses a 5-column landscape layout for season and episode views, which materially improves card visibility on the emulator.
+- The latest Browse routing pass keeps `All Seasons` lightweight: selecting a season now opens the season's episode list directly, and the normal Back path returns to the season list instead of detouring through an extra overview screen.
 - `about.png` confirms the old plain settings page has been replaced with a proper TV status/settings layout, with grouped app, token, playback, and session panels, and the header now names the app as `ScriptGod's AmazonVOD for FireOS`.
+- The latest overlay pass replaces the stock watchlist dialog with a custom TV-style action sheet, and the About page now reliably lands initial focus on `Back`.
 - `detail.png` confirms the detail action buttons now present their intended focus styling instead of default Material tint.
 - `player_overlay.png` confirms the redesigned audio/subtitle controls match the newer control language used elsewhere in the UI.
+- `final_home_continue-watching.png` confirms the dedicated progress-first `Continue Watching` card style is now live on Home.
+- `final_browse_all-seasons.png` confirms season cards now read as navigational containers distinct from the utilitarian episode cards.
+- `final_detail_watchlist-overlay.png` confirms Detail now uses the same custom watchlist overlay language as the rest of the redesign.
 - The latest consistency pass keeps the page-title/supporting-text hierarchy aligned between Browse, About, Detail, and Player-adjacent UI, and removes the last obvious timing mismatch in card focus animation.
 
 ## Device Validation Notes
@@ -69,9 +74,12 @@
 - Emulator validation on March 1, 2026 confirmed the editorial Home variant at `nav_bar [0,0][1920,96]`, `category_filter_row [64,104][1856,200]`, `home_featured_strip [64,216][1856,384]`, and `recycler_view [0,392][1920,1080]`.
 - Browse-page emulator validation confirmed `UP` from the first grid card lands on `Back`, preserving a clean escape route from the grid to the page header.
 - Browse-page emulator validation also confirmed a real `Seasons -> Browse Episodes` flow with five visible landscape episode cards on the first row and improved card height (`Episodes` grid bounds `[120,439][1800,1024]`).
+- Targeted emulator validation on March 1, 2026 confirmed `The Good Doctor -> All Seasons -> Season 2` now opens the `Season 2` episode list directly, Back returns to `All Seasons`, and episode subtitles like `S2 E1` remain fully visible.
 - About-page emulator validation confirmed `Back` takes first focus in non-touch mode, the playback quality row is focusable and stateful, and the lower `Sign Out` action remains reachable through the scroll view.
 - Search-state emulator validation confirmed `Results for ...` is shown only while search is active and disappears once search is dismissed.
 - Emulator validation also confirmed `Included with Prime` no longer appears in card subtitles after the metadata cleanup.
+- Emulator validation confirmed MENU now opens the custom watchlist overlay with `WATCHLIST`, `Add/Remove`, and `Cancel` actions.
+- Final emulator validation confirmed a visible `Continue Watching` rail on Home, the new season-card Browse treatment, and the Detail watchlist overlay capture set.
 - Consistency-pass emulator validation confirmed About still returns cleanly to Home through the new close transition helper, and Home/Browse/About all render with the updated shared type scale.
 - Fire TV validation on `192.168.0.12:5555` confirmed login bypass via `.device-token`, successful entry to `MainActivity`, and a targeted overlay-validation attempt against `PlayerActivity`.
 - If Fire TV `uiautomator` still remains too limited to authoritatively inspect the transient player overlay controls, emulator screenshots remain the review source for that part of the UI.

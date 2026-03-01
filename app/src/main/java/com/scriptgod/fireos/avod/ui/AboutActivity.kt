@@ -16,12 +16,16 @@ import java.io.File
 
 class AboutActivity : AppCompatActivity() {
 
+    private lateinit var btnBack: Button
+    private var appliedInitialButtonFocus: Boolean = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportActionBar?.hide()
         setContentView(R.layout.activity_about)
 
-        findViewById<Button>(R.id.btn_about_back).setOnClickListener { UiTransitions.close(this) }
+        btnBack = findViewById(R.id.btn_about_back)
+        btnBack.setOnClickListener { UiTransitions.close(this) }
 
         // Version
         val versionName = packageManager.getPackageInfo(packageName, 0).versionName ?: "unknown"
@@ -143,12 +147,6 @@ class AboutActivity : AppCompatActivity() {
         btnHdH265.setOnClickListener { save(PlaybackQuality.HD_H265) }
         btnUhd.setOnClickListener    { save(PlaybackQuality.UHD_HDR) }
 
-        val initialFocus = when {
-            initialQuality == PlaybackQuality.UHD_HDR && btnUhd.isEnabled -> btnUhd
-            initialQuality == PlaybackQuality.HD_H265 && btnHdH265.isEnabled -> btnHdH265
-            else -> btnHd
-        }
-        initialFocus.post { initialFocus.requestFocus() }
     }
 
     private fun btnLabel(q: PlaybackQuality) = when (q) {
@@ -175,5 +173,13 @@ class AboutActivity : AppCompatActivity() {
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         startActivity(intent)
         finish()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && !appliedInitialButtonFocus) {
+            appliedInitialButtonFocus = true
+            btnBack.post { btnBack.requestFocus() }
+        }
     }
 }
