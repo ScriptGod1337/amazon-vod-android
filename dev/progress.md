@@ -741,6 +741,56 @@ The Alexa Voice Remote shipped with Fire TV Stick 4K (AFTR/raven) has **no physi
 
 ---
 
+## Phase 22: COMPLETE — UI Redesign
+
+Full visual overhaul of every screen — from functional prototype to a polished, TV-first streaming
+experience. Commit: `26eeec6` — "Redesign TV UI" (84 files, +4885 / -1042 lines).
+
+### Delivered
+
+#### Cards & content grid
+- **Rounded card surfaces** with elevation shadow and gradient overlay; title always readable
+- **Animated focus ring + glow**: `card_focus_glow.xml` + `card_selector.xml`; scale animation on focus
+- **Four card variants**: portrait (`item_content.xml`), landscape (`item_content_landscape.xml`),
+  episode (`item_content_episode.xml`), season (`item_content_season.xml`)
+- **Watch-progress card** (`item_content_progress.xml`) — amber progress bar overlaid on card
+
+#### Navigation & layout
+- **Persistent top nav bar** with icon buttons (Home, Search, Watchlist, Library, Freevee, About);
+  active tab highlighted with `nav_active_indicator.xml`; D-pad focus chain wired between nav and content
+- **Page transition animations** — fade+slide in/out (`page_enter/exit/pop_enter/pop_exit.xml`)
+- **Filter chip row** redesigned with pill-shaped `filter_chip_background.xml`
+
+#### Loading states
+- **Shimmer skeleton** (`ShimmerAdapter.kt` + `item_shimmer_card.xml`) — shown while API calls
+  are in flight; replaced on completion without flicker
+
+#### Detail & browse screens
+- **Hero backdrop** redesigned with gradient scrim; metadata badges (4K, HDR, 5.1) via
+  `UiMetadataFormatter.kt`; consistent typography hierarchy
+- **Browse screen** (`activity_browse.xml`) — full-bleed header background, panel-style grid
+
+#### Player overlay
+- **Semi-transparent gradient overlay** (`player_overlay_bg.xml`, `player_overlay_panel.xml`);
+  pill-shaped track buttons (`player_track_button.xml`, `player_track_label.xml`); error panel
+
+#### Watchlist
+- **Action overlay dialog** (`WatchlistActionOverlay.kt` + `dialog_watchlist_action.xml`) —
+  replaces plain AlertDialog with a styled bottom-sheet-style confirmation
+
+#### Infrastructure
+- **`ContentItemParser.kt`** — extracted from `AmazonApiService.kt`; testable in isolation;
+  covered by `ContentItemParserTest.kt`
+- **`UiMetadataFormatter.kt`** — centralises badge/chip label formatting; covered by
+  `UiMetadataFormatterTest.kt`
+- **`UiMotion.kt`** — `revealFresh()` entry animation helper used on all screens
+- **`UiTransitions.kt`** — shared page transition helpers
+- **Color palette** (`colors.xml`): unified token set; consistent surface/on-surface/accent colours
+- **Dimension tokens** (`dimens.xml`): card sizes, rail spacing, badge padding
+- **`integers.xml`**: animation duration constants
+
+---
+
 ## Phase 23: COMPLETE — Content Overview / Detail Page
 
 A dedicated overview screen (`DetailActivity`) inserted before playback for every content item.
@@ -1182,40 +1232,3 @@ Warning findings must be fixed before Phase 27 is marked COMPLETE.
 - 0 Critical, 0 unresolved Warning findings
 - Fix commit(s) referenced in this section
 
----
-
-## Phase 22: PENDING — UI Redesign
-
-Redesign the app UI from functional prototype to a polished, modern streaming experience.
-
-### Goals
-- Transform the current flat grid + button layout into a visually appealing TV-first interface
-- Match the look and feel of modern streaming apps (hero banners, horizontal carousels, smooth animations)
-- Maintain full D-pad/remote navigation support
-
-### Planned changes
-
-#### Home screen
-- **Hero banner**: Large featured content banner at top with backdrop image, title, synopsis, and Play button
-- **Horizontal carousels**: Replace single grid with categorized rows ("Continue Watching", "Trending", "Watchlist", "Recently Added")
-- **Row headers**: Section titles with "See All" navigation
-- **Card redesign**: Rounded corners, shadow/elevation, focus scale animation, gradient overlay with title
-
-#### Navigation
-- **Side rail / top bar**: Replace flat button row with a collapsible side navigation rail or a fixed top nav bar with icons
-- **Smooth transitions**: Fade/slide animations between screens and content loads
-- **Loading states**: Skeleton placeholders instead of blank screen while content loads
-
-#### Series / Browse
-- **Detail page**: Full-width backdrop, season tabs, episode list with thumbnails and descriptions
-- **Parallax scrolling**: Backdrop image parallax on scroll
-
-#### Player
-- **Overlay controls**: Semi-transparent gradient overlay with transport controls, progress bar, and track info
-- **Thumbnail preview**: Show frame previews on seek (if available)
-
-#### General
-- **Color palette**: Refine from flat cyan to a gradient/themed palette
-- **Typography**: Consistent text hierarchy (title, subtitle, body, caption)
-- **Focus states**: Animated scale + glow border instead of simple highlight
-- **Shimmer loading**: Placeholder animations during API calls

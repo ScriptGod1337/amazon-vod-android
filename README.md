@@ -24,11 +24,14 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 - **Seekbar seeking** — D-pad left/right seeks ±10 seconds per press (hold to repeat), matching standard Fire TV remote behaviour
 - **Watch progress tracking** via UpdateStream API (START/PLAY/PAUSE/STOP)
 - **Resume from last position** — automatically seeks to where you left off
-- Watchlist management (long-press to add/remove, star indicator)
+- Watchlist management (long-press / hold SELECT to add/remove via styled action overlay)
 - Library with pagination, sub-filters (Movies / TV Shows), and sort (Recent / A-Z / Z-A)
 - Freevee section (territory-dependent)
 - D-pad navigation optimized for Fire TV remote
 - Automatic token refresh on 401/403
+- **Polished TV UI** — animated focus ring + glow on cards, shimmer skeleton loading, page
+  fade/slide transitions, pill-shaped nav bar, four card variants (portrait, landscape, episode,
+  season), semi-transparent gradient player overlay, consistent colour palette and dimension tokens
 - **CI/CD** via GitHub Actions with date-based versioning and automatic APK releases
 
 ## Architecture
@@ -39,6 +42,7 @@ com.scriptgod.fireos.avod
  |   +-- AmazonAuthService.kt      Token management, OkHttp interceptors (auth, headers, logging)
  +-- api/
  |   +-- AmazonApiService.kt       Catalog, search, detail, watchlist, library, playback, stream reporting
+ |   +-- ContentItemParser.kt      Parses catalog/rail JSON responses into ContentItem model objects
  +-- drm/
  |   +-- AmazonLicenseService.kt   Widevine license: wraps challenge as widevine2Challenge, unwraps widevine2License
  +-- model/
@@ -49,13 +53,19 @@ com.scriptgod.fireos.avod
  +-- ui/
      +-- LoginActivity.kt          Amazon login: email/password + MFA, PKCE OAuth, device registration
      +-- MainActivity.kt           Home screen: rails or grid, search, nav, filters, pagination
-     +-- AboutActivity.kt          App info (version, device ID) and Sign Out
+     +-- AboutActivity.kt          App info, video quality setting, Sign Out
      +-- DetailActivity.kt         Content overview: hero image, metadata, IMDb, trailer, play/browse buttons
      +-- BrowseActivity.kt         Series detail: seasons / episodes grid
      +-- PlayerActivity.kt         ExoPlayer with DASH + Widevine DRM, track selection, resume
      +-- RailsAdapter.kt           Outer vertical adapter (one row per ContentRail)
      +-- ContentAdapter.kt         Inner horizontal adapter with poster, watchlist star, progress bar
+     +-- ShimmerAdapter.kt         Skeleton placeholder adapter shown during API calls
+     +-- CardPresentation.kt       Card focus/scale animation helpers
+     +-- WatchlistActionOverlay.kt Styled action overlay for Add/Remove watchlist confirmation
      +-- DpadEditText.kt           EditText with Fire TV remote keyboard handling
+     +-- UiMotion.kt               Entry animation helper (revealFresh)
+     +-- UiTransitions.kt          Page transition helpers
+     +-- UiMetadataFormatter.kt    Badge and chip label formatting (4K, HDR, 5.1, codec, etc.)
 ```
 
 ## Screenshots
@@ -81,15 +91,19 @@ com.scriptgod.fireos.avod
 See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history and upcoming work.
 
 **Recently completed:**
-- **Fix** — Video quality and codec label in player overlay (`720p · H265 · SDR`); H265 CDN fallback to H264 on HTTP 400; display HDR capability check prevents blank screen on SDR TVs; stale label cleared on new playback
-- **Fix** — Amazon HD quality tier confirmed at 720p SDR cap for both H264 and H265; 1080p+ requires UHD+HDR; quality presets updated: HD H264 (720p), H265 (720p SDR), 4K/DV HDR (requires HDR display)
-- **Fix** — Trailers no longer mark movies as watched or inherit the movie's resume position
+- **Phase 22** — Full UI redesign: animated focus ring + glow, shimmer skeleton loading, page
+  fade/slide transitions, pill nav bar, four card variants, gradient player overlay, watchlist
+  action overlay, `UiMetadataFormatter`, `ContentItemParser` (with unit tests)
 - **Phase 23** — Content overview / detail page (`DetailActivity`) — hero image, poster, IMDb rating, genres, synopsis, Play/Trailer/Browse/Watchlist buttons; All Seasons button for quick season switching; trailer playback via `videoMaterialType=Trailer`
 - **Fix** — Audio track menu: one entry per language/codec, no bitrate duplicates; codec qualifier shown only when needed; adaptive bitrate within chosen group; seekbar D-pad seeks ±10 s per press
+- **Fix** — Video quality and codec label in player overlay (`720p · H265 · SDR`); H265 CDN fallback to H264 on HTTP 400; display HDR capability check prevents blank screen on SDR TVs
 - **Phase 21** — AI code review (10 warnings, 0 critical); all warnings fixed — lifecycle leaks, password hygiene, header scoping, CI keystore cleanup, monotonic versionCode, server-order preservation
 
 **Next up:**
-- **Phase 22** — UI Redesign (hero banners, animations, polished streaming UX)
+- **Phase 24** — Home rail source filter (Prime / All chips on home carousels)
+- **Phase 25** — Player controls streamline (consolidate audio/subtitle/speed into one set of controls)
+- **Phase 26** — Configurable audio passthrough (Dolby AC3/EAC3 to AV receiver)
+- **Phase 27** — AI code review (all code added since Phase 21)
 
 ## Requirements
 
