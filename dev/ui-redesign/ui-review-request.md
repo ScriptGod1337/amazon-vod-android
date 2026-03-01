@@ -22,7 +22,7 @@
 - [x] Home density pass: rail headers, card heights, recycler padding, and inter-rail spacing were reduced so lower rows remain visible on the emulator
 - [x] Card metadata cleanup: redundant `Included with Prime` subtitle text was removed in favor of badge-only Prime signaling
 - [x] Home editorial pass: added a compact featured strip and stronger rail eyebrow taxonomy without reintroducing the oversized hero
-- [x] Browse density pass: season and episode browse now use a shorter header and a denser 5-column landscape grid so cards are fully visible
+- [x] Browse density pass: episode browse now uses a denser 5-column landscape grid, while season overview keeps a readable 4-column selector layout with span-filling cards and no redundant subtitle copy
 - [x] Browse routing pass: selecting a season from `All Seasons` now opens that season's episode list directly, and Back returns to the season list
 - [x] About focus fix: `Back` now takes initial focus reliably on About entry
 - [x] Watchlist overlay redesign: MENU now opens a custom TV-style watchlist action overlay instead of the stock dialog
@@ -58,8 +58,9 @@
 - Home now includes a compact non-focusable featured strip above the rails instead of a full hero banner.
 - Focus states are differentiated for selected vs focused nav and filter controls.
 - Browse uses a dedicated page header with `Back`, context chips, and item count, and `UP` from the first grid item returns to `Back`.
-- Season and episode browse use a denser landscape grid, giving more visible card height and fitting five episode cards across on the emulator.
+- Episode browse uses a denser 5-column landscape grid, while season overview stays at a readable 4-column layout with span-filling cards.
 - Selecting a season from `All Seasons` now opens that season's episode list directly, and pressing Back from that list returns to `All Seasons`.
+- Season overview cards now omit the redundant `Open episode list` subtitle, so the selector shows only the season label and title.
 - Non-home surfaces now share the same page-title, supporting-text, panel-title, and compact-control scale.
 - Detail, Browse, and About now use the same page transition helper for open/close navigation, and content-card focus animation timing is normalized.
 - `UP` from the Home grid returns to `All Types`.

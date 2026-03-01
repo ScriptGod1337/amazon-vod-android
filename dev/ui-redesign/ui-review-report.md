@@ -55,7 +55,7 @@
 - The latest search-close pass removes the stale search summary card once search is dismissed, so Home and Watchlist return to their normal state instead of looking like lingering search views.
 - The compact Home density pass shortens landscape rails, tightens inter-rail spacing, and removes redundant Prime subtitle copy so lower rows get more headroom on the emulator.
 - `browse.png` specifically confirms Browse now reads as a dedicated destination with its own header panel, contextual chips, and framed grid surface instead of a bare recycler screen.
-- The latest Browse density pass shortens the header and uses a 5-column landscape layout for season and episode views, which materially improves card visibility on the emulator.
+- The latest Browse density pass shortens the header, keeps episode browse at a 5-column landscape layout, and keeps season overview at a readable 4-column selector layout with span-filling cards.
 - The latest Browse routing pass keeps `All Seasons` lightweight: selecting a season now opens the season's episode list directly, and the normal Back path returns to the season list instead of detouring through an extra overview screen.
 - `about.png` confirms the old plain settings page has been replaced with a proper TV status/settings layout, with grouped app, token, playback, and session panels, and the header now names the app as `ScriptGod's AmazonVOD for FireOS`.
 - The latest overlay pass replaces the stock watchlist dialog with a custom TV-style action sheet, and the About page now reliably lands initial focus on `Back`.
@@ -63,6 +63,7 @@
 - `player_overlay.png` confirms the redesigned audio/subtitle controls match the newer control language used elsewhere in the UI.
 - `final_home_continue-watching.png` confirms the dedicated progress-first `Continue Watching` card style is now live on Home.
 - `final_browse_all-seasons.png` confirms season cards now read as navigational containers distinct from the utilitarian episode cards.
+- The latest season-overview cleanup also removes the redundant `Open episode list` subtitle, leaving only the season label and title in the selector cards.
 - `final_detail_watchlist-overlay.png` confirms Detail now uses the same custom watchlist overlay language as the rest of the redesign.
 - The latest consistency pass keeps the page-title/supporting-text hierarchy aligned between Browse, About, Detail, and Player-adjacent UI, and removes the last obvious timing mismatch in card focus animation.
 - The metadata truthfulness pass removes the last UI-side Prime inference. Card badges and the Home featured strip now rely on the same explicit availability rule, so Prime is only shown when the payload actually marks the title as Prime.
@@ -82,6 +83,7 @@
 - Emulator validation on March 1, 2026 confirmed the editorial Home variant at `nav_bar [0,0][1920,96]`, `category_filter_row [64,104][1856,200]`, `home_featured_strip [64,216][1856,384]`, and `recycler_view [0,392][1920,1080]`.
 - Browse-page emulator validation confirmed `UP` from the first grid card lands on `Back`, preserving a clean escape route from the grid to the page header.
 - Browse-page emulator validation also confirmed a real `Seasons -> Browse Episodes` flow with five visible landscape episode cards on the first row and improved card height (`Episodes` grid bounds `[120,439][1800,1024]`).
+- Season-overview emulator validation confirmed the final readable state uses four span-filling season cards per row, without the redundant season subtitle line.
 - Targeted emulator validation on March 1, 2026 confirmed `The Good Doctor -> All Seasons -> Season 2` now opens the `Season 2` episode list directly, Back returns to `All Seasons`, and episode subtitles like `S2 E1` remain fully visible.
 - About-page emulator validation confirmed `Back` takes first focus in non-touch mode, the playback quality row is focusable and stateful, and the lower `Sign Out` action remains reachable through the scroll view.
 - Search-state emulator validation confirmed `Results for ...` is shown only while search is active and disappears once search is dismissed.

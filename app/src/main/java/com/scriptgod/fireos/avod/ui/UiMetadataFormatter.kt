@@ -35,7 +35,7 @@ internal object UiMetadataFormatter {
             CardPresentation.SEASON -> CardMetadata(
                 overline = "Season",
                 title = item.title,
-                subtitle = sanitizedSubtitle(item).ifBlank { "Open episode list" }
+                subtitle = ""
             )
             CardPresentation.PROGRESS -> CardMetadata(
                 overline = "Continue Watching",
