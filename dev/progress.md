@@ -1107,6 +1107,83 @@ const val PREF_AUDIO_PASSTHROUGH_WARNED = "audio_passthrough_warned"
 
 ---
 
+## Phase 27: PENDING — AI Code Review (Post-Phase 21)
+
+Phase 21 reviewed the codebase as it stood after Phase 16. Since then, the following was added
+or substantially rewritten:
+
+| New / rewritten | Since phase |
+|----------------|-------------|
+| `BrowseActivity.kt` | 19 |
+| `RailsAdapter.kt` | 19 |
+| `CardPresentation.kt` | 19 |
+| `ShimmerAdapter.kt` | 22 |
+| `UiMotion.kt` | 22 |
+| `UiTransitions.kt` | 22 |
+| `DpadEditText.kt` | 22 |
+| `DetailActivity.kt` | 23 |
+| `AboutActivity.kt` — quality section, audio passthrough section | 20, 26 |
+| `MainActivity.kt` — rail filter, tab nav, shimmer | 19, 24 |
+| `PlayerActivity.kt` — overlay, H265 fallback, format label, passthrough | 21–26 |
+
+This is a full review pass, not incremental.
+
+### Checklist scope
+
+The review agent should open `dev/REVIEW.md` for the standard checklist and additionally cover
+the areas that are new since Phase 21:
+
+#### Security & auth
+- [ ] No token/credential values logged at any level (verify new activities and adapters)
+- [ ] `SharedPreferences("auth")` not read in UI layer outside `LoginActivity` / `AboutActivity`
+- [ ] `DpadEditText` input handling — no accidental logging of typed content
+- [ ] `DetailActivity` deep-link / intent data not trusted without validation
+
+#### Memory & lifecycle
+- [ ] `RailsAdapter` / `ContentAdapter` — no anonymous `Handler` or `Runnable` that captures `Activity` context
+- [ ] `ShimmerAdapter` — animation drawables released in `onViewRecycled`
+- [ ] `UiMotion` / `UiTransitions` — `ValueAnimator` / `ObjectAnimator` instances cancelled on view detach
+- [ ] `PlayerActivity` — `BroadcastReceiver` for `AUDIO_CAPABILITIES_CHANGED_ACTION` (Phase 26) unregistered in `onStop`
+- [ ] `PlayerActivity` — coroutine `scopeJob` cancelled before re-creating player (H265 fallback path)
+- [ ] `DetailActivity` — coroutine scope cancelled in `onDestroy`
+
+#### Network & API
+- [ ] `RailsAdapter` / `BrowseActivity` — no network calls on the main thread
+- [ ] Pagination / infinite scroll does not fire duplicate requests if the previous one is still in flight
+- [ ] `DetailActivity` — API errors surface to the user (not silently swallowed)
+- [ ] `ShimmerAdapter` shimmer is hidden on error as well as on success (no infinite spinner)
+
+#### D-pad / TV UX
+- [ ] All new interactive views declare `focusable="true"` and `focusableInTouchMode="false"`
+- [ ] `DpadEditText` — correct `imeOptions` and `inputType` for TV keyboard
+- [ ] `RailsAdapter` rail items — `nextFocusDown` from last rail row leads to nav bar, not into void
+- [ ] `DetailActivity` — D-pad can reach every interactive element (season tabs, episode list, play button)
+- [ ] `CardPresentation` focus scale animation does not leave views in a scaled-up state after fast scrolling
+
+#### Quality & correctness
+- [ ] `PlaybackQuality.fromPrefValue` has a safe fallback for unknown/null pref values
+- [ ] H265 fallback in `PlayerActivity` — `h265FallbackAttempted` flag reset on `setupPlayer()` so it does not persist across content items
+- [ ] `MainActivity` filter state (`activeSourceFilter`, `activeTypeFilter`) reset or preserved correctly on back-stack pop
+- [ ] `UiMotion.revealFresh` handles views that are already `VISIBLE` without flickering
+
+#### Audio passthrough (Phase 26, once implemented)
+- [ ] `PREF_AUDIO_PASSTHROUGH` read inside `buildPlayer()`, not cached at activity creation
+- [ ] Volume warning Toast shown at most once across all sessions
+
+### Output
+
+The review agent should write findings to `dev/review-findings-p27.md` using the same format as
+Phase 21 (severity: Critical / Warning / Info / OK, with file + line reference). All Critical and
+Warning findings must be fixed before Phase 27 is marked COMPLETE.
+
+### Definition of done
+
+- `dev/review-findings-p27.md` exists with all items assessed
+- 0 Critical, 0 unresolved Warning findings
+- Fix commit(s) referenced in this section
+
+---
+
 ## Phase 22: PENDING — UI Redesign
 
 Redesign the app UI from functional prototype to a polished, modern streaming experience.
