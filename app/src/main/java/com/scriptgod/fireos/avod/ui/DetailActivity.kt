@@ -1,6 +1,7 @@
 package com.scriptgod.fireos.avod.ui
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -37,10 +38,13 @@ class DetailActivity : AppCompatActivity() {
     private lateinit var ivHero: ImageView
     private lateinit var ivPoster: ImageView
     private lateinit var tvTitle: TextView
+    private lateinit var tvDetailEyebrow: TextView
+    private lateinit var tvDetailSupport: TextView
     private lateinit var tvMetadata: TextView
     private lateinit var tvImdb: TextView
-    private lateinit var tvGenres: TextView
     private lateinit var tvSynopsis: TextView
+    private lateinit var tvSynopsisLabel: TextView
+    private lateinit var tvDirectorsLabel: TextView
     private lateinit var tvDirectors: TextView
     private lateinit var btnPlay: Button
     private lateinit var btnTrailer: Button
@@ -65,10 +69,13 @@ class DetailActivity : AppCompatActivity() {
         ivHero = findViewById(R.id.iv_hero)
         ivPoster = findViewById(R.id.iv_poster)
         tvTitle = findViewById(R.id.tv_title)
+        tvDetailEyebrow = findViewById(R.id.tv_detail_eyebrow)
+        tvDetailSupport = findViewById(R.id.tv_detail_support)
         tvMetadata = findViewById(R.id.tv_metadata)
         tvImdb = findViewById(R.id.tv_imdb)
-        tvGenres = findViewById(R.id.tv_genres)
         tvSynopsis = findViewById(R.id.tv_synopsis)
+        tvSynopsisLabel = findViewById(R.id.tv_synopsis_label)
+        tvDirectorsLabel = findViewById(R.id.tv_directors_label)
         tvDirectors = findViewById(R.id.tv_directors)
         btnPlay = findViewById(R.id.btn_play)
         btnTrailer = findViewById(R.id.btn_trailer)
@@ -136,6 +143,8 @@ class DetailActivity : AppCompatActivity() {
         // Title
         tvTitle.text = if (info.showTitle.isNotEmpty()) "${info.showTitle}: ${info.title}"
                        else info.title
+        tvDetailEyebrow.text = detailEyebrow(info.contentType)
+        tvDetailSupport.text = UiMetadataFormatter.detailSupportLine(info)
 
         // Metadata row: year · runtime · age rating · quality
         val meta = buildString {
@@ -161,29 +170,34 @@ class DetailActivity : AppCompatActivity() {
             }
         }
         tvMetadata.text = meta
+        tvMetadata.visibility = if (meta.isNotBlank()) View.VISIBLE else View.GONE
 
-        // IMDb
         if (info.imdbRating > 0f) {
-            tvImdb.text = "IMDb  %.1f / 10".format(info.imdbRating)
+            tvImdb.text = "\u2605 IMDb %.1f / 10".format(info.imdbRating)
+            tvImdb.setTextColor(imdbColorFor(info.imdbRating))
             tvImdb.visibility = View.VISIBLE
-        }
-
-        // Genres
-        if (info.genres.isNotEmpty()) {
-            tvGenres.text = info.genres.joinToString("  ·  ")
-            tvGenres.visibility = View.VISIBLE
+        } else {
+            tvImdb.visibility = View.GONE
         }
 
         // Synopsis
         if (info.synopsis.isNotEmpty()) {
             tvSynopsis.text = info.synopsis
             tvSynopsis.visibility = View.VISIBLE
+            tvSynopsisLabel.visibility = View.VISIBLE
+        } else {
+            tvSynopsis.visibility = View.GONE
+            tvSynopsisLabel.visibility = View.GONE
         }
 
         // Directors
         if (info.directors.isNotEmpty()) {
             tvDirectors.text = "Director: " + info.directors.joinToString(", ")
             tvDirectors.visibility = View.VISIBLE
+            tvDirectorsLabel.visibility = View.VISIBLE
+        } else {
+            tvDirectors.visibility = View.GONE
+            tvDirectorsLabel.visibility = View.GONE
         }
 
         // Watchlist button
@@ -223,6 +237,10 @@ class DetailActivity : AppCompatActivity() {
         }
 
         layoutContent.visibility = View.VISIBLE
+        UiMotion.revealFresh(
+            findViewById(R.id.detail_hero_section),
+            findViewById(R.id.detail_body_section)
+        )
 
         // Focus the primary action button
         layoutContent.post {
@@ -235,7 +253,28 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun updateWatchlistButton(isIn: Boolean) {
-        btnWatchlist.text = if (isIn) "★  Watchlist" else "☆  Watchlist"
+        btnWatchlist.text = if (isIn) "In Watchlist" else "Add to Watchlist"
+        btnWatchlist.isSelected = isIn
+    }
+
+    private fun detailEyebrow(contentType: String): String {
+        val upper = contentType.uppercase()
+        return when {
+            upper.contains("SEASON") -> "SEASON"
+            upper.contains("EPISODE") -> "EPISODE"
+            AmazonApiService.isSeriesContentType(contentType) -> "SERIES"
+            else -> "MOVIE"
+        }
+    }
+
+    private fun imdbColorFor(rating: Float): Int {
+        return when {
+            rating >= 8.5f -> Color.parseColor("#4FD1C5")
+            rating >= 7.0f -> Color.parseColor("#9FD36A")
+            rating >= 6.0f -> Color.parseColor("#F3C85F")
+            rating >= 5.0f -> Color.parseColor("#F29D52")
+            else -> Color.parseColor("#E06B6B")
+        }
     }
 
     private fun onPlayClicked(info: DetailInfo) {
@@ -244,7 +283,7 @@ class DetailActivity : AppCompatActivity() {
             putExtra(PlayerActivity.EXTRA_TITLE, info.title)
             putExtra(PlayerActivity.EXTRA_CONTENT_TYPE, info.contentType)
         }
-        startActivity(intent)
+        UiTransitions.open(this, intent)
     }
 
     private fun onTrailerClicked(info: DetailInfo) {
@@ -254,7 +293,7 @@ class DetailActivity : AppCompatActivity() {
             putExtra(PlayerActivity.EXTRA_CONTENT_TYPE, info.contentType)
             putExtra(PlayerActivity.EXTRA_MATERIAL_TYPE, "Trailer")
         }
-        startActivity(intent)
+        UiTransitions.open(this, intent)
     }
 
     private fun onBrowseClicked(info: DetailInfo) {
@@ -267,7 +306,7 @@ class DetailActivity : AppCompatActivity() {
             putExtra(BrowseActivity.EXTRA_IMAGE_URL, info.posterImageUrl.ifEmpty { fallbackImageUrl })
             putStringArrayListExtra(BrowseActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
         }
-        startActivity(intent)
+        UiTransitions.open(this, intent)
     }
 
     private fun onAllSeasonsClicked(info: DetailInfo) {
@@ -279,24 +318,35 @@ class DetailActivity : AppCompatActivity() {
             putExtra(BrowseActivity.EXTRA_IMAGE_URL, info.posterImageUrl.ifEmpty { fallbackImageUrl })
             putStringArrayListExtra(BrowseActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
         }
-        startActivity(intent)
+        UiTransitions.open(this, intent)
     }
 
     private fun onWatchlistClicked() {
         val isIn = watchlistAsins.contains(currentAsin)
-        lifecycleScope.launch {
-            val success = withContext(Dispatchers.IO) {
-                if (isIn) apiService.removeFromWatchlist(currentAsin)
-                else apiService.addToWatchlist(currentAsin)
-            }
-            if (success) {
-                if (isIn) watchlistAsins.remove(currentAsin)
-                else watchlistAsins.add(currentAsin)
-                updateWatchlistButton(watchlistAsins.contains(currentAsin))
-                val msg = if (isIn) "Removed from watchlist" else "Added to watchlist"
-                Toast.makeText(this@DetailActivity, msg, Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this@DetailActivity, "Watchlist update failed", Toast.LENGTH_SHORT).show()
+        val overlayItem = com.scriptgod.fireos.avod.model.ContentItem(
+            asin = currentAsin,
+            title = detailInfo?.title ?: (intent.getStringExtra(EXTRA_TITLE) ?: ""),
+            contentType = detailInfo?.contentType ?: currentContentType
+        )
+        WatchlistActionOverlay.show(
+            activity = this,
+            item = overlayItem,
+            isInWatchlist = isIn
+        ) {
+            lifecycleScope.launch {
+                val success = withContext(Dispatchers.IO) {
+                    if (isIn) apiService.removeFromWatchlist(currentAsin)
+                    else apiService.addToWatchlist(currentAsin)
+                }
+                if (success) {
+                    if (isIn) watchlistAsins.remove(currentAsin)
+                    else watchlistAsins.add(currentAsin)
+                    updateWatchlistButton(watchlistAsins.contains(currentAsin))
+                    val msg = if (isIn) "Removed from watchlist" else "Added to watchlist"
+                    Toast.makeText(this@DetailActivity, msg, Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@DetailActivity, "Watchlist update failed", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }

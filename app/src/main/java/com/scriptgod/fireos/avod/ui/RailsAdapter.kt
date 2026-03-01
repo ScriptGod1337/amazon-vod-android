@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.view.doOnNextLayout
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
@@ -18,10 +19,26 @@ class RailsAdapter(
 ) : ListAdapter<ContentRail, RailsAdapter.RailViewHolder>(DIFF_CALLBACK) {
 
     private val sharedPool = RecyclerView.RecycledViewPool()
+    var itemNextFocusUpId: Int = View.NO_ID
+    private var outerRecyclerView: RecyclerView? = null
 
     class RailViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val eyebrow: TextView = itemView.findViewById(R.id.tv_rail_eyebrow)
         val header: TextView = itemView.findViewById(R.id.tv_rail_header)
+        val seeAll: TextView = itemView.findViewById(R.id.tv_see_all)
         val innerRecycler: RecyclerView = itemView.findViewById(R.id.rv_rail_items)
+    }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
+        outerRecyclerView = recyclerView
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView)
+        if (outerRecyclerView === recyclerView) {
+            outerRecyclerView = null
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RailViewHolder {
@@ -32,19 +49,98 @@ class RailsAdapter(
         holder.innerRecycler.layoutManager = LinearLayoutManager(
             parent.context, LinearLayoutManager.HORIZONTAL, false
         )
+        holder.innerRecycler.itemAnimator = null
         return holder
     }
 
     override fun onBindViewHolder(holder: RailViewHolder, position: Int) {
         val rail = getItem(position)
+        val progressItemCount = rail.items.count { it.watchProgressMs > 0 || it.watchProgressMs == -1L }
+        val isProgressRail = isProgressRail(rail, progressItemCount)
+        val displayItems = if (isProgressRail) {
+            rail.items.filter { it.watchProgressMs > 0 || it.watchProgressMs == -1L }
+        } else {
+            rail.items
+        }
+        val eyebrowLabel = railEyebrow(rail, position, isProgressRail)
+        holder.eyebrow.visibility = if (eyebrowLabel != null) View.VISIBLE else View.GONE
+        holder.eyebrow.text = eyebrowLabel ?: ""
         holder.header.text = rail.headerText
+        holder.seeAll.visibility = View.GONE
+        holder.seeAll.setOnClickListener(null)
 
+        val presentation = resolvePresentation(rail, position, isProgressRail)
         val innerAdapter = ContentAdapter(
             onItemClick = onItemClick,
-            onMenuKey = onMenuKey
+            onMenuKey = onMenuKey,
+            nextFocusUpId = itemNextFocusUpId,
+            presentation = presentation,
+            onVerticalFocusMove = { itemPosition, direction ->
+                moveFocusBetweenRails(holder.bindingAdapterPosition, itemPosition, direction)
+            }
         )
         holder.innerRecycler.adapter = innerAdapter
-        innerAdapter.submitList(rail.items)
+        innerAdapter.submitList(displayItems)
+    }
+
+    private fun resolvePresentation(rail: ContentRail, position: Int, isProgressRail: Boolean): CardPresentation {
+        val header = rail.headerText.lowercase()
+        return when {
+            isProgressRail -> CardPresentation.PROGRESS
+            position == 0 -> CardPresentation.LANDSCAPE
+            header.contains("top 10") -> CardPresentation.LANDSCAPE
+            header.contains("continue") -> CardPresentation.LANDSCAPE
+            header.contains("watch next") -> CardPresentation.LANDSCAPE
+            header.contains("because") -> CardPresentation.LANDSCAPE
+            header.contains("award") || header.contains("preis") -> CardPresentation.LANDSCAPE
+            header.contains("episode") -> CardPresentation.LANDSCAPE
+            header.contains("season") -> CardPresentation.LANDSCAPE
+            header.contains("live") -> CardPresentation.LANDSCAPE
+            else -> CardPresentation.POSTER
+        }
+    }
+
+    private fun railEyebrow(rail: ContentRail, position: Int, isProgressRail: Boolean): String? {
+        if (isProgressRail) return "Continue Watching"
+        val header = rail.headerText.lowercase()
+        return when {
+            position == 0 -> "Featured Now"
+            header.contains("top 10") -> "Top 10"
+            header.contains("award") || header.contains("preis") -> "Award Picks"
+            header.contains("kürzlich") || header.contains("new") || header.contains("added") -> "Just Added"
+            header.contains("because") || header.contains("empfehl") -> "Recommended"
+            else -> null
+        }
+    }
+
+    private fun isProgressRail(rail: ContentRail, progressItemCount: Int): Boolean {
+        if (progressItemCount == 0) return false
+        val header = rail.headerText.lowercase()
+        return header.contains("continue")
+            || header.contains("watch next")
+            || header.contains("weiter")
+            || (rail.items.size <= 3 && progressItemCount == rail.items.size)
+            || (progressItemCount >= 2 && progressItemCount * 2 >= rail.items.size)
+    }
+
+    private fun moveFocusBetweenRails(currentRailPosition: Int, itemPosition: Int, direction: Int): Boolean {
+        val targetRailPosition = currentRailPosition + direction
+        if (targetRailPosition !in 0 until itemCount) return false
+
+        val outerRecycler = outerRecyclerView ?: return false
+        outerRecycler.scrollToPosition(targetRailPosition)
+        outerRecycler.doOnNextLayout {
+            val targetHolder = outerRecycler.findViewHolderForAdapterPosition(targetRailPosition) as? RailViewHolder
+                ?: return@doOnNextLayout
+            val targetIndex = itemPosition.coerceAtMost(getItem(targetRailPosition).items.lastIndex).coerceAtLeast(0)
+            val innerRecycler = targetHolder.innerRecycler
+            innerRecycler.scrollToPosition(targetIndex)
+            innerRecycler.doOnNextLayout {
+                val targetView = innerRecycler.layoutManager?.findViewByPosition(targetIndex)
+                targetView?.requestFocus()
+            }
+        }
+        return true
     }
 
     companion object {

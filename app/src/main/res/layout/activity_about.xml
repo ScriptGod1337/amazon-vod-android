@@ -1,228 +1,520 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black"
-    android:padding="48dp">
+    android:background="@drawable/about_screen_background"
+    android:fillViewport="true"
+    android:scrollbarThumbVertical="@android:color/transparent">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:maxWidth="600dp">
-
-        <!-- App name + version header -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ScriptGod's FireOS AmazonVOD"
-            android:textColor="#00A8E0"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp"/>
-
-        <TextView
-            android:id="@+id/tv_version"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#AAAAAA"
-            android:textSize="16sp"
-            android:layout_marginBottom="40dp"/>
-
-        <!-- Info section -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="APP"
-            android:textColor="#666666"
-            android:textSize="12sp"
-            android:letterSpacing="0.15"
-            android:layout_marginBottom="8dp"/>
+        android:paddingStart="64dp"
+        android:paddingTop="96dp"
+        android:paddingEnd="64dp"
+        android:paddingBottom="48dp">
 
         <LinearLayout
+            android:id="@+id/about_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="160dp"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Version"
-                android:textColor="#888888"
-                android:textSize="15sp"/>
-            <TextView
-                android:id="@+id/tv_version_value"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"/>
-        </LinearLayout>
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="160dp"
-                android:layout_height="wrap_content"
-                android:text="Package"
-                android:textColor="#888888"
-                android:textSize="15sp"/>
-            <TextView
-                android:id="@+id/tv_package"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"/>
-        </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SETTINGS"
+                    android:textAllCaps="true"
+                    android:textColor="#7E9CAA"
+                    android:textSize="@dimen/section_eyebrow_size"
+                    android:letterSpacing="0.16"
+                    android:layout_marginBottom="8dp" />
 
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#333333"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="24dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ScriptGod's AmazonVOD for FireOS"
+                    android:textColor="#F5FAFD"
+                    android:textSize="@dimen/page_title_size"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
 
-        <!-- Account section -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ACCOUNT"
-            android:textColor="#666666"
-            android:textSize="12sp"
-            android:letterSpacing="0.15"
-            android:layout_marginBottom="8dp"/>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="160dp"
-                android:layout_height="wrap_content"
-                android:text="Device ID"
-                android:textColor="#888888"
-                android:textSize="15sp"/>
-            <TextView
-                android:id="@+id/tv_device_id"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="160dp"
-                android:layout_height="wrap_content"
-                android:text="Token"
-                android:textColor="#888888"
-                android:textSize="15sp"/>
-            <TextView
-                android:id="@+id/tv_token_location"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"/>
-        </LinearLayout>
-
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#333333"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="24dp"/>
-
-        <!-- Video Quality section -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="VIDEO QUALITY"
-            android:textColor="#666666"
-            android:textSize="12sp"
-            android:letterSpacing="0.15"
-            android:layout_marginBottom="8dp"/>
-
-        <TextView
-            android:id="@+id/tv_h265_support"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#888888"
-            android:textSize="13sp"
-            android:layout_marginBottom="12dp"/>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="6dp">
+                <TextView
+                    android:id="@+id/tv_version"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#A9BBC5"
+                    android:textSize="@dimen/page_supporting_size" />
+            </LinearLayout>
 
             <Button
-                android:id="@+id/btn_quality_hd"
+                android:id="@+id/btn_about_back"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="HD (H264)"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#CC555555"
-                android:layout_marginEnd="8dp"
-                android:focusable="true"/>
-
-            <Button
-                android:id="@+id/btn_quality_hd_h265"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="H265"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#CC555555"
-                android:layout_marginEnd="8dp"
-                android:focusable="true"/>
-
-            <Button
-                android:id="@+id/btn_quality_uhd"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="4K / HDR"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#CC555555"
-                android:focusable="true"/>
-
+                android:layout_height="44dp"
+                android:minWidth="0dp"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:text="Back"
+                android:textAllCaps="false"
+                android:textColor="@color/button_secondary_text"
+                android:textSize="@dimen/action_text_size"
+                android:background="@drawable/button_pill_secondary"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null"
+                android:stateListAnimator="@null" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/tv_quality_note"
+        <LinearLayout
+            android:id="@+id/about_chip_row"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#666666"
-            android:textSize="12sp"
-            android:layout_marginBottom="4dp"/>
+            android:orientation="horizontal"
+            android:layout_marginBottom="24dp">
 
-        <!-- Divider -->
-        <View
+            <TextView
+                android:id="@+id/tv_version_chip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/settings_badge_background"
+                android:paddingStart="14dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="8dp"
+                android:textColor="#E9F6FB"
+                android:textSize="@dimen/status_chip_text_size"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_token_chip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/settings_badge_background"
+                android:paddingStart="14dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="8dp"
+                android:textColor="#E9F6FB"
+                android:textSize="@dimen/status_chip_text_size"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_quality_chip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/settings_badge_background"
+                android:paddingStart="14dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="8dp"
+                android:textColor="#E9F6FB"
+                android:textSize="@dimen/status_chip_text_size"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/about_panel_columns"
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#333333"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="32dp"/>
-
-        <!-- Sign out button -->
-        <Button
-            android:id="@+id/btn_sign_out"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Sign Out"
-            android:textColor="@android:color/white"
-            android:backgroundTint="#C0392B"
-            android:paddingStart="32dp"
-            android:paddingEnd="32dp"
-            android:focusable="true"/>
+            android:baselineAligned="false"
+            android:orientation="horizontal">
 
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.2"
+                android:layout_marginEnd="20dp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/settings_panel_background"
+                    android:orientation="vertical"
+                    android:padding="24dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="APP STATUS"
+                        android:textAllCaps="true"
+                        android:textColor="#7E9CAA"
+                        android:textSize="@dimen/section_eyebrow_size"
+                        android:letterSpacing="0.16"
+                        android:layout_marginBottom="18dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Installed build"
+                        android:textColor="#F5FAFD"
+                        android:textSize="@dimen/panel_title_size"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="20dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="18dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Version"
+                                android:textColor="#8FA5B0"
+                                android:textSize="@dimen/meta_text_size"
+                                android:layout_marginBottom="4dp" />
+
+                            <TextView
+                                android:id="@+id/tv_version_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="#F5FAFD"
+                                android:textSize="@dimen/page_supporting_size"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Package"
+                                android:textColor="#8FA5B0"
+                                android:textSize="@dimen/meta_text_size"
+                                android:layout_marginBottom="4dp" />
+
+                            <TextView
+                                android:id="@+id/tv_package"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="#D9E6EC"
+                                android:textSize="@dimen/page_supporting_size" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginBottom="18dp"
+                        android:background="#223038" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginEnd="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Device ID"
+                                android:textColor="#8FA5B0"
+                                android:textSize="@dimen/meta_text_size"
+                                android:layout_marginBottom="4dp" />
+
+                            <TextView
+                                android:id="@+id/tv_device_id"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="#F5FAFD"
+                                android:textSize="@dimen/page_supporting_size"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Token Location"
+                                android:textColor="#8FA5B0"
+                                android:textSize="@dimen/meta_text_size"
+                                android:layout_marginBottom="4dp" />
+
+                            <TextView
+                                android:id="@+id/tv_token_location"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="#D9E6EC"
+                                android:textSize="@dimen/page_supporting_size" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/settings_panel_background"
+                    android:orientation="vertical"
+                    android:padding="24dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="SESSION"
+                        android:textAllCaps="true"
+                        android:textColor="#7E9CAA"
+                        android:textSize="@dimen/section_eyebrow_size"
+                        android:letterSpacing="0.16"
+                        android:layout_marginBottom="18dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Token status"
+                        android:textColor="#F5FAFD"
+                        android:textSize="@dimen/panel_title_size"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="12dp" />
+
+                    <TextView
+                        android:id="@+id/tv_token_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#D9E6EC"
+                        android:textSize="@dimen/page_supporting_size"
+                        android:layout_marginBottom="10dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Signing out clears the local token and resume positions. A new debug token can still be pushed later for direct device access."
+                        android:textColor="#8FA5B0"
+                        android:textSize="@dimen/body_text_size"
+                        android:lineSpacingExtra="4dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/settings_panel_background"
+                    android:orientation="vertical"
+                    android:padding="24dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="PLAYBACK"
+                        android:textAllCaps="true"
+                        android:textColor="#7E9CAA"
+                        android:textSize="@dimen/section_eyebrow_size"
+                        android:letterSpacing="0.16"
+                        android:layout_marginBottom="18dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Playback quality"
+                        android:textColor="#F5FAFD"
+                        android:textSize="@dimen/panel_title_size"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="16dp">
+
+                        <TextView
+                            android:id="@+id/tv_codec_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/settings_badge_background"
+                            android:paddingStart="14dp"
+                            android:paddingTop="8dp"
+                            android:paddingEnd="14dp"
+                            android:paddingBottom="8dp"
+                            android:textColor="#E9F6FB"
+                            android:textSize="@dimen/status_chip_text_size"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_hdr_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/settings_badge_background"
+                            android:paddingStart="14dp"
+                            android:paddingTop="8dp"
+                            android:paddingEnd="14dp"
+                            android:paddingBottom="8dp"
+                            android:textColor="#E9F6FB"
+                            android:textSize="@dimen/status_chip_text_size"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_h265_support"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#D9E6EC"
+                        android:textSize="@dimen/page_supporting_size"
+                        android:lineSpacingExtra="4dp"
+                        android:layout_marginBottom="18dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:baselineAligned="false"
+                        android:layout_marginBottom="14dp">
+
+                        <Button
+                            android:id="@+id/btn_quality_hd"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/settings_quality_option_background"
+                            android:backgroundTint="@null"
+                            android:minWidth="0dp"
+                            android:paddingStart="18dp"
+                            android:paddingEnd="18dp"
+                            android:text="HD (H264)"
+                            android:textAllCaps="false"
+                            android:textColor="@color/settings_quality_option_text"
+                            android:textSize="@dimen/action_text_size"
+                            android:stateListAnimator="@null"
+                            android:nextFocusUp="@id/btn_about_back" />
+
+                        <Button
+                            android:id="@+id/btn_quality_hd_h265"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/settings_quality_option_background"
+                            android:backgroundTint="@null"
+                            android:minWidth="0dp"
+                            android:paddingStart="18dp"
+                            android:paddingEnd="18dp"
+                            android:text="H265"
+                            android:textAllCaps="false"
+                            android:textColor="@color/settings_quality_option_text"
+                            android:textSize="@dimen/action_text_size"
+                            android:stateListAnimator="@null"
+                            android:nextFocusUp="@id/btn_about_back" />
+
+                        <Button
+                            android:id="@+id/btn_quality_uhd"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/settings_quality_option_background"
+                            android:backgroundTint="@null"
+                            android:minWidth="0dp"
+                            android:paddingStart="18dp"
+                            android:paddingEnd="18dp"
+                            android:text="4K / HDR"
+                            android:textAllCaps="false"
+                            android:textColor="@color/settings_quality_option_text"
+                            android:textSize="@dimen/action_text_size"
+                            android:stateListAnimator="@null"
+                            android:nextFocusUp="@id/btn_about_back" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_quality_note"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#8FA5B0"
+                        android:textSize="@dimen/body_text_size"
+                        android:lineSpacingExtra="4dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/settings_panel_background"
+                    android:orientation="vertical"
+                    android:padding="24dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ACTIONS"
+                        android:textAllCaps="true"
+                        android:textColor="#7E9CAA"
+                        android:textSize="@dimen/section_eyebrow_size"
+                        android:letterSpacing="0.16"
+                        android:layout_marginBottom="18dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Session controls"
+                        android:textColor="#F5FAFD"
+                        android:textSize="@dimen/panel_title_size"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="12dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Use Sign Out when you want to clear the local token and return to the login screen."
+                        android:textColor="#8FA5B0"
+                        android:textSize="@dimen/body_text_size"
+                        android:lineSpacingExtra="4dp"
+                        android:layout_marginBottom="18dp" />
+
+                    <Button
+                        android:id="@+id/btn_sign_out"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:background="@drawable/button_pill_destructive"
+                        android:backgroundTint="@null"
+                        android:minWidth="0dp"
+                        android:paddingStart="28dp"
+                        android:paddingEnd="28dp"
+                        android:text="Sign Out"
+                        android:textAllCaps="false"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/action_text_size"
+                        android:stateListAnimator="@null" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="focus_motion_duration">150</integer>
+    <integer name="page_reveal_duration">220</integer>
+    <integer name="page_reveal_stagger">45</integer>
+    <integer name="page_reveal_max_stagger">120</integer>
+</resources>

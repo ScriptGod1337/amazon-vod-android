@@ -5,6 +5,8 @@ import com.scriptgod.fireos.avod.auth.AmazonAuthService
 import com.scriptgod.fireos.avod.model.ContentItem
 import com.scriptgod.fireos.avod.model.ContentRail
 import com.scriptgod.fireos.avod.model.DetailInfo
+import com.scriptgod.fireos.avod.model.Availability
+import com.scriptgod.fireos.avod.model.ContentKind
 import com.scriptgod.fireos.avod.model.PlaybackInfo
 import com.scriptgod.fireos.avod.model.PlaybackQuality
 import com.scriptgod.fireos.avod.model.SubtitleTrack
@@ -360,6 +362,14 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                     subtitle = subtitle,
                     imageUrl = imageUrl,
                     contentType = contentType,
+                    contentId = asin,
+                    kind = when {
+                        isMovieContentType(contentType) -> ContentKind.MOVIE
+                        isSeriesContentType(contentType) -> ContentKind.SERIES
+                        isEpisodeContentType(contentType) -> ContentKind.EPISODE
+                        else -> ContentKind.OTHER
+                    },
+                    availability = Availability.FREEVEE,
                     isPrime = false,
                     isFreeWithAds = true,
                     isLive = false,
@@ -554,7 +564,7 @@ class AmazonApiService(private val authService: AmazonAuthService) {
     }
 
     /**
-     * Fetches rich metadata for a content item (synopsis, IMDB rating, genres, hero image, etc.)
+     * Fetches rich metadata for a content item (synopsis, IMDb rating, genres, hero image, etc.)
      * using the android/atf/v3.jstl detail endpoint.
      *
      * For MOVIE: data is in resource.*
@@ -713,141 +723,11 @@ class AmazonApiService(private val authService: AmazonAuthService) {
         return if (el.isJsonPrimitive) el.asString else null
     }
 
-    private fun JsonObject.safeBoolean(key: String): Boolean? {
-        val el = get(key) ?: return null
-        return if (el.isJsonPrimitive) el.asBoolean else null
-    }
-
-    /**
-     * Parses items from a JsonArray of collection items.
-     * Shared between parseContentItems() and parseRails().
-     */
     private fun parseItemsFromArray(collectionList: JsonArray): List<ContentItem> {
         val items = mutableListOf<ContentItem>()
         for (element in collectionList) {
             val item = element.asJsonObject ?: continue
-            val model = item.getAsJsonObject("model") ?: item
-
-            val linkAction = model.getAsJsonObject("linkAction")
-            val asin = model.safeString("catalogId")
-                ?: model.safeString("compactGti")
-                ?: model.safeString("titleId")
-                ?: linkAction?.safeString("titleId")
-                ?: model.safeString("id")
-                ?: model.safeString("asin")
-                ?: continue
-            var title = model.safeString("title") ?: continue
-
-            val seasonNum = model.safeString("seasonNumber")
-                ?: model.safeString("number")
-            val episodeNum = model.safeString("episodeNumber")
-            val subtitle = model.safeString("ratingsBadge")
-                ?: if (seasonNum != null && episodeNum != null) "S${seasonNum} E${episodeNum}"
-                   else if (seasonNum != null) "Season $seasonNum"
-                   else if (episodeNum != null) "Episode $episodeNum"
-                   else ""
-
-            val contentType = model.safeString("contentType")
-                ?: if (seasonNum != null && episodeNum == null) "SEASON"
-                   else if (episodeNum != null) "EPISODE"
-                   else "Feature"
-
-            if (contentType.equals("SEASON", ignoreCase = true) && seasonNum != null) {
-                title = "Season $seasonNum"
-            } else if (contentType.equals("EPISODE", ignoreCase = true) && episodeNum != null) {
-                title = "E$episodeNum: $title"
-            }
-
-            val imageUrl = model.getAsJsonObject("image")
-                ?.safeString("url")
-                ?: model.safeString("imageUrl")
-                ?: model.getAsJsonObject("titleImageUrls")
-                    ?.let { urls ->
-                        urls.safeString("BOX_ART")
-                            ?: urls.safeString("COVER")
-                            ?: urls.safeString("POSTER")
-                            ?: urls.safeString("LEGACY")
-                            ?: urls.safeString("WIDE")
-                    }
-                ?: model.safeString("heroImageUrl")
-                ?: model.safeString("titleImageUrl")
-                ?: model.safeString("imagePack")
-                ?: ""
-
-            val isPrime = model.getAsJsonObject("badges")
-                ?.safeBoolean("prime")
-                ?: model.safeBoolean("showPrimeEmblem")
-                ?: model.safeBoolean("isPrime")
-                ?: model.safeBoolean("primeOnly")
-                ?: run {
-                    val badge = model.safeString("badgeInfo")
-                        ?: model.safeString("contentBadge") ?: ""
-                    !badge.contains("FREE", ignoreCase = true)
-                }
-
-            val isFreeWithAds = model.safeBoolean("isFreeWithAds")
-                ?: model.safeBoolean("freeWithAds")
-                ?: run {
-                    val badge = model.safeString("badgeInfo")
-                        ?: model.safeString("contentBadge") ?: ""
-                    badge.contains("FREE", ignoreCase = true) || badge.contains("AVOD", ignoreCase = true)
-                }
-
-            val isLive = contentType.equals("live", ignoreCase = true)
-                || contentType.equals("LiveStreaming", ignoreCase = true)
-                || model.has("liveInfo")
-                || model.has("liveState")
-                || (model.safeString("videoMaterialType")
-                    ?.equals("LiveStreaming", ignoreCase = true) ?: false)
-
-            val channelId = model.getAsJsonObject("playbackAction")
-                ?.safeString("channelId")
-                ?: model.getAsJsonObject("station")
-                    ?.safeString("id")
-                ?: model.safeString("channelId")
-                ?: ""
-
-            val runtimeMs = model.safeString("runtimeMillis")?.toLongOrNull()
-                ?: model.safeString("runtimeSeconds")?.toLongOrNull()?.times(1000)
-                ?: model.getAsJsonObject("runtime")?.get("valueMillis")?.asLong
-                ?: 0L
-
-            val remainingSec = model.safeString("remainingTimeInSeconds")?.toLongOrNull()
-            val timecodeSec = model.safeString("timecodeSeconds")?.toLongOrNull()
-            val completedAfterSec = model.safeString("completedAfterSeconds")?.toLongOrNull()
-            val isSeries = isSeriesContentType(contentType)
-            val runtimeSec = runtimeMs / 1000
-            val watchProgressMs = when {
-                isSeries -> 0L
-                // remainingSec=0 is ambiguous (could mean "no data" not "fully watched"),
-                // so only treat as progress when remaining < runtime (actual partial watch)
-                remainingSec != null && remainingSec > 0 && runtimeSec > 0 && remainingSec < runtimeSec -> {
-                    (runtimeMs - remainingSec * 1000).coerceAtLeast(1L)
-                }
-                // remainingSec equals runtime → not watched at all
-                remainingSec != null && remainingSec > 0 && runtimeSec > 0 && remainingSec >= runtimeSec -> 0L
-                // timecode-based fallback
-                timecodeSec != null && timecodeSec > 0 -> {
-                    if (completedAfterSec != null && timecodeSec >= completedAfterSec) -1L
-                    else if (runtimeSec > 0 && timecodeSec >= runtimeSec * 9 / 10) -1L
-                    else timecodeSec * 1000
-                }
-                else -> 0L
-            }
-
-            items.add(ContentItem(
-                asin = asin,
-                title = title,
-                subtitle = subtitle,
-                imageUrl = imageUrl,
-                contentType = contentType,
-                isPrime = isPrime,
-                isFreeWithAds = isFreeWithAds,
-                isLive = isLive,
-                channelId = channelId,
-                runtimeMs = runtimeMs,
-                watchProgressMs = watchProgressMs
-            ))
+            ContentItemParser.parseCollectionElement(item)?.let(items::add)
         }
         return items
     }
@@ -860,42 +740,9 @@ class AmazonApiService(private val authService: AmazonAuthService) {
 
             val allItemLists = mutableListOf<JsonArray>()
 
-            val collectionsArray = root?.getAsJsonArray("collections")
-            if (collectionsArray != null) {
-                for (collectionElement in collectionsArray) {
-                    val collection = collectionElement?.asJsonObject ?: continue
-                    val collectionList = collection.getAsJsonArray("collectionItemList") ?: continue
-                    allItemLists.add(collectionList)
-                }
-            }
-
-            val titlesArray = root?.getAsJsonArray("titles")
-            if (titlesArray != null && titlesArray.size() > 0) {
-                val firstTitle = titlesArray[0]?.asJsonObject
-                val collectionList = firstTitle?.getAsJsonArray("collectionItemList")
-                if (collectionList != null) {
-                    allItemLists.add(collectionList)
-                }
-            }
-
-            val rootCollectionList = root?.getAsJsonArray("collectionItemList")
-            if (rootCollectionList != null) {
-                allItemLists.add(rootCollectionList)
-            }
-
-            val dataWidgets = root?.getAsJsonArray("dataWidgetModels")
-            if (dataWidgets != null) {
-                allItemLists.add(dataWidgets)
-            }
-
-            val seasonsArray = root?.getAsJsonArray("seasons")
-            if (seasonsArray != null) {
-                allItemLists.add(seasonsArray)
-            }
-            val episodesArray = root?.getAsJsonArray("episodes")
-            if (episodesArray != null) {
-                allItemLists.add(episodesArray)
-            }
+            collectItemLists(root, allItemLists)
+            collectItemLists(root?.getAsJsonObject("selectedSeason"), allItemLists)
+            collectItemLists(root?.getAsJsonObject("show"), allItemLists)
 
             if (allItemLists.isEmpty()) {
                 Log.i(TAG, "No parseable item lists in response keys: ${root?.keySet()?.take(10)}")
@@ -911,6 +758,30 @@ class AmazonApiService(private val authService: AmazonAuthService) {
         val unique = items.distinctBy { it.asin }
         Log.w(TAG, "Parsed ${unique.size} content items (${items.size - unique.size} duplicates removed)")
         return unique
+    }
+
+    private fun collectItemLists(node: JsonObject?, target: MutableList<JsonArray>) {
+        if (node == null) return
+
+        val collectionsArray = node.getAsJsonArray("collections")
+        if (collectionsArray != null) {
+            for (collectionElement in collectionsArray) {
+                val collection = collectionElement?.asJsonObject ?: continue
+                val collectionList = collection.getAsJsonArray("collectionItemList") ?: continue
+                target.add(collectionList)
+            }
+        }
+
+        val titlesArray = node.getAsJsonArray("titles")
+        if (titlesArray != null && titlesArray.size() > 0) {
+            val firstTitle = titlesArray[0]?.asJsonObject
+            firstTitle?.getAsJsonArray("collectionItemList")?.let(target::add)
+        }
+
+        node.getAsJsonArray("collectionItemList")?.let(target::add)
+        node.getAsJsonArray("dataWidgetModels")?.let(target::add)
+        node.getAsJsonArray("seasons")?.let(target::add)
+        node.getAsJsonArray("episodes")?.let(target::add)
     }
 
     /**

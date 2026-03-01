@@ -9,6 +9,8 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -18,8 +20,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
 import com.scriptgod.fireos.avod.R
-import android.widget.LinearLayout
 import com.scriptgod.fireos.avod.api.AmazonApiService
 import com.scriptgod.fireos.avod.model.ContentRail
 import com.scriptgod.fireos.avod.api.AmazonApiService.LibraryFilter
@@ -38,19 +40,33 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var recyclerView: RecyclerView
+    private lateinit var shimmerRecyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
     private lateinit var tvError: TextView
+    private lateinit var searchRow: LinearLayout
+    private lateinit var searchStateCard: LinearLayout
     private lateinit var etSearch: DpadEditText
     private lateinit var btnSearch: Button
+    private lateinit var btnSearchIcon: Button
+    private lateinit var tvSearchQuery: TextView
+    private lateinit var tvSearchHint: TextView
+    private lateinit var tvSearchCount: TextView
     private lateinit var btnHome: Button
     private lateinit var btnFreevee: Button
     private lateinit var btnWatchlist: Button
     private lateinit var btnLibrary: Button
     private lateinit var btnAbout: Button
+    private lateinit var homeFeaturedStrip: LinearLayout
+    private lateinit var homeFeaturedImage: ImageView
+    private lateinit var tvHomeFeaturedEyebrow: TextView
+    private lateinit var tvHomeFeaturedTitle: TextView
+    private lateinit var tvHomeFeaturedMeta: TextView
 
     // Category buttons — two independent groups
     private lateinit var categoryFilterRow: LinearLayout
+    private lateinit var sourceFilterSection: LinearLayout
     private lateinit var sourceFilterGroup: LinearLayout
+    private lateinit var typeFilterSection: LinearLayout
     private lateinit var btnCatAll: Button
     private lateinit var btnCatPrime: Button
     private lateinit var btnTypeAll: Button
@@ -74,6 +90,7 @@ class MainActivity : AppCompatActivity() {
     private var homeNextPageParams: String = ""
     private var homePageLoading: Boolean = false
     private var unfilteredRails: List<ContentRail> = emptyList()
+    private var featuredHomeItem: ContentItem? = null
 
     // Two independent filter dimensions
     private var sourceFilter: String = "all"   // "all" or "prime"
@@ -93,18 +110,32 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         recyclerView = findViewById(R.id.recycler_view)
+        shimmerRecyclerView = findViewById(R.id.shimmer_recycler_view)
         progressBar = findViewById(R.id.progress_bar)
         tvError = findViewById(R.id.tv_error)
+        searchRow = findViewById(R.id.search_row)
+        searchStateCard = findViewById(R.id.search_state_card)
         etSearch = findViewById(R.id.et_search)
         btnSearch = findViewById(R.id.btn_search)
+        btnSearchIcon = findViewById(R.id.btn_search_icon)
+        tvSearchQuery = findViewById(R.id.tv_search_query)
+        tvSearchHint = findViewById(R.id.tv_search_hint)
+        tvSearchCount = findViewById(R.id.tv_search_count)
         btnHome = findViewById(R.id.btn_home)
         btnFreevee = findViewById(R.id.btn_freevee)
         btnWatchlist = findViewById(R.id.btn_watchlist)
         btnLibrary = findViewById(R.id.btn_library)
         btnAbout = findViewById(R.id.btn_about)
+        homeFeaturedStrip = findViewById(R.id.home_featured_strip)
+        homeFeaturedImage = findViewById(R.id.iv_home_featured)
+        tvHomeFeaturedEyebrow = findViewById(R.id.tv_home_featured_eyebrow)
+        tvHomeFeaturedTitle = findViewById(R.id.tv_home_featured_title)
+        tvHomeFeaturedMeta = findViewById(R.id.tv_home_featured_meta)
 
         categoryFilterRow = findViewById(R.id.category_filter_row)
+        sourceFilterSection = findViewById(R.id.source_filter_section)
         sourceFilterGroup = findViewById(R.id.source_filter_group)
+        typeFilterSection = findViewById(R.id.type_filter_section)
         btnCatAll = findViewById(R.id.btn_cat_all)
         btnCatPrime = findViewById(R.id.btn_cat_prime)
         btnTypeAll = findViewById(R.id.btn_type_all)
@@ -134,9 +165,12 @@ class MainActivity : AppCompatActivity() {
             onItemClick = { item -> onItemSelected(item) },
             onMenuKey = { item -> showItemMenu(item) }
         )
-        val gridLayoutManager = GridLayoutManager(this, 5)
+        shimmerRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        shimmerRecyclerView.adapter = ShimmerAdapter()
+        val gridLayoutManager = GridLayoutManager(this, 4)
         recyclerView.layoutManager = gridLayoutManager
         recyclerView.adapter = adapter
+        recyclerView.itemAnimator = null
 
         // On Fire TV: EditText gets D-pad focus (highlight) but keyboard only
         // shows when user presses DPAD_CENTER (click). stateHidden in manifest
@@ -151,10 +185,8 @@ class MainActivity : AppCompatActivity() {
 
         // Handle back press while keyboard is showing (onKeyPreIme intercepts before IME)
         etSearch.onBackPressedWhileFocused = {
-            Log.i(TAG, "Back pressed while search focused — hiding keyboard")
-            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.hideSoftInputFromWindow(etSearch.windowToken, 0)
-            etSearch.clearFocus()
+            Log.i(TAG, "Back pressed while search focused — collapsing search")
+            closeSearchAndRestorePage()
             recyclerView.requestFocus()
         }
 
@@ -176,13 +208,14 @@ class MainActivity : AppCompatActivity() {
 
         // Search button click
         btnSearch.setOnClickListener { dismissKeyboardAndSearch() }
+        btnSearchIcon.setOnClickListener { toggleSearchRow() }
 
         // Navigation buttons
         btnHome.setOnClickListener { loadNav("home") }
         btnFreevee.setOnClickListener { loadNav("freevee") }
         btnWatchlist.setOnClickListener { loadNav("watchlist") }
         btnLibrary.setOnClickListener { loadNav("library") }
-        btnAbout.setOnClickListener { startActivity(Intent(this, AboutActivity::class.java)) }
+        btnAbout.setOnClickListener { UiTransitions.open(this, Intent(this, AboutActivity::class.java)) }
 
         // Source filter buttons (All vs Prime)
         btnCatAll.setOnClickListener { setSourceFilter("all") }
@@ -222,6 +255,8 @@ class MainActivity : AppCompatActivity() {
         // Give initial focus to recycler, not the search field (prevents keyboard on startup)
         etSearch.clearFocus()
         recyclerView.requestFocus()
+        updateNavButtonHighlight()
+        updateFilterHighlights()
 
         // Hide filter rows on initial home load (rails are server-curated)
         updateFilterRowVisibility()
@@ -241,11 +276,63 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun dismissKeyboardAndSearch() {
-        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(etSearch.windowToken, 0)
+        hideKeyboard()
         etSearch.clearFocus()
         recyclerView.requestFocus()
         performSearch()
+    }
+
+    private fun toggleSearchRow() {
+        if (searchRow.visibility == View.VISIBLE) closeSearchAndRestorePage()
+        else showSearchRow()
+    }
+
+    private fun showSearchRow() {
+        searchRow.visibility = View.VISIBLE
+        etSearch.requestFocus()
+        showKeyboard()
+    }
+
+    private fun hideSearchRow() {
+        hideKeyboard()
+        searchRow.visibility = View.GONE
+        etSearch.clearFocus()
+    }
+
+    private fun resetSearchUi(clearQuery: Boolean) {
+        hideSearchRow()
+        if (clearQuery) {
+            etSearch.text?.clear()
+        }
+        updateSearchState("", null)
+    }
+
+    private fun closeSearchAndRestorePage() {
+        val hadQuery = etSearch.text.toString().trim().isNotEmpty()
+        resetSearchUi(clearQuery = true)
+        if (!hadQuery) return
+
+        when (currentNavPage) {
+            "home" -> loadHomeRails()
+            "library" -> {
+                switchToGridMode()
+                loadLibraryInitial()
+            }
+            else -> {
+                switchToGridMode()
+                loadFilteredContent("")
+            }
+        }
+    }
+
+    private fun showKeyboard() {
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.showSoftInput(etSearch, InputMethodManager.SHOW_FORCED)
+    }
+
+    private fun hideKeyboard() {
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(etSearch.windowToken, 0)
     }
 
     // --- Filter selection (two independent dimensions) ---
@@ -267,22 +354,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateFilterHighlights() {
-        val activeColor = Color.parseColor("#00A8E0")
-        val inactiveColor = Color.parseColor("#555555")
-        val activeText = Color.BLACK
-        val inactiveText = Color.WHITE
-
         // Source group
         listOf(btnCatAll to "all", btnCatPrime to "prime").forEach { (btn, value) ->
             val active = value == sourceFilter
-            btn.backgroundTintList = android.content.res.ColorStateList.valueOf(if (active) activeColor else inactiveColor)
-            btn.setTextColor(if (active) activeText else inactiveText)
+            btn.isSelected = active
         }
         // Type group
         listOf(btnTypeAll to "all", btnCatMovies to "movies", btnCatSeries to "series").forEach { (btn, value) ->
             val active = value == typeFilter
-            btn.backgroundTintList = android.content.res.ColorStateList.valueOf(if (active) activeColor else inactiveColor)
-            btn.setTextColor(if (active) activeText else inactiveText)
+            btn.isSelected = active
         }
     }
 
@@ -293,6 +373,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadFilteredContent(query: String = "") {
         showLoading()
+        updateSearchState(query, null)
         lifecycleScope.launch {
             try {
                 val items = withContext(Dispatchers.IO) {
@@ -330,6 +411,7 @@ class MainActivity : AppCompatActivity() {
         Log.i(TAG, "performSearch query='$query'")
         if (query.isEmpty() && currentNavPage == "home") {
             // Search cleared — reload rails
+            updateSearchState("", null)
             loadHomeRails()
         } else {
             if (query.isNotEmpty()) switchToGridMode()
@@ -340,6 +422,7 @@ class MainActivity : AppCompatActivity() {
     // --- Nav pages (Home / Watchlist / Library) ---
 
     private fun loadNav(page: String) {
+        resetSearchUi(clearQuery = true)
         currentNavPage = page
         sourceFilter = "all"
         typeFilter = "all"
@@ -388,58 +471,92 @@ class MainActivity : AppCompatActivity() {
     // --- Nav button highlight ---
 
     private fun updateNavButtonHighlight() {
-        val activeColor = Color.parseColor("#00A8E0")
-        val inactiveColor = Color.parseColor("#333333")
-        val activeText = Color.BLACK
-        val inactiveText = Color.WHITE
-
         listOf(
             btnHome to "home",
             btnFreevee to "freevee",
             btnWatchlist to "watchlist",
             btnLibrary to "library"
         ).forEach { (btn, page) ->
-            val active = page == currentNavPage
-            btn.backgroundTintList = android.content.res.ColorStateList.valueOf(if (active) activeColor else inactiveColor)
-            btn.setTextColor(if (active) activeText else inactiveText)
+            btn.isSelected = page == currentNavPage
         }
     }
 
     private fun updateFilterRowVisibility() {
+        val isSearchActive = etSearch.text.toString().trim().isNotEmpty()
+        searchStateCard.visibility = if (isSearchActive) View.VISIBLE else View.GONE
         when (currentNavPage) {
             "library" -> {
                 categoryFilterRow.visibility = View.GONE
+                sourceFilterSection.visibility = View.GONE
+                sourceFilterGroup.visibility = View.GONE
+                typeFilterSection.visibility = View.GONE
                 libraryFilterRow.visibility = View.VISIBLE
+                homeFeaturedStrip.visibility = View.GONE
                 setNavFocusTarget(R.id.btn_lib_all)
             }
             "home" -> {
-                // Show type filters (Movies/Series) but hide source group (All/Prime)
                 categoryFilterRow.visibility = View.VISIBLE
+                sourceFilterSection.visibility = View.GONE
                 sourceFilterGroup.visibility = View.GONE
+                typeFilterSection.visibility = View.VISIBLE
                 libraryFilterRow.visibility = View.GONE
+                homeFeaturedStrip.visibility = if (!isSearchActive && featuredHomeItem != null) View.VISIBLE else View.GONE
                 setNavFocusTarget(R.id.btn_type_all)
             }
             "watchlist" -> {
                 categoryFilterRow.visibility = View.VISIBLE
+                sourceFilterSection.visibility = View.VISIBLE
                 sourceFilterGroup.visibility = View.VISIBLE
+                typeFilterSection.visibility = View.VISIBLE
                 libraryFilterRow.visibility = View.GONE
+                homeFeaturedStrip.visibility = View.GONE
                 setNavFocusTarget(R.id.btn_cat_all)
             }
             else -> {
                 categoryFilterRow.visibility = View.GONE
+                sourceFilterSection.visibility = View.GONE
+                sourceFilterGroup.visibility = View.GONE
+                typeFilterSection.visibility = View.GONE
                 libraryFilterRow.visibility = View.GONE
+                homeFeaturedStrip.visibility = View.GONE
                 setNavFocusTarget(R.id.recycler_view)
             }
         }
+        updateFilterFocusTargets()
     }
 
     private fun setNavFocusTarget(targetId: Int) {
+        val cardFocusTarget = if (targetId == R.id.recycler_view) R.id.btn_home else targetId
         btnHome.nextFocusDownId = targetId
         btnFreevee.nextFocusDownId = targetId
         btnWatchlist.nextFocusDownId = targetId
         btnLibrary.nextFocusDownId = targetId
-        // Also update recyclerView's upward focus target
-        recyclerView.nextFocusUpId = targetId
+        btnSearchIcon.nextFocusDownId = targetId
+        btnAbout.nextFocusDownId = targetId
+        recyclerView.nextFocusUpId = cardFocusTarget
+        adapter.nextFocusUpId = cardFocusTarget
+        railsAdapter.itemNextFocusUpId = cardFocusTarget
+    }
+
+    private fun updateFilterFocusTargets() {
+        val navUpTarget = when (currentNavPage) {
+            "watchlist" -> R.id.btn_watchlist
+            "library" -> R.id.btn_library
+            "freevee" -> R.id.btn_freevee
+            else -> R.id.btn_home
+        }
+        val filterButtons = listOf(btnCatAll, btnCatPrime, btnTypeAll, btnCatMovies, btnCatSeries)
+        val nextDownTarget = R.id.recycler_view
+
+        filterButtons.forEach { button ->
+            button.nextFocusUpId = navUpTarget
+            button.nextFocusDownId = nextDownTarget
+        }
+
+        btnLibAll.nextFocusUpId = navUpTarget
+        btnLibMovies.nextFocusUpId = navUpTarget
+        btnLibShows.nextFocusUpId = navUpTarget
+        btnLibSort.nextFocusUpId = navUpTarget
     }
 
     // --- Watchlist pagination ---
@@ -481,20 +598,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateLibraryFilterHighlight() {
-        val activeColor = Color.parseColor("#00A8E0")
-        val inactiveColor = Color.parseColor("#555555")
-        val activeText = Color.BLACK
-        val inactiveText = Color.WHITE
-
         listOf(
             btnLibAll to LibraryFilter.ALL,
             btnLibMovies to LibraryFilter.MOVIES,
             btnLibShows to LibraryFilter.TV_SHOWS
         ).forEach { (btn, f) ->
-            val active = f == libraryFilter
-            btn.backgroundTintList = android.content.res.ColorStateList.valueOf(if (active) activeColor else inactiveColor)
-            btn.setTextColor(if (active) activeText else inactiveText)
+            btn.isSelected = f == libraryFilter
         }
+        btnLibSort.isSelected = false
     }
 
     private fun updateLibrarySortLabel() {
@@ -571,18 +682,17 @@ class MainActivity : AppCompatActivity() {
             putExtra(DetailActivity.EXTRA_IMAGE_URL, item.imageUrl)
             putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
         }
-        startActivity(intent)
+        UiTransitions.open(this, intent)
     }
 
     // --- Watchlist context menu (MENU key) ---
 
     private fun showItemMenu(item: ContentItem) {
-        val isIn = watchlistAsins.contains(item.asin)
-        val label = if (isIn) "Remove from Watchlist" else "Add to Watchlist"
-        AlertDialog.Builder(this)
-            .setTitle(item.title)
-            .setItems(arrayOf(label)) { _, _ -> toggleWatchlist(item) }
-            .show()
+        WatchlistActionOverlay.show(
+            activity = this,
+            item = item,
+            isInWatchlist = watchlistAsins.contains(item.asin)
+        ) { toggleWatchlist(item) }
     }
 
     private fun toggleWatchlist(item: ContentItem) {
@@ -632,7 +742,7 @@ class MainActivity : AppCompatActivity() {
     private fun switchToGridMode() {
         if (!isRailsMode) return
         isRailsMode = false
-        recyclerView.layoutManager = GridLayoutManager(this, 5)
+        recyclerView.layoutManager = GridLayoutManager(this, 4)
         recyclerView.adapter = adapter
     }
 
@@ -685,6 +795,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     unfilteredRails = unfilteredRails + markedRails
                     val filtered = applyTypeFilterToRails(unfilteredRails)
+                    updateHomeFeaturedStrip(filtered)
                     railsAdapter.submitList(filtered)
                     Log.i(TAG, "Appended ${newRails.size} rails, total unfiltered=${unfilteredRails.size}")
                 } else {
@@ -701,10 +812,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun showRails(rails: List<ContentRail>) {
         progressBar.visibility = View.GONE
+        shimmerRecyclerView.visibility = View.GONE
         if (rails.isEmpty()) {
+            recyclerView.visibility = View.GONE
             tvError.text = "No content found"
             tvError.visibility = View.VISIBLE
         } else {
+            recyclerView.visibility = View.VISIBLE
             tvError.visibility = View.GONE
             val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
             val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
@@ -727,7 +841,15 @@ class MainActivity : AppCompatActivity() {
             }
             unfilteredRails = markedRails
             val filtered = applyTypeFilterToRails(markedRails)
+            updateHomeFeaturedStrip(filtered)
             railsAdapter.submitList(filtered)
+            val animatedViews = mutableListOf<View>()
+            if (searchStateCard.visibility == View.VISIBLE) animatedViews += searchStateCard
+            if (categoryFilterRow.visibility == View.VISIBLE) animatedViews += categoryFilterRow
+            if (libraryFilterRow.visibility == View.VISIBLE) animatedViews += libraryFilterRow
+            if (homeFeaturedStrip.visibility == View.VISIBLE) animatedViews += homeFeaturedStrip
+            animatedViews += recyclerView
+            UiMotion.revealFresh(*animatedViews.toTypedArray())
             recyclerView.post {
                 val firstChild = recyclerView.getChildAt(0)
                 if (firstChild != null) firstChild.requestFocus()
@@ -738,6 +860,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyRailsTypeFilter() {
         val filtered = applyTypeFilterToRails(unfilteredRails)
+        updateHomeFeaturedStrip(filtered)
         if (filtered.isEmpty()) {
             tvError.text = "No content found"
             tvError.visibility = View.VISIBLE
@@ -765,19 +888,27 @@ class MainActivity : AppCompatActivity() {
     // --- View state helpers ---
 
     private fun showLoading() {
-        progressBar.visibility = View.VISIBLE
+        progressBar.visibility = View.GONE
+        shimmerRecyclerView.visibility = View.VISIBLE
+        recyclerView.visibility = View.GONE
         tvError.visibility = View.GONE
+        homeFeaturedStrip.visibility = View.GONE
         if (isRailsMode) railsAdapter.submitList(emptyList())
         else adapter.submitList(emptyList())
     }
 
     private fun showItems(items: List<ContentItem>) {
         progressBar.visibility = View.GONE
+        shimmerRecyclerView.visibility = View.GONE
+        updateSearchState(etSearch.text.toString().trim(), items.size)
         if (items.isEmpty()) {
+            recyclerView.visibility = View.GONE
             tvError.text = "No content found"
             tvError.visibility = View.VISIBLE
         } else {
+            recyclerView.visibility = View.VISIBLE
             tvError.visibility = View.GONE
+            homeFeaturedStrip.visibility = View.GONE
             // Merge watchlist flags and watch progress into items
             val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
             val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
@@ -791,12 +922,19 @@ class MainActivity : AppCompatActivity() {
                     val runtimeMs = if (serverProgress != null && item.runtimeMs == 0L)
                         serverProgress.second else item.runtimeMs
                     item.copy(
+                        isPrime = item.isPrime,
                         isInWatchlist = watchlistAsins.contains(item.asin),
                         watchProgressMs = progressMs,
                         runtimeMs = runtimeMs
                     )
                 }
             adapter.submitList(markedItems)
+            val animatedViews = mutableListOf<View>()
+            if (searchStateCard.visibility == View.VISIBLE) animatedViews += searchStateCard
+            if (categoryFilterRow.visibility == View.VISIBLE) animatedViews += categoryFilterRow
+            if (libraryFilterRow.visibility == View.VISIBLE) animatedViews += libraryFilterRow
+            animatedViews += recyclerView
+            UiMotion.revealFresh(*animatedViews.toTypedArray())
             // After items are submitted, request focus on first grid item for D-pad navigation
             recyclerView.post {
                 val firstChild = recyclerView.getChildAt(0)
@@ -811,11 +949,78 @@ class MainActivity : AppCompatActivity() {
 
     private fun showError(msg: String) {
         progressBar.visibility = View.GONE
+        shimmerRecyclerView.visibility = View.GONE
+        recyclerView.visibility = View.GONE
+        homeFeaturedStrip.visibility = View.GONE
         tvError.text = msg
         tvError.visibility = View.VISIBLE
+        updateSearchState(etSearch.text.toString().trim(), null)
+    }
+
+    private fun updateHomeFeaturedStrip(rails: List<ContentRail>) {
+        val featuredRail = rails.firstOrNull { it.items.isNotEmpty() }
+        val featuredItem = featuredRail?.items?.firstOrNull()
+        featuredHomeItem = featuredItem
+        val shouldShow = currentNavPage == "home" &&
+            etSearch.text.toString().trim().isEmpty() &&
+            featuredRail != null &&
+            featuredItem != null
+        if (!shouldShow) {
+            homeFeaturedStrip.visibility = View.GONE
+            return
+        }
+
+        val nonNullFeaturedRail = featuredRail ?: return
+        val nonNullFeaturedItem = featuredItem ?: return
+
+        tvHomeFeaturedEyebrow.text = when {
+            nonNullFeaturedRail.headerText.isBlank() -> "Featured Now"
+            nonNullFeaturedRail.headerText.length <= 28 -> nonNullFeaturedRail.headerText.uppercase()
+            else -> "Featured Now"
+        }
+        tvHomeFeaturedTitle.text = nonNullFeaturedItem.title
+        tvHomeFeaturedMeta.text = UiMetadataFormatter.featuredMeta(nonNullFeaturedRail.headerText, nonNullFeaturedItem)
+        if (nonNullFeaturedItem.imageUrl.isNotEmpty()) {
+            homeFeaturedImage.load(nonNullFeaturedItem.imageUrl) {
+                crossfade(true)
+            }
+        } else {
+            homeFeaturedImage.setImageDrawable(null)
+            homeFeaturedImage.setBackgroundColor(Color.parseColor("#1A1A1A"))
+        }
+        homeFeaturedStrip.visibility = View.VISIBLE
+    }
+
+    private fun updateSearchState(query: String, resultCount: Int?) {
+        val active = query.isNotBlank()
+        searchStateCard.visibility = if (active) View.VISIBLE else View.GONE
+        if (!active) return
+        tvSearchQuery.text = "Results for \"$query\""
+        tvSearchHint.text = buildSearchHint()
+        tvSearchCount.text = when (resultCount) {
+            null -> "Searching..."
+            1 -> "1 Title"
+            else -> "$resultCount Titles"
+        }
+    }
+
+    private fun buildSearchHint(): String {
+        val facets = mutableListOf<String>()
+        if (sourceFilter == "prime") facets += "Prime only"
+        facets += when (typeFilter) {
+            "movies" -> "Movies only"
+            "series" -> "Series only"
+            else -> "All types"
+        }
+        return listOf("Global catalog search", *facets.toTypedArray()).joinToString("  ·  ")
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_BACK && searchRow.visibility == View.VISIBLE) {
+            closeSearchAndRestorePage()
+            recyclerView.requestFocus()
+            return true
+        }
         if (keyCode == KeyEvent.KEYCODE_MENU) {
             val item = focusedContentItem()
             if (item != null) {
@@ -852,6 +1057,7 @@ class MainActivity : AppCompatActivity() {
                     ) })
                 }
                 val filtered = applyTypeFilterToRails(unfilteredRails)
+                updateHomeFeaturedStrip(filtered)
                 railsAdapter.submitList(filtered)
             }
         } else {
@@ -862,7 +1068,6 @@ class MainActivity : AppCompatActivity() {
                 adapter.submitList(updated)
             }
         }
-
         // Re-focus when returning from another activity
         recyclerView.post {
             val firstChild = recyclerView.getChildAt(0)
