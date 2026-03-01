@@ -151,7 +151,7 @@ class DetailActivity : AppCompatActivity() {
         tvDetailEyebrow.text = detailEyebrow(info.contentType)
         tvDetailSupport.text = UiMetadataFormatter.detailSupportLine(info)
 
-        if (isItemPrime) {
+        if (info.isPrime) {
             tvPrimeBadge.text = "\u2713 Included with Prime"
             tvPrimeBadge.setTextColor(Color.parseColor("#2DC8E0"))
         } else {

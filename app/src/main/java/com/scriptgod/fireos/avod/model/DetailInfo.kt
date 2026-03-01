@@ -23,5 +23,6 @@ data class DetailInfo(
     // For series/season detail
     val showTitle: String = "",
     val showAsin: String = "",
-    val audioTracks: List<AudioTrack> = emptyList()
+    val audioTracks: List<AudioTrack> = emptyList(),
+    val isPrime: Boolean = false
 )

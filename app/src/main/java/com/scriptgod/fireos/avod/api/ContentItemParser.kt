@@ -53,9 +53,14 @@ internal object ContentItemParser {
 
         // Hero carousel items (Featured rail) carry Prime entitlement in
         // messagePresentationModel.entitlementMessageSlotCompact[].imageId == "ENTITLED_ICON"
+        // The text must also mention "prime" — ENTITLED_ICON alone is used for channel subs/rentals too.
         val hasEntitledIcon = model.getAsJsonObject("messagePresentationModel")
             ?.getAsJsonArray("entitlementMessageSlotCompact")
-            ?.any { el -> el.isJsonObject && el.asJsonObject.safeString("imageId") == "ENTITLED_ICON" }
+            ?.any { el ->
+                el.isJsonObject &&
+                el.asJsonObject.safeString("imageId") == "ENTITLED_ICON" &&
+                el.asJsonObject.safeString("text")?.contains("prime", ignoreCase = true) == true
+            }
             ?: false
 
         val isPrime = (model.getAsJsonObject("badges")?.safeBoolean("prime")

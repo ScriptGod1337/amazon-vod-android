@@ -654,6 +654,8 @@ class AmazonApiService(private val authService: AmazonAuthService) {
             val isUhd = badges?.get("uhd")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
             val isHdr = badges?.get("hdr")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
             val isDolby = badges?.get("dolby51")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
+            // badges.prime in the detail API is accurate; the catalog-level showPrimeEmblem is not
+            val isPrime = badges?.get("prime")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
 
             // Show info (populated for SEASON type)
             val show = resource.getAsJsonObject("show")
@@ -680,7 +682,8 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                 isDolby51 = isDolby,
                 showTitle = showTitle,
                 showAsin = showAsin,
-                audioTracks = audioTracks
+                audioTracks = audioTracks,
+                isPrime = isPrime
             )
         } catch (e: Exception) {
             Log.w(TAG, "parseDetailInfo error", e)
