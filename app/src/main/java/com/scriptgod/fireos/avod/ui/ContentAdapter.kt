@@ -17,8 +17,6 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.scriptgod.fireos.avod.R
 import com.scriptgod.fireos.avod.model.ContentItem
-import com.scriptgod.fireos.avod.model.isIncludedWithPrime
-import com.scriptgod.fireos.avod.model.primaryAvailabilityBadge
 import kotlin.math.roundToInt
 
 class ContentAdapter(
@@ -60,8 +58,7 @@ class ContentAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = getItem(position)
-        val progressSubtitle = progressSubtitle(item)
-        val metadata = metadataForPresentation(item, progressSubtitle)
+        val metadata = UiMetadataFormatter.cardMetadata(item, presentation)
         holder.overline.text = metadata.overline
         holder.overline.visibility = if (metadata.overline.isBlank()) View.GONE else View.VISIBLE
         holder.title.text = metadata.title
@@ -90,10 +87,7 @@ class ContentAdapter(
         )
 
         holder.badges.removeAllViews()
-        val badgeValues = buildList {
-            item.primaryAvailabilityBadge()?.let(::add)
-            if (item.watchProgressMs == -1L) add("Watched")
-        }.take(3)
+        val badgeValues = UiMetadataFormatter.badgeLabels(item)
         holder.badges.visibility = if (presentation == CardPresentation.SEASON && badgeValues.isEmpty()) {
             View.GONE
         } else {
@@ -125,6 +119,7 @@ class ContentAdapter(
         when {
             item.watchProgressMs == -1L -> {
                 holder.watchProgress.visibility = View.VISIBLE
+                holder.watchProgress.isIndeterminate = false
                 holder.watchProgress.max = 100
                 holder.watchProgress.progress = 100
                 holder.watchProgress.progressTintList = ColorStateList.valueOf(0xFFF5A623.toInt())
@@ -133,14 +128,25 @@ class ContentAdapter(
             }
             item.watchProgressMs > 0 && item.runtimeMs > 0 -> {
                 holder.watchProgress.visibility = View.VISIBLE
+                holder.watchProgress.isIndeterminate = false
                 holder.watchProgress.max = 100
                 holder.watchProgress.progress = (item.watchProgressMs * 100 / item.runtimeMs).toInt().coerceIn(1, 99)
                 holder.watchProgress.progressTintList = ColorStateList.valueOf(0xFFF5A623.toInt())
                 holder.watchProgress.progressBackgroundTintList = ColorStateList.valueOf(0x44FFFFFF)
                 holder.title.setTextColor(0xFFFFFFFF.toInt())
             }
+            item.watchProgressMs > 0 -> {
+                holder.watchProgress.visibility = View.VISIBLE
+                holder.watchProgress.isIndeterminate = false
+                holder.watchProgress.max = 100
+                holder.watchProgress.progress = 35
+                holder.watchProgress.progressBackgroundTintList = ColorStateList.valueOf(0x44FFFFFF)
+                holder.watchProgress.progressTintList = ColorStateList.valueOf(0xFFF5A623.toInt())
+                holder.title.setTextColor(0xFFFFFFFF.toInt())
+            }
             else -> {
                 holder.watchProgress.visibility = View.GONE
+                holder.watchProgress.isIndeterminate = false
                 holder.watchProgress.progress = 0
                 holder.title.setTextColor(0xFFFFFFFF.toInt())
             }
@@ -211,127 +217,5 @@ class ContentAdapter(
             override fun areItemsTheSame(old: ContentItem, new: ContentItem) = old.asin == new.asin
             override fun areContentsTheSame(old: ContentItem, new: ContentItem) = old == new
         }
-    }
-
-    private fun progressSubtitle(item: ContentItem): String? {
-        if (item.watchProgressMs == 0L || item.runtimeMs <= 0L) return null
-        return when (item.watchProgressMs) {
-            -1L -> "Finished recently"
-            else -> {
-                val progressPercent = ((item.watchProgressMs * 100) / item.runtimeMs).toInt().coerceIn(1, 99)
-                val remainingMinutes = ((item.runtimeMs - item.watchProgressMs).coerceAtLeast(0L) / 60000L).toInt()
-                if (remainingMinutes > 0) {
-                    "$progressPercent% watched · ${remainingMinutes} min left"
-                } else {
-                    "$progressPercent% watched"
-                }
-            }
-        }
-    }
-
-    private data class CardMetadata(
-        val overline: String,
-        val title: String,
-        val subtitle: String
-    )
-
-    private fun metadataForPresentation(item: ContentItem, progressSubtitle: String?): CardMetadata {
-        return when (presentation) {
-            CardPresentation.SEASON -> CardMetadata(
-                overline = "Season",
-                title = item.title,
-                subtitle = sanitizeSubtitle(item.subtitle).ifBlank { "Open episode list" }
-            )
-            CardPresentation.PROGRESS -> CardMetadata(
-                overline = "Continue Watching",
-                title = item.title,
-                subtitle = progressSubtitle ?: "Resume playback"
-            )
-            CardPresentation.EPISODE -> {
-                val (episodeOverline, episodeTitle) = episodeLabelParts(item.title)
-                CardMetadata(
-                    overline = episodeOverline.ifBlank { overlineText(item, progressSubtitle != null) },
-                    title = episodeTitle,
-                    subtitle = sanitizeSubtitle(item.subtitle).ifBlank { "Start playback" }
-                )
-            }
-            CardPresentation.LANDSCAPE -> CardMetadata(
-                overline = overlineText(item, progressSubtitle != null),
-                title = item.title,
-                subtitle = progressSubtitle ?: landscapeSubtitle(item)
-            )
-            CardPresentation.POSTER -> CardMetadata(
-                overline = overlineText(item, progressSubtitle != null),
-                title = item.title,
-                subtitle = progressSubtitle ?: secondaryLine(item)
-            )
-        }
-    }
-
-    private fun overlineText(item: ContentItem, isProgress: Boolean): String {
-        if (isProgress) return "Continue Watching"
-        return when {
-            item.isLive -> "Live"
-            ContentTypeMatcher.isEpisode(item.contentType) -> "Episode"
-            ContentTypeMatcher.isSeries(item.contentType) -> "Series"
-            ContentTypeMatcher.isMovie(item.contentType) -> "Movie"
-            else -> "Featured"
-        }
-    }
-
-    private fun secondaryLine(item: ContentItem): String {
-        val cleanedSubtitle = sanitizeSubtitle(item.subtitle)
-        if (cleanedSubtitle.isNotBlank()) {
-            return cleanedSubtitle
-        }
-        val parts = mutableListOf<String>()
-        if (ContentTypeMatcher.isEpisode(item.contentType)) parts += "Playable episode"
-        else if (ContentTypeMatcher.isSeries(item.contentType)) parts += "Series overview"
-        else if (ContentTypeMatcher.isMovie(item.contentType)) parts += "Feature film"
-        item.primaryAvailabilityBadge()?.let { badge ->
-            if (badge == "Freevee") parts += "Ad-supported"
-            if (badge == "Live") parts += "Live channel"
-        }
-        return parts.joinToString("  ·  ")
-    }
-
-    private fun landscapeSubtitle(item: ContentItem): String {
-        return when {
-            ContentTypeMatcher.isSeries(item.contentType) -> "Open season overview"
-            else -> secondaryLine(item)
-        }
-    }
-
-    private fun sanitizeSubtitle(subtitle: String): String {
-        return subtitle
-            .replace("Included with Prime", "", ignoreCase = true)
-            .replace("Prime Video", "", ignoreCase = true)
-            .replace("  ·   ·  ", "  ·  ")
-            .replace(" • ", "  ·  ")
-            .replace(Regex("\\s+·\\s*$"), "")
-            .replace(Regex("^\\s*·\\s+"), "")
-            .replace(Regex("\\s{2,}"), " ")
-            .trim()
-    }
-
-    private fun episodeLabelParts(rawTitle: String): Pair<String, String> {
-        val match = Regex("^E(\\d+):\\s*(.+)$", RegexOption.IGNORE_CASE).matchEntire(rawTitle.trim())
-        if (match != null) {
-            val episodeNumber = match.groupValues[1]
-            val episodeTitle = match.groupValues[2]
-            return "Episode $episodeNumber" to episodeTitle
-        }
-        return "" to rawTitle
-    }
-
-    private object ContentTypeMatcher {
-        fun isMovie(contentType: String) =
-            contentType.equals("Feature", true) || contentType.equals("Movie", true)
-        fun isSeries(contentType: String) =
-            contentType.equals("Series", true) || contentType.equals("Season", true) ||
-                contentType.equals("Show", true) || contentType.equals("TVSeason", true) ||
-                contentType.equals("TVSeries", true)
-        fun isEpisode(contentType: String) =
-            contentType.equals("Episode", true) || contentType.equals("TVEpisode", true)
     }
 }

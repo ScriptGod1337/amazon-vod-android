@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="@dimen/landscape_card_width"
-    android:layout_height="196dp"
+    android:layout_height="204dp"
     android:layout_marginEnd="@dimen/card_spacing"
     android:clickable="true"
     android:focusable="true"
@@ -51,6 +51,21 @@
                 android:layout_margin="8dp"
                 android:gravity="end"
                 android:orientation="horizontal" />
+
+            <ProgressBar
+                android:id="@+id/pb_watch_progress"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:layout_gravity="bottom"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="8dp"
+                android:max="100"
+                android:progress="0"
+                android:progressTint="#F5A623"
+                android:progressBackgroundTint="#44000000"
+                android:visibility="gone" />
         </FrameLayout>
 
         <LinearLayout
@@ -78,7 +93,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:ellipsize="end"
-                android:maxLines="2"
+                android:maxLines="1"
                 android:textColor="@color/text_primary"
                 android:textSize="@dimen/body_text_size"
                 android:textStyle="bold" />
@@ -89,21 +104,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:ellipsize="end"
-                android:maxLines="2"
+                android:maxLines="1"
                 android:textColor="@color/text_secondary"
                 android:textSize="@dimen/compact_control_text_size" />
-
-            <ProgressBar
-                android:id="@+id/pb_watch_progress"
-                style="@android:style/Widget.ProgressBar.Horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="6dp"
-                android:layout_marginTop="10dp"
-                android:max="100"
-                android:progress="0"
-                android:progressTint="#F5A623"
-                android:progressBackgroundTint="#44FFFFFF"
-                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 

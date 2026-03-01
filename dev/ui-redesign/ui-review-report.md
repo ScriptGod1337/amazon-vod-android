@@ -66,8 +66,10 @@
 - `final_detail_watchlist-overlay.png` confirms Detail now uses the same custom watchlist overlay language as the rest of the redesign.
 - The latest consistency pass keeps the page-title/supporting-text hierarchy aligned between Browse, About, Detail, and Player-adjacent UI, and removes the last obvious timing mismatch in card focus animation.
 - The metadata truthfulness pass removes the last UI-side Prime inference. Card badges and the Home featured strip now rely on the same explicit availability rule, so Prime is only shown when the payload actually marks the title as Prime.
+- The latest metadata refactor also moves payload parsing and UI metadata formatting into dedicated shared layers, which reduces the chance of Home, Browse, and Detail drifting apart again.
 - The latest Detail cleanup also tightens support text so seasons and episodes carry contextual `From ...` copy only where it adds value, while empty metadata rows collapse cleanly instead of leaving dead space.
 - The latest player pass reduces overlay width, trims padding/button height, shortens the hint copy, and hides the video-format pill when the player has no trustworthy live format to report.
+- The latest Home progress fix keeps the Continue Watching indicator visible on resumed titles even when only local resume data is available, and it places the bar over the artwork so it remains visible when the row is only partially in view.
 
 ## Device Validation Notes
 
@@ -91,4 +93,5 @@
   - `Borderlands` still renders the movie-detail metadata stack cleanly with IMDb and synopsis
   - `The Good Doctor - Staffel 7` renders the season-detail support line as `Drama  ·  From The Good Doctor`
   - Home still exposes the dedicated `Continue Watching` presentation with watchlist iconography and the shared badge rules
+- Emulator validation during the latest Home fix reproduced the missing `Continue Watching` progress indicator on `Borderlands`, and the follow-up patch moved that indicator onto the artwork region so it is not lost at the bottom edge of the viewport.
 - Emulator validation after the latest player pass confirmed `PlayerActivity` still opens, and on DRM/license failure the bottom-left error panel is the only visible surface, which is the intended fallback behavior for failed playback.

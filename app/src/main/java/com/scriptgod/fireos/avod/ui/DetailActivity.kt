@@ -144,7 +144,7 @@ class DetailActivity : AppCompatActivity() {
         tvTitle.text = if (info.showTitle.isNotEmpty()) "${info.showTitle}: ${info.title}"
                        else info.title
         tvDetailEyebrow.text = detailEyebrow(info.contentType)
-        tvDetailSupport.text = buildSupportLine(info)
+        tvDetailSupport.text = UiMetadataFormatter.detailSupportLine(info)
 
         // Metadata row: year · runtime · age rating · quality
         val meta = buildString {
@@ -275,23 +275,6 @@ class DetailActivity : AppCompatActivity() {
             rating >= 5.0f -> Color.parseColor("#F29D52")
             else -> Color.parseColor("#E06B6B")
         }
-    }
-
-    private fun buildSupportLine(info: DetailInfo): String {
-        val parts = mutableListOf<String>()
-        if (info.showTitle.isNotEmpty() && info.contentType.uppercase().contains("SEASON")) {
-            parts += "From ${info.showTitle}"
-        }
-        if (info.genres.isNotEmpty()) {
-            parts += info.genres.joinToString("  ·  ")
-        }
-        if (info.showTitle.isNotEmpty() && info.contentType.uppercase().contains("EPISODE")) {
-            parts += "From ${info.showTitle}"
-        }
-        if (info.isTrailerAvailable) {
-            parts += "Trailer available"
-        }
-        return parts.joinToString("  ·  ").ifEmpty { "Start playback, browse related titles, or manage watchlist status." }
     }
 
     private fun onPlayClicked(info: DetailInfo) {

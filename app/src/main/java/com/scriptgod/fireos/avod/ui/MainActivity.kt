@@ -32,7 +32,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import com.scriptgod.fireos.avod.model.primaryAvailabilityBadge
 
 class MainActivity : AppCompatActivity() {
 
@@ -980,7 +979,7 @@ class MainActivity : AppCompatActivity() {
             else -> "Featured Now"
         }
         tvHomeFeaturedTitle.text = nonNullFeaturedItem.title
-        tvHomeFeaturedMeta.text = buildFeaturedMeta(nonNullFeaturedRail, nonNullFeaturedItem)
+        tvHomeFeaturedMeta.text = UiMetadataFormatter.featuredMeta(nonNullFeaturedRail.headerText, nonNullFeaturedItem)
         if (nonNullFeaturedItem.imageUrl.isNotEmpty()) {
             homeFeaturedImage.load(nonNullFeaturedItem.imageUrl) {
                 crossfade(true)
@@ -990,20 +989,6 @@ class MainActivity : AppCompatActivity() {
             homeFeaturedImage.setBackgroundColor(Color.parseColor("#1A1A1A"))
         }
         homeFeaturedStrip.visibility = View.VISIBLE
-    }
-
-    private fun buildFeaturedMeta(rail: ContentRail, item: ContentItem): String {
-        val parts = mutableListOf<String>()
-        parts += when {
-            item.isLive -> "Live"
-            AmazonApiService.isEpisodeContentType(item.contentType) -> "Episode"
-            AmazonApiService.isSeriesContentType(item.contentType) -> "Series"
-            AmazonApiService.isMovieContentType(item.contentType) -> "Movie"
-            else -> "Featured"
-        }
-        item.primaryAvailabilityBadge()?.let(parts::add)
-        if (rail.headerText.isNotBlank()) parts += rail.headerText
-        return parts.joinToString("  ·  ")
     }
 
     private fun updateSearchState(query: String, resultCount: Int?) {

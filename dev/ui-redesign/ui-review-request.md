@@ -31,9 +31,11 @@
 - [x] Final visual pass: Continue Watching is now visually verified on Home, season cards have their own Browse treatment, and Detail uses the same watchlist overlay system as Home/Browse
 - [x] Metadata truthfulness pass: Prime detection now requires an explicit Prime signal from the payload instead of being inferred from `not Freevee`
 - [x] Shared availability helpers: card badges and featured-strip metadata now use one `included with Prime / Freevee / Live` rule across Home, Browse, and Watchlist
+- [x] Shared metadata mapping layer: payload parsing and UI metadata formatting now live in dedicated mapper/formatter classes instead of ad hoc per-screen logic
 - [x] Detail metadata cleanup: empty metadata rows now collapse cleanly, and support text is more context-aware for seasons and episodes
 - [x] Player overlay tuning pass: Fire TV-safe overlay margins were tightened and MENU now routes track focus to `Audio`
 - [x] Player compactness pass: the track overlay is now narrower, denser, and hides the format pill when no real playback format is available
+- [x] Continue Watching progress fix: Home progress cards now keep a visible progress indicator even when only local resume data exists, and the bar is anchored over the artwork so it remains visible in the lower viewport
 
 ## Known issues / deviations from spec
 - `See All` remains intentionally hidden. The current app still has no safe full-collection browse contract for `collectionId` without API/model work.
@@ -70,6 +72,7 @@
 - Home featured metadata now follows the same availability truthfulness rules as card badges instead of using a separate Prime heuristic.
 - MENU on cards now opens a custom watchlist action overlay with explicit `Add/Remove` and `Cancel` actions.
 - The final Home state now includes a verified `Continue Watching` rail using the dedicated progress-first card presentation.
+- Home `Continue Watching` cards now use the shared metadata layer and keep a visible progress indicator for resumed titles such as `Borderlands`.
 - Detail metadata now collapses empty rows cleanly and keeps season/episode support text more relevant to the current content type.
 - Player overlay audio/subtitle controls use the updated redesign styling.
 - Player overlay now uses a denser track panel with shorter hint copy, smaller buttons, and conditional video-format visibility.
