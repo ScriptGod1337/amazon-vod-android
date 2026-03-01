@@ -340,14 +340,18 @@ class MainActivity : AppCompatActivity() {
     private fun setSourceFilter(source: String) {
         sourceFilter = source
         updateFilterHighlights()
-        reloadFiltered()
+        if (isRailsMode) {
+            applyRailsFilters()
+        } else {
+            reloadFiltered()
+        }
     }
 
     private fun setTypeFilter(type: String) {
         typeFilter = type
         updateFilterHighlights()
         if (isRailsMode) {
-            applyRailsTypeFilter()
+            applyRailsFilters()
         } else {
             reloadFiltered()
         }
@@ -496,12 +500,12 @@ class MainActivity : AppCompatActivity() {
             }
             "home" -> {
                 categoryFilterRow.visibility = View.VISIBLE
-                sourceFilterSection.visibility = View.GONE
-                sourceFilterGroup.visibility = View.GONE
+                sourceFilterSection.visibility = View.VISIBLE
+                sourceFilterGroup.visibility = View.VISIBLE
                 typeFilterSection.visibility = View.VISIBLE
                 libraryFilterRow.visibility = View.GONE
                 homeFeaturedStrip.visibility = if (!isSearchActive && featuredHomeItem != null) View.VISIBLE else View.GONE
-                setNavFocusTarget(R.id.btn_type_all)
+                setNavFocusTarget(R.id.btn_cat_all)
             }
             "watchlist" -> {
                 categoryFilterRow.visibility = View.VISIBLE
@@ -722,7 +726,7 @@ class MainActivity : AppCompatActivity() {
                             if (ci.asin == item.asin) ci.copy(isInWatchlist = !isCurrentlyIn) else ci
                         })
                     }
-                    railsAdapter.submitList(applyTypeFilterToRails(unfilteredRails))
+                    railsAdapter.submitList(applyAllFiltersToRails(unfilteredRails))
                 }
             } else {
                 Toast.makeText(this@MainActivity, "Watchlist update failed", Toast.LENGTH_SHORT).show()
@@ -794,7 +798,7 @@ class MainActivity : AppCompatActivity() {
                         })
                     }
                     unfilteredRails = unfilteredRails + markedRails
-                    val filtered = applyTypeFilterToRails(unfilteredRails)
+                    val filtered = applyAllFiltersToRails(unfilteredRails)
                     updateHomeFeaturedStrip(filtered)
                     railsAdapter.submitList(filtered)
                     Log.i(TAG, "Appended ${newRails.size} rails, total unfiltered=${unfilteredRails.size}")
@@ -840,7 +844,7 @@ class MainActivity : AppCompatActivity() {
                 })
             }
             unfilteredRails = markedRails
-            val filtered = applyTypeFilterToRails(markedRails)
+            val filtered = applyAllFiltersToRails(markedRails)
             updateHomeFeaturedStrip(filtered)
             railsAdapter.submitList(filtered)
             val animatedViews = mutableListOf<View>()
@@ -858,8 +862,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun applyRailsTypeFilter() {
-        val filtered = applyTypeFilterToRails(unfilteredRails)
+    private fun applyRailsFilters() {
+        val filtered = applyAllFiltersToRails(unfilteredRails)
         updateHomeFeaturedStrip(filtered)
         if (filtered.isEmpty()) {
             tvError.text = "No content found"
@@ -870,18 +874,21 @@ class MainActivity : AppCompatActivity() {
         railsAdapter.submitList(filtered)
     }
 
-    private fun applyTypeFilterToRails(rails: List<ContentRail>): List<ContentRail> {
-        if (typeFilter == "all") return rails
+    private fun applyAllFiltersToRails(rails: List<ContentRail>): List<ContentRail> {
+        val sourceAll = sourceFilter == "all"
+        val typeAll = typeFilter == "all"
+        if (sourceAll && typeAll) return rails
         return rails.mapNotNull { rail ->
             val filteredItems = rail.items.filter { item ->
-                when (typeFilter) {
+                val passesSource = sourceAll || item.isPrime
+                val passesType = typeAll || when (typeFilter) {
                     "movies" -> AmazonApiService.isMovieContentType(item.contentType)
                     "series" -> AmazonApiService.isSeriesContentType(item.contentType)
                     else -> true
                 }
+                passesSource && passesType
             }
-            if (filteredItems.isEmpty()) null
-            else rail.copy(items = filteredItems)
+            if (filteredItems.isEmpty()) null else rail.copy(items = filteredItems)
         }
     }
 
@@ -1056,7 +1063,7 @@ class MainActivity : AppCompatActivity() {
                         watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs
                     ) })
                 }
-                val filtered = applyTypeFilterToRails(unfilteredRails)
+                val filtered = applyAllFiltersToRails(unfilteredRails)
                 updateHomeFeaturedStrip(filtered)
                 railsAdapter.submitList(filtered)
             }
