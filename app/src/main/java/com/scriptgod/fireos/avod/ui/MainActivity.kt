@@ -9,6 +9,7 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -47,7 +48,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchStateCard: LinearLayout
     private lateinit var etSearch: DpadEditText
     private lateinit var btnSearch: Button
-    private lateinit var btnSearchIcon: Button
+    private lateinit var btnSearchIcon: ImageButton
     private lateinit var tvSearchQuery: TextView
     private lateinit var tvSearchHint: TextView
     private lateinit var tvSearchCount: TextView

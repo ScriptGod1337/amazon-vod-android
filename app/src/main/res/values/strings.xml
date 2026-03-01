@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">ScriptGod\'s FireOS AmazonVOD</string>
     <string name="search_hint">Search movies and TV...</string>
+    <string name="search_button_icon">Open search</string>
     <string name="loading">Loading…</string>
     <string name="error_playback">Playback error</string>
     <string name="error_network">Network error</string>

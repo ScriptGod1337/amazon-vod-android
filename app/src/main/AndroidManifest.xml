@@ -11,8 +11,8 @@
     <application
         android:allowBackup="false"
         android:banner="@drawable/app_banner"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@drawable/tv_launcher_icon"
+        android:roundIcon="@drawable/tv_launcher_icon"
         android:label="@string/app_name"
         android:theme="@style/Theme.FireTV"
         android:usesCleartextTraffic="false">

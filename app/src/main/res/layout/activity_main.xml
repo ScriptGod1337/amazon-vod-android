@@ -94,24 +94,26 @@
                 android:layout_height="1dp"
                 android:layout_weight="1" />
 
-            <Button
+            <ImageButton
                 android:id="@+id/btn_search_icon"
                 android:layout_width="44dp"
                 android:layout_height="44dp"
                 android:background="@drawable/header_icon_button_background"
                 android:backgroundTint="@null"
                 app:backgroundTint="@null"
+                android:contentDescription="@string/search_button_icon"
                 android:minWidth="0dp"
+                android:padding="10dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_search"
                 android:stateListAnimator="@null"
-                android:text="🔍"
-                android:textAllCaps="false"
-                android:textColor="@color/header_icon_text"
-                android:textSize="@dimen/page_supporting_size" />
+                android:tint="@color/header_icon_text" />
 
             <Button
                 android:id="@+id/btn_about"
                 android:layout_width="44dp"
                 android:layout_height="44dp"
+                android:layout_marginStart="8dp"
                 android:background="@drawable/header_icon_button_background"
                 android:backgroundTint="@null"
                 app:backgroundTint="@null"
