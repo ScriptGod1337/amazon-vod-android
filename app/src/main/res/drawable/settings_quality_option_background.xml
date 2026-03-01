@@ -1,52 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Disabled -->
     <item android:state_enabled="false">
         <shape>
             <corners android:radius="18dp" />
-            <solid android:color="#12171B" />
-            <stroke
-                android:width="1dp"
-                android:color="#222B31" />
+            <solid android:color="#0C1318" />
+            <stroke android:width="1dp" android:color="#172028" />
         </shape>
     </item>
 
+    <!-- Focused + Selected: bright fill + white ring -->
     <item android:state_focused="true" android:state_selected="true">
         <shape>
             <corners android:radius="18dp" />
             <solid android:color="#4FC0DF" />
-            <stroke
-                android:width="2dp"
-                android:color="#F2FBFF" />
+            <stroke android:width="3dp" android:color="#FFFFFF" />
         </shape>
     </item>
 
+    <!-- Selected only: vivid teal fill — unmistakably "on" -->
     <item android:state_selected="true">
         <shape>
             <corners android:radius="18dp" />
-            <solid android:color="#1C5163" />
-            <stroke
-                android:width="1dp"
-                android:color="#2F6C80" />
+            <solid android:color="#1B7A9E" />
+            <stroke android:width="2dp" android:color="#2DC8EC" />
         </shape>
     </item>
 
+    <!-- Focused only: near-black body + thick vivid ring -->
     <item android:state_focused="true">
         <shape>
             <corners android:radius="18dp" />
-            <solid android:color="#1A2328" />
-            <stroke
-                android:width="2dp"
-                android:color="#8BE2F7" />
+            <solid android:color="#131F28" />
+            <stroke android:width="3dp" android:color="#5BCCE6" />
         </shape>
     </item>
 
+    <!-- Rest: near-black, recedes -->
     <item>
         <shape>
             <corners android:radius="18dp" />
-            <solid android:color="#182025" />
-            <stroke
-                android:width="1dp"
-                android:color="#2A3942" />
+            <solid android:color="#0E1820" />
+            <stroke android:width="1dp" android:color="#1D2D36" />
         </shape>
     </item>
+
 </selector>

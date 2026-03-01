@@ -60,6 +60,9 @@ class AboutActivity : AppCompatActivity() {
         // Video quality setting
         setupQualitySection()
 
+        // Audio passthrough setting
+        setupAudioPassthroughSection()
+
         // Sign out
         findViewById<Button>(R.id.btn_sign_out).setOnClickListener {
             AlertDialog.Builder(this)
@@ -147,6 +150,64 @@ class AboutActivity : AppCompatActivity() {
         btnHdH265.setOnClickListener { save(PlaybackQuality.HD_H265) }
         btnUhd.setOnClickListener    { save(PlaybackQuality.UHD_HDR) }
 
+    }
+
+    private fun setupAudioPassthroughSection() {
+        val caps = androidx.media3.exoplayer.audio.AudioCapabilities.getCapabilities(this)
+        val supportsAc3  = caps.supportsEncoding(androidx.media3.common.C.ENCODING_AC3)
+        val supportsEac3 = caps.supportsEncoding(androidx.media3.common.C.ENCODING_E_AC3)
+        val supportsAny  = supportsAc3 || supportsEac3
+
+        val prefs     = getSharedPreferences("settings", MODE_PRIVATE)
+        val btnOff    = findViewById<Button>(R.id.btn_passthrough_off)
+        val btnOn     = findViewById<Button>(R.id.btn_passthrough_on)
+        val tvBadge   = findViewById<TextView>(R.id.tv_passthrough_badge)
+        val tvSupport = findViewById<TextView>(R.id.tv_passthrough_support)
+        val tvNote    = findViewById<TextView>(R.id.tv_passthrough_note)
+
+        tvBadge.text = when {
+            supportsAc3 && supportsEac3 -> "AC3 + EAC3 capable"
+            supportsAc3  -> "AC3 capable"
+            supportsEac3 -> "EAC3 capable"
+            else         -> "Passthrough unavailable"
+        }
+        val fmts = listOfNotNull(
+            if (supportsAc3)  "Dolby Digital (AC3)"   else null,
+            if (supportsEac3) "Dolby Digital+ (EAC3)" else null
+        )
+        tvSupport.text = "HDMI audio passthrough: " +
+            if (fmts.isNotEmpty()) fmts.joinToString(", ") else "not supported on this output"
+
+        btnOn.isEnabled = supportsAny
+        btnOn.alpha = if (supportsAny) 1f else 0.45f
+
+        fun updateButtons(on: Boolean) {
+            btnOff.isSelected = !on
+            btnOn.isSelected  = on
+        }
+
+        val initial = prefs.getBoolean("audio_passthrough", false) && supportsAny
+        updateButtons(initial)
+
+        tvNote.text = if (!supportsAny)
+            "This output does not report Dolby passthrough support. Keep Off to use PCM stereo."
+        else
+            "When On, encoded Dolby audio is sent directly to your AV receiver. " +
+            "Volume control moves to the receiver. Takes effect on next playback session."
+
+        fun save(on: Boolean) {
+            prefs.edit().putBoolean("audio_passthrough", on).apply()
+            updateButtons(on)
+            Toast.makeText(
+                this,
+                if (on) "Passthrough on — takes effect on next playback"
+                else    "Passthrough off — takes effect on next playback",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        btnOff.setOnClickListener { save(false) }
+        btnOn.setOnClickListener  { save(true)  }
     }
 
     private fun btnLabel(q: PlaybackQuality) = when (q) {

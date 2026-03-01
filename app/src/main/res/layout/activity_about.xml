@@ -401,14 +401,13 @@
                         android:baselineAligned="false"
                         android:layout_marginBottom="14dp">
 
-                        <Button
+                        <androidx.appcompat.widget.AppCompatButton
                             android:id="@+id/btn_quality_hd"
                             android:layout_width="0dp"
                             android:layout_height="56dp"
                             android:layout_weight="1"
                             android:layout_marginEnd="10dp"
                             android:background="@drawable/settings_quality_option_background"
-                            android:backgroundTint="@null"
                             android:minWidth="0dp"
                             android:paddingStart="18dp"
                             android:paddingEnd="18dp"
@@ -419,14 +418,13 @@
                             android:stateListAnimator="@null"
                             android:nextFocusUp="@id/btn_about_back" />
 
-                        <Button
+                        <androidx.appcompat.widget.AppCompatButton
                             android:id="@+id/btn_quality_hd_h265"
                             android:layout_width="0dp"
                             android:layout_height="56dp"
                             android:layout_weight="1"
                             android:layout_marginEnd="10dp"
                             android:background="@drawable/settings_quality_option_background"
-                            android:backgroundTint="@null"
                             android:minWidth="0dp"
                             android:paddingStart="18dp"
                             android:paddingEnd="18dp"
@@ -437,13 +435,12 @@
                             android:stateListAnimator="@null"
                             android:nextFocusUp="@id/btn_about_back" />
 
-                        <Button
+                        <androidx.appcompat.widget.AppCompatButton
                             android:id="@+id/btn_quality_uhd"
                             android:layout_width="0dp"
                             android:layout_height="56dp"
                             android:layout_weight="1"
                             android:background="@drawable/settings_quality_option_background"
-                            android:backgroundTint="@null"
                             android:minWidth="0dp"
                             android:paddingStart="18dp"
                             android:paddingEnd="18dp"
@@ -457,6 +454,95 @@
 
                     <TextView
                         android:id="@+id/tv_quality_note"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#8FA5B0"
+                        android:textSize="@dimen/body_text_size"
+                        android:lineSpacingExtra="4dp" />
+
+                    <!-- divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#1A3B4A"
+                        android:layout_marginTop="20dp"
+                        android:layout_marginBottom="20dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Audio passthrough"
+                        android:textColor="#F5FAFD"
+                        android:textSize="@dimen/panel_title_size"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="12dp" />
+
+                    <TextView
+                        android:id="@+id/tv_passthrough_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:background="@drawable/settings_badge_background"
+                        android:paddingStart="14dp"
+                        android:paddingTop="8dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="8dp"
+                        android:textColor="#E9F6FB"
+                        android:textSize="@dimen/status_chip_text_size"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_passthrough_support"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#D9E6EC"
+                        android:textSize="@dimen/page_supporting_size"
+                        android:lineSpacingExtra="4dp"
+                        android:layout_marginBottom="18dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:baselineAligned="false"
+                        android:layout_marginBottom="14dp">
+
+                        <androidx.appcompat.widget.AppCompatButton
+                            android:id="@+id/btn_passthrough_off"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/settings_quality_option_background"
+                            android:minWidth="0dp"
+                            android:paddingStart="18dp"
+                            android:paddingEnd="18dp"
+                            android:text="Off"
+                            android:textAllCaps="false"
+                            android:textColor="@color/settings_quality_option_text"
+                            android:textSize="@dimen/action_text_size"
+                            android:stateListAnimator="@null"
+                            android:nextFocusUp="@id/btn_quality_hd" />
+
+                        <androidx.appcompat.widget.AppCompatButton
+                            android:id="@+id/btn_passthrough_on"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/settings_quality_option_background"
+                            android:minWidth="0dp"
+                            android:paddingStart="18dp"
+                            android:paddingEnd="18dp"
+                            android:text="On"
+                            android:textAllCaps="false"
+                            android:textColor="@color/settings_quality_option_text"
+                            android:textSize="@dimen/action_text_size"
+                            android:stateListAnimator="@null"
+                            android:nextFocusUp="@id/btn_quality_uhd" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_passthrough_note"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textColor="#8FA5B0"
@@ -499,12 +585,11 @@
                         android:lineSpacingExtra="4dp"
                         android:layout_marginBottom="18dp" />
 
-                    <Button
+                    <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/btn_sign_out"
                         android:layout_width="wrap_content"
                         android:layout_height="48dp"
                         android:background="@drawable/button_pill_destructive"
-                        android:backgroundTint="@null"
                         android:minWidth="0dp"
                         android:paddingStart="28dp"
                         android:paddingEnd="28dp"

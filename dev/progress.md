@@ -1146,116 +1146,116 @@ sufficient — no extra API call needed.
 
 ---
 
-## Phase 26: PENDING — Audio Passthrough (Configurable)
+## Phase 26: COMPLETE — Audio Passthrough (Configurable)
 
-### Background
+### What was built
 
-ExoPlayer's `DefaultAudioSink` uses `AudioCapabilities.DEFAULT_AUDIO_CAPABILITIES` by default,
-which assumes **no passthrough** is available. All encoded audio (AC3, EAC3) is decoded to PCM
-before reaching the Android audio mixer. This means connected AV receivers never receive a
-Dolby bitstream, even when the hardware chain supports it.
+A user-facing **Audio passthrough** toggle added to the About / Settings screen (PLAYBACK panel,
+below the existing video quality section). Persisted as `"audio_passthrough"` (Boolean) in
+`SharedPreferences("settings")`. Default: `false` (PCM decode, unchanged behaviour).
 
-Amazon's catalog format breakdown:
+#### Root cause addressed
 
-| Format | Used by Amazon | Fire TV 4K passthrough |
-|--------|---------------|------------------------|
-| AAC stereo/5.1 | All titles | Decoded (no passthrough for AAC) |
-| AC3 (Dolby Digital 5.1) | Yes | Yes — if receiver supports |
-| EAC3 (Dolby Digital Plus) | Yes (most HD/4K) | Yes — if receiver supports |
-| DTS | **No** | Capable, irrelevant for this app |
-| TrueHD / Atmos | No | N/A |
+`DefaultRenderersFactory` uses `AudioCapabilities.DEFAULT_AUDIO_CAPABILITIES` — a stub that
+always reports no passthrough support. All AC3/EAC3 audio was decoded to PCM before the Android
+audio mixer, so AV receivers never saw a Dolby bitstream even on capable hardware.
 
-DTS passthrough is therefore out of scope. The target is AC3 / EAC3 Dolby passthrough.
+Enabling passthrough overrides `buildAudioSink()` to inject a `DefaultAudioSink` built with
+`AudioCapabilities.getCapabilities(context)`, which queries real HDMI output capabilities at
+player-creation time.
 
-**Important system constraint**: Fire TV has a system-level "Dolby Digital Plus" toggle at
-Settings → Display & Sounds → Audio. If disabled there, `AudioCapabilities.getCapabilities()`
-already reports no passthrough support, so the app setting has no effect in that case. The app
-setting purely controls whether we *ask* ExoPlayer to use passthrough when the device permits it.
-
-### Goal
-
-Add a user-facing toggle **"Audio passthrough"** (on/off) in `AboutActivity` (Settings panel).
-Persisted in `SharedPreferences("settings")` under key `"audio_passthrough"` (default: `false`).
-
-When enabled, `PlayerActivity` builds `DefaultAudioSink` with
-`AudioCapabilities.getCapabilities(context)` so ExoPlayer can send encoded Dolby bitstreams to
-the HDMI output. When disabled (default), behaviour is unchanged (decoded PCM, volume rocker
-works normally).
-
-### UI — AboutActivity
-
-Add a new section below the Video Quality section:
-
-```
-┌─────────────────────────────────────────────┐
-│ Audio                                       │
-│ Passthrough  [ Off ]  [ On ]                │
-│                                             │
-│ Sends encoded Dolby audio directly to your  │
-│ AV receiver over HDMI. Requires a receiver  │
-│ that supports Dolby Digital. Volume control │
-│ moves to the receiver when enabled.         │
-│ Takes effect on next playback session.      │
-└─────────────────────────────────────────────┘
-```
-
-Buttons follow the same selected/unselected style as the quality buttons (`btn_quality_*`).
-
-**Pref key**: `"audio_passthrough"` (Boolean) in `SharedPreferences("settings", MODE_PRIVATE)`
-
-### PlayerActivity changes
-
-At player construction time (inside `buildPlayer()` / `setupPlayer()`), read the pref and
-conditionally override the audio sink:
-
-```kotlin
-val passthroughEnabled = getSharedPreferences("settings", MODE_PRIVATE)
-    .getBoolean("audio_passthrough", false)
-
-val renderersFactory = if (passthroughEnabled) {
-    object : DefaultRenderersFactory(this) {
-        override fun buildAudioSink(
-            context: Context,
-            enableFloatOutput: Boolean,
-            enableAudioTrackPlaybackParams: Boolean
-        ): AudioSink = DefaultAudioSink.Builder(context)
-            .setAudioCapabilities(AudioCapabilities.getCapabilities(context))
-            .setEnableFloatOutput(enableFloatOutput)
-            .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
-            .build()
-    }
-} else {
-    DefaultRenderersFactory(this)
-        .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF)
-}
-```
-
-Note: `AudioCapabilities.AUDIO_CAPABILITIES_CHANGED_ACTION` broadcast signals HDMI changes
-(e.g. user switches receiver input). Register a `BroadcastReceiver` in `onStart`/`onStop` that
-calls `releasePlayer()` + `buildPlayer()` so the sink is rebuilt with updated capabilities. Only
-needed when passthrough is enabled.
-
-### Volume rocker caveat
-
-When passthrough is active the Android audio stack is bypassed; the volume rocker does nothing.
-Show a one-time `Snackbar`/`Toast` on first passthrough playback session: *"Volume is now
-controlled by your AV receiver."* Use a separate pref key `"audio_passthrough_warned"` (Boolean)
-to gate the warning.
-
-### Files to change
+#### Files changed
 
 | File | Change |
 |------|--------|
-| `ui/AboutActivity.kt` | Add `setupAudioSection()`: two-button Off/On toggle wired to `"audio_passthrough"` pref |
-| `res/layout/activity_about.xml` | Add audio section card with Off/On buttons and description text |
-| `ui/PlayerActivity.kt` | Read pref; build passthrough `DefaultRenderersFactory` when enabled; register `AudioCapabilities` broadcast receiver |
+| `res/layout/activity_about.xml` | Added audio passthrough sub-section inside PLAYBACK panel: divider, title, `tv_passthrough_badge`, `tv_passthrough_support`, Off/On `AppCompatButton` row, `tv_passthrough_note` |
+| `ui/AboutActivity.kt` | `setupAudioPassthroughSection()` — queries live HDMI caps (`AudioCapabilities.getCapabilities`), sets badge (`AC3 + EAC3 capable` / `Passthrough unavailable`), disables/dims On button when output has no support, reads/saves pref, Toast on change |
+| `ui/PlayerActivity.kt` | Constants `PREF_AUDIO_PASSTHROUGH`, `PREF_AUDIO_PASSTHROUGH_WARNED` in companion object; `setupPlayer()` reads pref and builds passthrough `DefaultRenderersFactory` subclass overriding `buildAudioSink()`; one-time Toast warning gated by `PREF_AUDIO_PASSTHROUGH_WARNED` |
 
-### Pref key constants (add to a shared file or companion object)
+#### Key implementation detail
+
+`DefaultRenderersFactory` subclass (anonymous object) overrides `buildAudioSink()`:
 
 ```kotlin
-const val PREF_AUDIO_PASSTHROUGH = "audio_passthrough"
-const val PREF_AUDIO_PASSTHROUGH_WARNED = "audio_passthrough_warned"
+object : DefaultRenderersFactory(this) {
+    init { setExtensionRendererMode(EXTENSION_RENDERER_MODE_OFF) }
+    override fun buildAudioSink(
+        context: Context,
+        enableFloatOutput: Boolean,
+        enableAudioTrackPlaybackParams: Boolean
+    ): AudioSink = DefaultAudioSink.Builder(context)
+        .setAudioCapabilities(AudioCapabilities.getCapabilities(context))
+        .build()
+}
 ```
+
+#### System constraint
+
+Fire TV has a system-level "Dolby Digital Plus" toggle (Settings → Display & Sounds → Audio).
+If disabled there, `AudioCapabilities.getCapabilities()` reports no support and the On button
+is greyed out — the app setting has no effect beyond what the OS permits.
+
+#### API used (Media3 1.3.1 — no new dependency)
+
+- `DefaultRenderersFactory.buildAudioSink(Context, Boolean, Boolean)` — protected, overridden
+- `AudioCapabilities.getCapabilities(Context)` — live HDMI query
+- `AudioCapabilities.supportsEncoding(Int)` — badge check (`C.ENCODING_AC3` / `C.ENCODING_E_AC3`)
+- `DefaultAudioSink.Builder(Context).setAudioCapabilities(…).build()`
+
+---
+
+## Phase 26 post-fixes — Settings UX Polish
+
+### Search icon clipping fix
+
+**Problem:** The header search button in `activity_main.xml` used the literal emoji `🔍` as
+button text. On Fire TV / Android TV launchers and TV fonts, emoji glyph metrics rendered
+clipped or vertically off-center.
+
+**Fix:**
+- Replaced `<Button>` with `<ImageButton>` using `src=@drawable/ic_search`
+- Added `ic_search.xml` vector drawable (standard Material magnifier path)
+- `scaleType=centerInside`, `padding=10dp`, same `header_icon_button_background` and tint
+- `MainActivity.kt`: `btnSearchIcon` changed from `Button` to `ImageButton`
+- `strings.xml`: added `search_button_icon = "Open search"` for accessibility
+
+Icon now renders via vector paths — no dependency on font glyph metrics or emoji rendering.
+
+### Settings button state rendering fix (MaterialButton → AppCompatButton)
+
+**Problem:** The About screen PLAYBACK and ACTIONS buttons (`btn_quality_*`, `btn_passthrough_*`,
+`btn_sign_out`) showed identical appearance for focused and selected states despite different
+drawables being defined.
+
+**Root cause:** The app theme (`Theme.MaterialComponents.NoActionBar`) maps `<Button>` to
+`MaterialButton`, which applies its own `colorPrimary` (`#00A8E0`) tint via the Material tint
+system on top of the background drawable. Setting `android:backgroundTint="@null"` alone does
+not disable the Material-namespace `app:backgroundTint`, so the drawable state-list was being
+overridden for all interactive states.
+
+**Fix:** Changed all six option buttons in `activity_about.xml` to
+`<androidx.appcompat.widget.AppCompatButton>`. `AppCompatButton` does not participate in the
+Material tint system and uses `android:background` as the sole styling authority, allowing the
+state-list drawable (`settings_quality_option_background.xml`) to fully control appearance.
+
+**State-list redesign (same file):**
+
+| State | Fill | Border | Text | Meaning |
+|---|---|---|---|---|
+| Rest | `#0E1820` near-black | 1dp `#1D2D36` | `#6E8590` muted | inactive |
+| Selected | `#1B7A9E` vivid teal | 2dp `#2DC8EC` | `#FFFFFF` | active setting |
+| Focused | `#131F28` dark | 3dp `#5BCCE6` | `#FFFFFF` | cursor ring |
+| Focused + Selected | `#4FC0DF` bright teal | 3dp `#FFFFFF` | `#061117` | active + cursor |
+| Disabled | `#0C1318` | 1dp `#172028` | `#3D5260` | unavailable |
+
+### D-pad focus navigation fix
+
+`btn_passthrough_off` and `btn_passthrough_on` had `nextFocusUp="@id/btn_about_back"` (copied
+from the quality buttons), causing Up from the passthrough row to jump to the page Back button
+instead of the quality row above it.
+
+**Fix:** `btn_passthrough_off` → `nextFocusUp="@id/btn_quality_hd"` (left-aligned),
+`btn_passthrough_on` → `nextFocusUp="@id/btn_quality_uhd"` (right-aligned).
 
 ---
 

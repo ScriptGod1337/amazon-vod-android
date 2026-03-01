@@ -384,3 +384,72 @@ listener. The overlay is visible if and only if `exo_controller` is visible.
 
 **Files**: `PlayerActivity.kt` (`syncTrackButtonsRunnable`, `hideTrackButtonsRunnable`,
 `controllerView`, updated `ControllerVisibilityListener`, updated `onKeyDown`).
+
+---
+
+## Decision 19: AppCompatButton over MaterialButton for drawable state-list buttons
+
+**Date**: Phase 26 post-fix
+
+**Problem**: Settings buttons (`btn_quality_*`, `btn_passthrough_*`, `btn_sign_out`) in
+`activity_about.xml` used `<Button>`, which maps to `MaterialButton` under
+`Theme.MaterialComponents`. `MaterialButton` applies its own `colorPrimary` (`#00A8E0`) tint
+via the Material tint system on top of the background drawable regardless of
+`android:backgroundTint="@null"`. Only `app:backgroundTint="@null"` (the Material-namespace
+attribute) disables it, but even then Material rebuilds its own shaped background. The result:
+all interactive states (rest, focused, selected) appeared identically teal because the drawable
+state-list was being overridden.
+
+**Decision**: Use `<androidx.appcompat.widget.AppCompatButton>` for all buttons in `AboutActivity`
+that are styled exclusively via `android:background` + a state-list drawable.
+`AppCompatButton` does not participate in the Material tint system; `android:background` is the
+sole styling authority, and `state_selected` / `state_focused` in the drawable are respected
+correctly.
+
+**Rule for future**: Any button requiring full drawable state-list control in a
+`Theme.MaterialComponents` app must use `AppCompatButton` (or explicitly suppress Material's
+background via `style="@style/Widget.AppCompat.Button"` on the `<Button>` element).
+
+---
+
+## Decision 20: Audio passthrough via DefaultRenderersFactory.buildAudioSink() override
+
+**Date**: Phase 26
+
+**Problem**: `DefaultRenderersFactory` defaults to `AudioCapabilities.DEFAULT_AUDIO_CAPABILITIES`
+(a stub reporting no passthrough). All AC3/EAC3 was decoded to PCM — AV receivers never
+received a Dolby bitstream.
+
+**Decision**: When passthrough is enabled (pref `"audio_passthrough"`), create an anonymous
+`DefaultRenderersFactory` subclass that overrides `buildAudioSink()` to return a
+`DefaultAudioSink` built with `AudioCapabilities.getCapabilities(context)` (live HDMI query).
+No new dependency — all APIs are in Media3 1.3.1.
+
+The pref is read inside `setupPlayer()` at player-creation time (not cached at activity start)
+so that a pref change between sessions takes effect without restarting the activity.
+
+A one-time Toast warning ("volume is controlled by your AV receiver") is gated by a second pref
+`"audio_passthrough_warned"` so it fires only on the first passthrough-enabled playback.
+
+**Scope**: AC3 and EAC3 only (the formats Amazon uses). DTS is not in scope (Amazon does not
+use DTS in its catalog).
+
+**System dependency**: Fire TV's system-level "Dolby Digital Plus" toggle
+(Settings → Display & Sounds → Audio) gates what `AudioCapabilities.getCapabilities()` reports.
+If the system toggle is off, `getCapabilities()` returns no support and the app's On button is
+greyed out — the app setting cannot override the OS-level restriction.
+
+---
+
+## Decision 21: Vector drawable for header search icon (no emoji text)
+
+**Date**: Phase 26 post-fix
+
+**Problem**: The search button in `activity_main.xml` used the emoji `🔍` as button text.
+On Fire TV and Android TV, emoji glyph metrics vary by font renderer and can render clipped
+or vertically off-center inside a fixed-height button, producing a visually broken icon.
+
+**Decision**: Replace the `<Button>` with an `<ImageButton>` and a dedicated
+`ic_search.xml` vector drawable (standard Material magnifier path). `scaleType=centerInside`
+with explicit padding keeps the icon centred and unclipped at TV scale. Vector paths render
+independently of font metrics and emoji availability.

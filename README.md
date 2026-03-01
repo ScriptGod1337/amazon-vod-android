@@ -22,6 +22,7 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 - **Audio & subtitle track selection** during playback — labels sourced from Amazon's API metadata for correct display names, Audio Description tagging, and family grouping (main / AD / Dialogue Boost); channel layout suffix shown (`2.0`, `5.1`, `7.1`); MENU key or pause shows controls; overlay follows Media3 controller visibility exactly with no flicker
 - **Video format label** in player overlay — shows active codec, resolution, and HDR status (e.g. `720p · H265 · SDR`, `4K · H265 · HDR10`), updated live as ABR ramps up
 - **Video quality selection** in About screen — choose between HD H264 (720p), H265 (720p SDR), or 4K/DV HDR; device capability checks disable unavailable options; H265 fallback to H264 on CDN error
+- **Audio passthrough toggle** in About screen — Off (default, PCM decode) / On (sends encoded AC3/EAC3 Dolby bitstream directly to AV receiver over HDMI); live HDMI capability badge shows supported formats; On button disabled when device output does not report passthrough support; one-time volume warning on first passthrough session
 - **Seekbar seeking** — D-pad left/right seeks ±10 seconds per press (hold to repeat), matching standard Fire TV remote behaviour
 - **Watch progress tracking** via UpdateStream API (START/PLAY/PAUSE/STOP)
 - **Resume from last position** — automatically seeks to where you left off
@@ -54,7 +55,7 @@ com.scriptgod.fireos.avod
  +-- ui/
      +-- LoginActivity.kt          Amazon login: email/password + MFA, PKCE OAuth, device registration
      +-- MainActivity.kt           Home screen: rails or grid, search, nav, filters, pagination
-     +-- AboutActivity.kt          App info, video quality setting, Sign Out
+     +-- AboutActivity.kt          App info, video quality + audio passthrough settings, Sign Out
      +-- DetailActivity.kt         Content overview: hero image, metadata, IMDb, trailer, play/browse buttons
      +-- BrowseActivity.kt         Series detail: seasons / episodes grid
      +-- PlayerActivity.kt         ExoPlayer with DASH + Widevine DRM, track selection, resume

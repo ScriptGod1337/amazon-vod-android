@@ -1,8 +1,10 @@
 package com.scriptgod.fireos.avod.ui
 
 import android.app.AlertDialog
+import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.widget.Toast
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
@@ -23,6 +25,9 @@ import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.audio.AudioCapabilities
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
@@ -66,6 +71,9 @@ class PlayerActivity : AppCompatActivity() {
 
         // Widevine UUID
         private val WIDEVINE_UUID = UUID.fromString("edef8ba9-79d6-4ace-a3c8-27dcd51d21ed")
+
+        private const val PREF_AUDIO_PASSTHROUGH        = "audio_passthrough"
+        private const val PREF_AUDIO_PASSTHROUGH_WARNED = "audio_passthrough_warned"
 
     }
 
@@ -316,8 +324,24 @@ class PlayerActivity : AppCompatActivity() {
             .setMultiSession(false)
             .build(licenseCallback)
 
-        val renderersFactory = DefaultRenderersFactory(this)
-            .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF)
+        val passthroughEnabled = getSharedPreferences("settings", MODE_PRIVATE)
+            .getBoolean(PREF_AUDIO_PASSTHROUGH, false)
+
+        val renderersFactory = if (passthroughEnabled) {
+            object : DefaultRenderersFactory(this) {
+                init { setExtensionRendererMode(EXTENSION_RENDERER_MODE_OFF) }
+                override fun buildAudioSink(
+                    context: Context,
+                    enableFloatOutput: Boolean,
+                    enableAudioTrackPlaybackParams: Boolean
+                ): AudioSink = DefaultAudioSink.Builder(context)
+                    .setAudioCapabilities(AudioCapabilities.getCapabilities(context))
+                    .build()
+            }
+        } else {
+            DefaultRenderersFactory(this)
+                .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF)
+        }
 
         val dataSourceFactory = androidx.media3.datasource.okhttp.OkHttpDataSource.Factory(
             authService.buildAuthenticatedClient()
@@ -374,6 +398,17 @@ class PlayerActivity : AppCompatActivity() {
                     resumeSeeked = true
                 }
                 exoPlayer.playWhenReady = true
+                if (passthroughEnabled) {
+                    val settingsPrefs = getSharedPreferences("settings", MODE_PRIVATE)
+                    if (!settingsPrefs.getBoolean(PREF_AUDIO_PASSTHROUGH_WARNED, false)) {
+                        settingsPrefs.edit().putBoolean(PREF_AUDIO_PASSTHROUGH_WARNED, true).apply()
+                        Toast.makeText(
+                            this@PlayerActivity,
+                            "Audio passthrough on — volume is controlled by your AV receiver",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
             }
 
         progressBar.visibility = View.GONE

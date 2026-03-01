@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_enabled="false" android:color="#5D6B73" />
-    <item android:state_focused="true" android:state_selected="true" android:color="#061117" />
-    <item android:state_selected="true" android:color="#E6F5FA" />
-    <item android:state_focused="true" android:color="#FFFFFF" />
-    <item android:color="#C3D1D8" />
+    <item android:state_enabled="false"                                         android:color="#3D5260" />
+    <!-- Focused + selected: dark text on bright fill -->
+    <item android:state_focused="true" android:state_selected="true"           android:color="#061117" />
+    <!-- Selected: white on vivid teal fill -->
+    <item android:state_selected="true"                                         android:color="#FFFFFF" />
+    <!-- Focused: white on near-black -->
+    <item android:state_focused="true"                                          android:color="#FFFFFF" />
+    <!-- Rest: muted -->
+    <item                                                                       android:color="#6E8590" />
 </selector>
