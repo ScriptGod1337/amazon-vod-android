@@ -688,6 +688,8 @@ class MainActivity : AppCompatActivity() {
             putExtra(DetailActivity.EXTRA_IS_PRIME, item.isPrime)
             putExtra(DetailActivity.EXTRA_RESUME_MS,
                 (watchlistProgress[item.asin]?.first ?: item.watchProgressMs).coerceAtLeast(0L))
+            putExtra(DetailActivity.EXTRA_PROGRESS_MAP,
+                HashMap(watchlistProgress.mapValues { it.value.first }))
             putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
         }
         UiTransitions.open(this, intent)

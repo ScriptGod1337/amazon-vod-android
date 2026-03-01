@@ -35,6 +35,7 @@ class BrowseActivity : AppCompatActivity() {
         const val EXTRA_FILTER = "extra_filter"  // "seasons" or "episodes"
         const val EXTRA_IMAGE_URL = "extra_image_url"  // fallback image for child items
         const val EXTRA_WATCHLIST_ASINS = "extra_watchlist_asins"
+        const val EXTRA_PROGRESS_MAP = "extra_progress_map"
     }
 
     private lateinit var recyclerView: RecyclerView
@@ -53,6 +54,7 @@ class BrowseActivity : AppCompatActivity() {
     private lateinit var adapter: ContentAdapter
     private var parentImageUrl: String = ""
     private var watchlistAsins: MutableSet<String> = mutableSetOf()
+    private var serverProgressMap: HashMap<String, Long> = hashMapOf()
     private var preferHeaderFocus: Boolean = false
     private var currentFilter: String? = null
 
@@ -79,6 +81,8 @@ class BrowseActivity : AppCompatActivity() {
         apiService = AmazonApiService(authService)
 
         watchlistAsins = (intent.getStringArrayListExtra(EXTRA_WATCHLIST_ASINS) ?: ArrayList()).toMutableSet()
+        @Suppress("UNCHECKED_CAST")
+        serverProgressMap = (intent.getSerializableExtra(EXTRA_PROGRESS_MAP) as? HashMap<String, Long>) ?: hashMapOf()
 
         shimmerRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         shimmerRecyclerView.adapter = ShimmerAdapter()
@@ -155,9 +159,10 @@ class BrowseActivity : AppCompatActivity() {
                     tvCountChip.text = "0 Items"
                 } else {
                     recyclerView.visibility = View.VISIBLE
-                    val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
-                    val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
-                    val withProgress = withImages.map { it.copy(watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs) }
+                    val withProgress = withImages.map { item ->
+                        val serverMs = serverProgressMap[item.asin]
+                        if (serverMs != null && serverMs > 0L) item.copy(watchProgressMs = serverMs) else item
+                    }
                     val withWatchlist = withProgress.map { it.copy(isInWatchlist = watchlistAsins.contains(it.asin)) }
                     adapter.submitList(withWatchlist)
                     val itemLabel = if (withWatchlist.size == 1) "1 Item" else "${withWatchlist.size} Items"
@@ -267,15 +272,9 @@ class BrowseActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Refresh watch progress on cards when returning from player
         val currentList = adapter.currentList
         if (currentList.isNotEmpty()) {
-            val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
-            val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
-            val updated = currentList.map { it.copy(
-            watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs,
-            isInWatchlist = watchlistAsins.contains(it.asin)
-        ) }
+            val updated = currentList.map { it.copy(isInWatchlist = watchlistAsins.contains(it.asin)) }
             adapter.submitList(updated)
         }
         recyclerView.post {
@@ -371,6 +370,7 @@ class BrowseActivity : AppCompatActivity() {
                         putExtra(EXTRA_FILTER, "episodes")
                         putExtra(EXTRA_IMAGE_URL, item.imageUrl.ifEmpty { parentImageUrl })
                         putStringArrayListExtra(EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
+                        putExtra(EXTRA_PROGRESS_MAP, serverProgressMap)
                     }
                 } else {
                     Intent(this, DetailActivity::class.java).apply {
@@ -380,6 +380,7 @@ class BrowseActivity : AppCompatActivity() {
                         putExtra(DetailActivity.EXTRA_IMAGE_URL, item.imageUrl.ifEmpty { parentImageUrl })
                         putExtra(DetailActivity.EXTRA_IS_PRIME, item.isPrime)
                         putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
+                        putExtra(DetailActivity.EXTRA_PROGRESS_MAP, serverProgressMap)
                     }
                 }
                 UiTransitions.open(this, intent)
