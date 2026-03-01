@@ -152,11 +152,11 @@ class DetailActivity : AppCompatActivity() {
         tvDetailSupport.text = UiMetadataFormatter.detailSupportLine(info)
 
         if (isItemPrime) {
-            tvPrimeBadge.text = "\u2713 Prime"
+            tvPrimeBadge.text = "\u2713 Included with Prime"
             tvPrimeBadge.setTextColor(Color.parseColor("#2DC8E0"))
         } else {
-            tvPrimeBadge.text = "Not Prime"
-            tvPrimeBadge.setTextColor(Color.parseColor("#5C7A86"))
+            tvPrimeBadge.text = "\u2715 Not included with Prime"
+            tvPrimeBadge.setTextColor(Color.parseColor("#8FA8B4"))
         }
         tvPrimeBadge.visibility = View.VISIBLE
 
