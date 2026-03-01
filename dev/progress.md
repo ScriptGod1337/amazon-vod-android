@@ -1439,7 +1439,7 @@ Smali analysis of the decompiled Prime Video APK (`ContinueWatchingCarouselProvi
 
 ### Changes
 
-- **`AmazonApiService.getWatchlistData()`**: returns a `Triple<Set<String>, Map<String, Pair<Long,Long>>, List<ContentItem>>` — the third element is `watchlistInProgressItems` (movies/series with server-confirmed watch progress). Also calls `getHomePage()` to supplement `progressMap` for non-watchlist items.
+- **`AmazonApiService.getWatchlistData()`**: returns a `Triple<Set<String>, Map<String, Pair<Long,Long>>, List<ContentItem>>` — the third element is `watchlistInProgressItems` (movies/series with server-confirmed watch progress). Also calls `getHomePage()` to supplement `progressMap` for non-watchlist items (including in-progress episodes from the v1 home page).
 - **`ContentItemParser.kt`**: fixed `ClassCastException` — `getAsJsonArray("entitlementMessageSlotCompact")` crashed on `JsonNull` fields; replaced with `safeArray()`.
 - **`MainActivity.kt`**:
   - Added `watchlistInProgressItems: List<ContentItem>` field
@@ -1457,4 +1457,146 @@ Smali analysis of the decompiled Prime Video APK (`ContinueWatchingCarouselProvi
 - Source/type filters do not hide the CW row
 - Progress bars render correctly on all cards including position 0 (first item)
 - **Decision 23** added to `decisions.md`
+
+---
+
+## Phase 29 post-fixes — Server-sourced resume position
+
+### Motivation
+
+The player stability pass (pre-Phase 29) had added local `SharedPreferences("resume_positions")`
+writes to `PlayerActivity` — periodic saves every 30 s via `resumeProgressRunnable`, forced saves
+on pause/stop/seek/error — so that resume position persisted across cold starts. This duplicated
+the server's own position tracking (UpdateStream / PES V2 heartbeats already report position
+continuously) and used a different storage path from the `watchlistProgress` map that drives
+progress bars and the Continue Watching row: a title watched partially via local storage would
+show no progress bar on the home screen until the watchlist API was re-queried.
+
+`BrowseActivity` also had two local reads that were missed in the initial removal.
+
+### Approach
+
+Remove all local resume storage from `PlayerActivity` and `BrowseActivity`. Resume position is
+now passed by callers via intent extras sourced from the server `watchlistProgress` map.
+The existing `UpdateStream` + PES V2 heartbeat logic (START/PLAY/PAUSE/STOP) that reports
+position to the server is fully intact; `remainingTimeInSeconds` in the watchlist API reflects
+the last reported position after a session.
+
+The v1 home page supplement in `getWatchlistData()` already covers **episodes**: Amazon's watchlist
+API skips episode-level items, but in-progress episodes appear in the v1 landing page with
+`remainingTimeInSeconds > 0` and are merged into `watchlistProgress` at startup.
+
+### Changes
+
+**`PlayerActivity.kt`**:
+- Removed fields: `resumePrefs`, `lastResumeSaveElapsedMs`, `resumeProgressRunnable`
+- Removed methods: `persistPlaybackProgress()`, `saveResumePosition()`, `startResumeProgressUpdates()`, `stopResumeProgressUpdates()`
+- Removed ~12 call sites across `playerListener`, `startStreamReporting`, `stopStreamReporting`, `onPause`, `onStop`, `onDestroy`
+- Added `h265FallbackPositionMs: Long` — holds live position when H265 CDN returns 400; player restart uses this over the intent extra and resets it to 0 after use
+- `setupPlayer()` reads resume from `intent.getLongExtra(EXTRA_RESUME_MS, 0L)`
+- Added `EXTRA_RESUME_MS = "extra_resume_ms"` constant
+- **Server-side UpdateStream / PES V2 reporting unchanged**
+
+**Intent chain for resume position (`EXTRA_RESUME_MS`)**:
+
+| Caller | Value | Destination |
+|--------|-------|-------------|
+| `MainActivity.onItemSelected()` | `watchlistProgress[asin]?.first ?: item.watchProgressMs` | `DetailActivity` |
+| `DetailActivity.onPlayClicked()` | `serverResumeMs` (from own intent) | `PlayerActivity` |
+| `BrowseActivity` episode play | `item.watchProgressMs` | `PlayerActivity` |
+
+**`BrowseActivity.kt`**:
+- Removed both local `SharedPreferences("resume_positions")` reads (initial load + `onResume`)
+- Added `EXTRA_PROGRESS_MAP` — receives `HashMap<String, Long>` (ASIN → progressMs) from callers
+- Initial load merges `serverProgressMap` into episode items
+- `onResume` after player return: refreshes watchlist star state only (no local progress update)
+
+**`DetailActivity.kt`**:
+- Added `EXTRA_RESUME_MS` and `EXTRA_PROGRESS_MAP` constants
+- Reads both from intent; forwards `EXTRA_PROGRESS_MAP` to both BrowseActivity launches
+
+**`MainActivity.kt`**:
+- Passes `HashMap(watchlistProgress.mapValues { it.value.first })` as `DetailActivity.EXTRA_PROGRESS_MAP`
+
+### Resume support matrix (current)
+
+| Scenario | Resume works? |
+|---|---|
+| Movie or series in watchlist | ✓ server `remainingTimeInSeconds` |
+| Episode (series in watchlist) | ✓ v1 home page supplement |
+| Title not in watchlist | ✗ no server data, no local fallback (→ Phase 30) |
+| H265 CDN fallback (H264 restart) | ✓ `h265FallbackPositionMs` instance variable |
+| Trailer | ✗ always starts from 0 |
+
+### Commits
+
+- `2aa4638` — `refactor: replace local resume-position SharedPreferences with server-sourced intent extra`
+- `ad55485` — `fix: remove local SharedPreferences resume reads from BrowseActivity, use server progress`
+
+---
+
+## Phase 30: PENDING — Centralized Progress Repository
+
+### Goal
+
+Replace the current ad-hoc intent-chain approach (passing `EXTRA_RESUME_MS` / `EXTRA_PROGRESS_MAP`
+through 3 activities) with a single `ProgressRepository` that any screen can read and write.
+Covers all content types (movies, series, episodes) and all entry points (home rails, watchlist,
+library, browse, detail, player).
+
+### Requirements
+
+1. **Primary source: server** — on app start, `ProgressRepository.refresh()` calls
+   `getWatchlistData()` and populates an in-memory map (ASIN → progressMs, runtimeMs).
+2. **Fallback: local** — when server data is absent (offline, not in watchlist), a local
+   `SharedPreferences("progress_cache")` store is used. This re-adds the local fallback removed
+   in Phase 29, but in a single controlled location.
+3. **Live updates during playback** — `PlayerActivity` calls `ProgressRepository.update(asin, posMs, durMs)`
+   on each heartbeat tick AND on pause/stop. This writes to the local cache immediately, so
+   returning to any screen shows the updated progress bar without a server round-trip.
+4. **Consistent read API** — all screens call `ProgressRepository.get(asin)` instead of:
+   - `watchlistProgress[asin]?.first` (MainActivity)
+   - `item.watchProgressMs` (BrowseActivity)
+   - `EXTRA_RESUME_MS` from intent (PlayerActivity)
+5. **Trailer isolation** — `update()` is a no-op when `materialType == "Trailer"`.
+6. **Lifecycle** — repository is scoped to the Application (or a `ViewModel` shared across the
+   back stack). Not tied to any single Activity lifecycle.
+
+### Design
+
+```
+ProgressRepository  (singleton, Application-scoped)
+  + progressMap: MutableMap<String, Pair<Long, Long>>   // in-memory, ASIN → (posMs, durMs)
+  + refresh()   // IO — calls getWatchlistData(), repopulates map, writes local cache
+  + update(asin, posMs, durMs)  // main/IO — writes map + local cache
+  + get(asin): Pair<Long, Long>?  // sync — returns in-memory value (server merged with local)
+  - prefs: SharedPreferences("progress_cache")
+```
+
+### Files to create / change
+
+| File | Change |
+|------|--------|
+| `data/ProgressRepository.kt` | New singleton — holds map, refresh(), update(), get() |
+| `ui/PlayerActivity.kt` | Call `ProgressRepository.update()` on heartbeat + pause + stop; read `ProgressRepository.get(asin)` for initial resume position instead of intent extra |
+| `ui/MainActivity.kt` | Call `ProgressRepository.get(asin)` when building rail items / CW row instead of `watchlistProgress` |
+| `ui/BrowseActivity.kt` | Read from `ProgressRepository.get(asin)` for episode progress — no more `EXTRA_PROGRESS_MAP` |
+| `ui/DetailActivity.kt` | Remove `EXTRA_RESUME_MS` / `EXTRA_PROGRESS_MAP` pass-through |
+| `api/AmazonApiService.kt` | `getWatchlistData()` result feeds into `ProgressRepository.refresh()` |
+
+### Simplifications enabled
+
+- `EXTRA_RESUME_MS` and `EXTRA_PROGRESS_MAP` intent extras can be removed entirely
+- `watchlistProgress` field in `MainActivity` can be replaced by direct `ProgressRepository` reads
+- `BrowseActivity.onResume()` can re-read progress from repository after returning from player,
+  so progress bars update immediately (currently they are static from launch time)
+- `serverResumeMs` / `serverProgressMap` fields in `DetailActivity` and `BrowseActivity` removed
+
+### Definition of done
+
+- All local `SharedPreferences("resume_positions")` references gone (already done)
+- `ProgressRepository` is the single source of truth for all ASIN progress
+- Progress bars on BrowseActivity episode cards update after returning from player without a
+  server refresh
+- Non-watchlist titles resume from last local position after the next heartbeat write
 

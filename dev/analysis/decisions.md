@@ -532,3 +532,38 @@ causing a brief empty frame before items appeared. Fix: store `contentAdapter` i
 and reuse it when `presentation` is unchanged — only call `submitList` with the updated list.
 Also added `getItemViewType()` override to `ContentAdapter` (returns `presentation.ordinal`) to
 prevent cross-presentation pool contamination via the shared `RecycledViewPool`.
+
+---
+
+## Decision 24: Server-sourced resume position via intent chain; local fallback deferred to Phase 30
+
+**Date**: Phase 29 post-fixes
+
+**Problem**: `PlayerActivity` persisted resume positions locally in `SharedPreferences("resume_positions")` via `resumeProgressRunnable` (30 s periodic), forced saves on pause/stop/seek/error. This created two independent progress storage paths: local prefs (read by the player for resume) vs. server `watchlistProgress` (read by the home screen for progress bars and the CW row). A title watched via this app would not show an updated progress bar on the home screen until the watchlist API was re-queried, and a user relying on the server position via the official app would not get resume if local prefs had no entry.
+
+**Decision**: Remove all local `SharedPreferences("resume_positions")` writes from `PlayerActivity`. Resume position is passed to the player via `EXTRA_RESUME_MS` (Long ms) sourced from the server `watchlistProgress` map. The server is kept up to date by the existing `UpdateStream` / PES V2 heartbeat calls (already in `PlayerActivity`); `remainingTimeInSeconds` on the watchlist API reflects the last reported position.
+
+**Episode resume**: Amazon's watchlist API skips episode-level items. However, `getWatchlistData()` calls `getHomePage()` as a supplement — in-progress episodes appear in the v1 home page with `remainingTimeInSeconds > 0`. These ASIN entries are merged into `watchlistProgress` at startup and flow through the intent chain.
+
+**Intent chain** (no Activity has to query the repository itself):
+```
+MainActivity.watchlistProgress
+  → DetailActivity.EXTRA_RESUME_MS + EXTRA_PROGRESS_MAP
+    → PlayerActivity.EXTRA_RESUME_MS          (play)
+    → BrowseActivity.EXTRA_PROGRESS_MAP       (browse episodes)
+      → PlayerActivity.EXTRA_RESUME_MS        (episode play)
+```
+
+**H265 fallback**: When the H265 CDN returns HTTP 400 and the player restarts with H264, the live
+position is saved in `h265FallbackPositionMs` (instance variable, not prefs). `setupPlayer()` uses
+this over the intent extra and resets it to 0 after use.
+
+**Limitation accepted**: Titles not in the watchlist have no server progress entry and therefore
+no resume after this change. Local fallback will be re-added in Phase 30 via a centralized
+`ProgressRepository` that writes to local cache on every heartbeat and merges server + local data
+at read time.
+
+**Why not implement Phase 30 immediately**: The intent chain is a working, testable intermediate
+state. Phase 30 requires an Application-scoped singleton and changes to how `MainActivity`,
+`DetailActivity`, and `BrowseActivity` receive progress data — a broader refactor better done as
+its own phase after the current approach is validated on-device.

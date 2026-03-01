@@ -128,27 +128,27 @@ system service via a hidden MediaSession proxy on Fire OS. Not implemented.
 See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history and upcoming work.
 
 **Recently completed:**
-- **Phase 24** — Home rail source filter: Prime / All chips now work on home carousels; Featured
-  rail Prime false negatives fixed (hero items use `ENTITLED_ICON` + `"prime"` text check in
-  `messagePresentationModel` — ENTITLED_ICON alone is insufficient as it is also used for channel
-  subscriptions)
-- **Phase 25** — Player overlay sync: overlay now tracks Media3 controller visibility exactly via
-  `syncTrackButtonsRunnable`; audio track metadata sourced from Amazon APIs for accurate labels, AD
-  tagging, and channel layout suffixes; native ExoPlayer subtitle/settings buttons suppressed
-- **Fix** — Prime badge on detail page: `"✓ Included with Prime"` / `"✗ Not included with Prime"`
-  shown on every detail screen; uses `badges.prime` from ATF v3 detail API (authoritative, not the
-  unreliable catalog-level `showPrimeEmblem`)
-- **Fix** — Watchlist star state now survives navigation back to the All Seasons browse grid;
-  `BrowseActivity.onResume()` refreshes `isInWatchlist` from the in-memory `watchlistAsins` set
-- **Phase 22** — Full UI redesign: animated focus ring + glow, shimmer skeleton loading, page
-  fade/slide transitions, pill nav bar, four card variants, gradient player overlay, watchlist
-  action overlay, `UiMetadataFormatter`, `ContentItemParser` (with unit tests)
-- **Phase 23** — Content overview / detail page (`DetailActivity`) — hero image, poster, IMDb rating, genres, synopsis, Play/Trailer/Browse/Watchlist buttons; All Seasons button for quick season switching; trailer playback via `videoMaterialType=Trailer`
-- **Phase 21** — AI code review (10 warnings, 0 critical); all warnings fixed — lifecycle leaks, password hygiene, header scoping, CI keystore cleanup, monotonic versionCode, server-order preservation
+- **Phase 29** — Continue Watching row: first rail on the home screen built from server-side
+  watchlist progress; amber progress bars + remaining-time subtitles; hero strip overrides to
+  progress meta; bypasses source/type filters; `RailsAdapter` adapter-reuse fix eliminates
+  first-item flicker; pool contamination fix in `ContentAdapter`
+- **Phase 29 post-fixes** — Server-sourced resume position: removed all local
+  `SharedPreferences("resume_positions")` writes from `PlayerActivity` and `BrowseActivity`;
+  resume position now flows from server `watchlistProgress` via `EXTRA_RESUME_MS` /
+  `EXTRA_PROGRESS_MAP` intent extras; server-side `UpdateStream` / PES V2 heartbeats unchanged;
+  episode resume works via the v1 home-page supplement in `getWatchlistData()`
+- **Phase 28** — Widevine L3/SD fallback: emulator playback enabled; L3 device detected at
+  player-creation time and forced to SD quality (mirrors official APK `ConfigurablePlaybackSupportEvaluator`)
+- **Phase 27** — AI code review (5 warnings + 4 info); all findings fixed — keep-screen-on flags,
+  seek recovery via `onPositionDiscontinuity` + `onRenderedFirstFrame`, `h265FallbackAttempted`
+  reset, `SharedPreferences` key hygiene, AppCompatButton consistency
+- **Phase 26** — Configurable audio passthrough: Off (PCM decode) / On (AC3/EAC3 Dolby bitstream
+  to AV receiver); live HDMI capability badge; `DefaultRenderersFactory.buildAudioSink()` override
 
 **Next up:**
-- **Phase 26** — Configurable audio passthrough (Dolby AC3/EAC3 to AV receiver)
-- **Phase 27** — AI code review (all code added since Phase 21)
+- **Phase 30** — Centralized `ProgressRepository`: single source of truth for all ASIN progress;
+  primary server, fallback local cache; updated on every heartbeat tick so progress bars refresh
+  immediately after returning from the player; eliminates the intent-chain extras added in Phase 29
 
 ## Requirements
 
