@@ -4,6 +4,19 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.03.01.5] - 2026-03-01
+
+### Fixed (Phase 27 review findings)
+- Search query value no longer logged — log shows character count only (privacy)
+- `LoginActivity`: removed raw auth response body from logcat; token file write moved to `Dispatchers.IO` (was blocking main thread)
+- `DetailActivity`: ASIN extra blank-checked before use; error message includes ASIN in log and clearer user-facing text
+- `UiMotion.revealFresh`: no longer hard-resets alpha on already-visible views — eliminates flash when the same view is re-revealed
+- `ContentAdapter`: `scaleX`, `scaleY`, `elevation` reset in `onBindViewHolder` and `onViewRecycled` — recycled cards can no longer appear permanently oversized after fast scrolling
+- `ShimmerAdapter`: shimmer stopped in `onViewRecycled` as well as `onViewDetachedFromWindow`
+- `AboutActivity`: `PREF_AUDIO_PASSTHROUGH` constant added (was inline string literal); `save(true)` guarded by `supportsAny` so pref cannot be written `true` on unsupported outputs
+- `PlayerActivity`: `loadAndPlay()` cancels previous `playbackJob` before launching a new one, preventing stale in-flight coroutines on H265 fallback; `widevineSecurityLevel()` now distinguishes `UnsupportedSchemeException` (expected, `W`) from unexpected `MediaDrm` failures (`E`)
+- `activity_about.xml`: `btn_about_back` converted to `AppCompatButton` for drawable state-list consistency
+
 ## [2026.03.01.4] - 2026-03-01
 
 ### Added
