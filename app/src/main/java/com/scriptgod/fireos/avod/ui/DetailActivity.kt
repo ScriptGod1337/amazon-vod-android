@@ -31,6 +31,7 @@ class DetailActivity : AppCompatActivity() {
         const val EXTRA_IMAGE_URL = "extra_image_url"
         const val EXTRA_WATCHLIST_ASINS = "extra_watchlist_asins"
         const val EXTRA_IS_PRIME = "extra_is_prime"
+        const val EXTRA_RESUME_MS = "extra_resume_ms"
     }
 
     private lateinit var layoutContent: View
@@ -61,6 +62,7 @@ class DetailActivity : AppCompatActivity() {
     private var fallbackImageUrl: String = ""
     private var detailInfo: DetailInfo? = null
     private var isItemPrime: Boolean = false
+    private var serverResumeMs: Long = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,6 +99,7 @@ class DetailActivity : AppCompatActivity() {
         fallbackImageUrl = intent.getStringExtra(EXTRA_IMAGE_URL) ?: ""
         watchlistAsins = (intent.getStringArrayListExtra(EXTRA_WATCHLIST_ASINS) ?: ArrayList()).toMutableSet()
         isItemPrime = intent.getBooleanExtra(EXTRA_IS_PRIME, false)
+        serverResumeMs = intent.getLongExtra(EXTRA_RESUME_MS, 0L).coerceAtLeast(0L)
 
         tvTitle.text = intent.getStringExtra(EXTRA_TITLE) ?: ""
 
@@ -298,6 +301,7 @@ class DetailActivity : AppCompatActivity() {
             putExtra(PlayerActivity.EXTRA_ASIN, info.asin)
             putExtra(PlayerActivity.EXTRA_TITLE, info.title)
             putExtra(PlayerActivity.EXTRA_CONTENT_TYPE, info.contentType)
+            putExtra(PlayerActivity.EXTRA_RESUME_MS, serverResumeMs)
         }
         UiTransitions.open(this, intent)
     }

@@ -686,6 +686,8 @@ class MainActivity : AppCompatActivity() {
             putExtra(DetailActivity.EXTRA_CONTENT_TYPE, item.contentType)
             putExtra(DetailActivity.EXTRA_IMAGE_URL, item.imageUrl)
             putExtra(DetailActivity.EXTRA_IS_PRIME, item.isPrime)
+            putExtra(DetailActivity.EXTRA_RESUME_MS,
+                (watchlistProgress[item.asin]?.first ?: item.watchProgressMs).coerceAtLeast(0L))
             putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
         }
         UiTransitions.open(this, intent)

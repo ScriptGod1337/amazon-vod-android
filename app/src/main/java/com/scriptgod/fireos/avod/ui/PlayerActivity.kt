@@ -68,6 +68,7 @@ class PlayerActivity : AppCompatActivity() {
         const val EXTRA_TITLE = "extra_title"
         const val EXTRA_CONTENT_TYPE = "extra_content_type"
         const val EXTRA_MATERIAL_TYPE = "extra_material_type"
+        const val EXTRA_RESUME_MS = "extra_resume_ms"
         private val CHANNEL_SUFFIX_REGEX = Regex("""\s+\d\.\d(\s*(surround|atmos))?""", RegexOption.IGNORE_CASE)
 
         // Widevine UUID
@@ -111,7 +112,8 @@ class PlayerActivity : AppCompatActivity() {
     private var normalizedInitialAudioSelection: Boolean = false
     private var availableAudioTracks: List<AudioTrack> = emptyList()
     private var lastLoggedAudioTrackSignature: String = ""
-    private lateinit var resumePrefs: SharedPreferences
+    private var h265FallbackPositionMs: Long = 0L
+    private var seekResyncPending: Boolean = false
     private val hideTrackButtonsRunnable = Runnable {
         trackButtons.clearFocus()
         trackButtons.visibility = View.GONE
@@ -130,7 +132,6 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
     }
-
     private data class TrackOption(
         val group: Tracks.Group,
         val groupIndex: Int,
@@ -191,6 +192,7 @@ class PlayerActivity : AppCompatActivity() {
         tvPlaybackTitle.text = intent.getStringExtra(EXTRA_TITLE) ?: "Now Playing"
         tvPlaybackHint.text = "Press MENU for tracks. Press Back to exit."
         tvVideoFormat.visibility = View.GONE
+        playerView.keepScreenOn = false
         playerView.setShowSubtitleButton(false)
         playerView.post {
             playerView.findViewById<View>(androidx.media3.ui.R.id.exo_subtitle)?.visibility = View.GONE
@@ -227,8 +229,6 @@ class PlayerActivity : AppCompatActivity() {
         val asin = intent.getStringExtra(EXTRA_ASIN)
             ?: run { showError("No ASIN provided"); return }
         currentAsin = asin
-
-        resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
 
         val tokenFile = LoginActivity.findTokenFile(this)
             ?: run { finish(); return }
@@ -426,8 +426,12 @@ class PlayerActivity : AppCompatActivity() {
         trackSelector = selector
         normalizedInitialAudioSelection = false
 
-        // Trailers always start from the beginning — don't restore the movie's resume position
-        val resumeMs = if (currentMaterialType == "Trailer") 0L else resumePrefs.getLong(currentAsin, 0L)
+        // Trailers always start from beginning. For real content prefer h265FallbackPositionMs
+        // (set when restarting after a CDN 400) then the server position passed via intent.
+        val serverResumeMs = h265FallbackPositionMs.takeIf { it > 0L }
+            ?: intent.getLongExtra(EXTRA_RESUME_MS, 0L).coerceAtLeast(0L)
+        h265FallbackPositionMs = 0L
+        val resumeMs = if (currentMaterialType == "Trailer") 0L else serverResumeMs
 
         player = ExoPlayer.Builder(this, renderersFactory)
             .setTrackSelector(selector)
@@ -519,9 +523,14 @@ class PlayerActivity : AppCompatActivity() {
     private val playerListener = object : Player.Listener {
         override fun onPlaybackStateChanged(state: Int) {
             when (state) {
-                Player.STATE_BUFFERING -> progressBar.visibility = View.VISIBLE
+                Player.STATE_BUFFERING -> {
+                    progressBar.visibility = View.VISIBLE
+                    updatePlaybackWakeState(true)
+                }
                 Player.STATE_READY -> {
-                    progressBar.visibility = View.GONE
+                    if (!seekResyncPending) {
+                        progressBar.visibility = View.GONE
+                    }
                     tvError.visibility = View.GONE
                     playerView.useController = true
                     updateVideoFormatLabel()
@@ -532,16 +541,14 @@ class PlayerActivity : AppCompatActivity() {
                 }
                 Player.STATE_ENDED -> {
                     stopStreamReporting()
-                    // Only mark as fully watched for real content, not trailers
-                    if (currentMaterialType != "Trailer") {
-                        resumePrefs.edit().putLong(currentAsin, -1L).apply()
-                    }
+                    updatePlaybackWakeState(false)
                 }
-                Player.STATE_IDLE -> {}
+                Player.STATE_IDLE -> updatePlaybackWakeState(false)
             }
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
+            updatePlaybackWakeState(isPlaying || seekResyncPending)
             if (!streamReportingStarted) return
             if (isPlaying) {
                 startHeartbeat()
@@ -550,6 +557,21 @@ class PlayerActivity : AppCompatActivity() {
                 sendProgressEvent("PAUSE")
                 heartbeatJob?.cancel()
             }
+        }
+
+        override fun onPositionDiscontinuity(
+            oldPosition: Player.PositionInfo,
+            newPosition: Player.PositionInfo,
+            reason: Int
+        ) {
+            if (reason == Player.DISCONTINUITY_REASON_SEEK) {
+                Log.i(TAG, "Seek discontinuity old=${oldPosition.positionMs} new=${newPosition.positionMs}")
+                beginSeekResync()
+            }
+        }
+
+        override fun onRenderedFirstFrame() {
+            endSeekResync()
         }
 
         override fun onTracksChanged(tracks: Tracks) {
@@ -572,6 +594,8 @@ class PlayerActivity : AppCompatActivity() {
         override fun onPlayerError(error: PlaybackException) {
             Log.e(TAG, "Player error: ${error.errorCodeName}", error)
             stopStreamReporting()
+            updatePlaybackWakeState(false)
+            seekResyncPending = false
 
             // Amazon's CDN returns HTTP 400 for H265 segment URLs on some titles.
             // The UHD manifest's H264 tracks only reach 720p — must re-fetch using the HD
@@ -588,8 +612,7 @@ class PlayerActivity : AppCompatActivity() {
                     "H265 not available for this title — switching to H264",
                     Toast.LENGTH_SHORT
                 ).show()
-                // Save position so setupPlayer() can seek to it via resumePrefs
-                if (lastPos > 10_000) resumePrefs.edit().putLong(currentAsin, lastPos).apply()
+                if (lastPos > 10_000) h265FallbackPositionMs = lastPos
                 player?.release()
                 player = null
                 streamReportingStarted = false
@@ -665,17 +688,28 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun currentPositionSecs(): Long = (player?.currentPosition ?: 0) / 1000
 
-    private fun saveResumePosition() {
-        if (currentMaterialType == "Trailer") return  // trailers never affect watch progress
-        val p = player ?: return
-        val posMs = p.currentPosition
-        val durMs = p.duration
-        if (posMs < 10_000) return // too early, don't save
-        if (durMs > 0 && posMs >= durMs * 9 / 10) {
-            resumePrefs.edit().putLong(currentAsin, -1L).apply()
+    private fun updatePlaybackWakeState(isPlaying: Boolean) {
+        playerView.keepScreenOn = isPlaying
+        if (isPlaying) {
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
-            resumePrefs.edit().putLong(currentAsin, posMs).apply()
+            window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
+    }
+
+    private fun beginSeekResync() {
+        seekResyncPending = true
+        progressBar.visibility = View.VISIBLE
+        updatePlaybackWakeState(true)
+    }
+
+    private fun endSeekResync() {
+        if (!seekResyncPending) return
+        seekResyncPending = false
+        if (player?.playbackState == Player.STATE_READY) {
+            progressBar.visibility = View.GONE
+        }
+        updatePlaybackWakeState(player?.isPlaying == true)
     }
 
     private fun buildTrackOptions(trackType: Int, tracks: Tracks): List<TrackOption> {
@@ -1287,7 +1321,6 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        saveResumePosition()
         player?.pause()
     }
 
@@ -1308,11 +1341,11 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        saveResumePosition()
         if (streamReportingStarted) {
             stopStreamReporting()
             streamReportingStarted = false
         }
+        updatePlaybackWakeState(false)
         player?.pause()
     }
 
@@ -1321,6 +1354,7 @@ class PlayerActivity : AppCompatActivity() {
         scopeJob.cancel()
         trackButtons.removeCallbacks(syncTrackButtonsRunnable)
         trackButtons.removeCallbacks(hideTrackButtonsRunnable)
+        updatePlaybackWakeState(false)
         player?.release()
         player = null
     }
