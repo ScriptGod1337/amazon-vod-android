@@ -1259,78 +1259,117 @@ instead of the quality row above it.
 
 ---
 
-## Phase 27: PENDING — AI Code Review (Post-Phase 21)
+## Phase 27: PENDING — Full AI Code Review
 
-Phase 21 reviewed the codebase as it stood after Phase 16. Since then, the following was added
-or substantially rewritten:
+### Goal
 
-| New / rewritten | Since phase |
-|----------------|-------------|
-| `BrowseActivity.kt` | 19 |
-| `RailsAdapter.kt` | 19 |
-| `CardPresentation.kt` | 19 |
-| `ShimmerAdapter.kt` | 22 |
-| `UiMotion.kt` | 22 |
-| `UiTransitions.kt` | 22 |
-| `DpadEditText.kt` | 22 |
-| `DetailActivity.kt` | 23 |
-| `AboutActivity.kt` — quality section, audio passthrough section | 20, 26 |
-| `MainActivity.kt` — rail filter, tab nav, shimmer | 19, 24 |
-| `PlayerActivity.kt` — overlay, H265 fallback, format label, passthrough | 21–26 |
+**Primary**: Verify correctness, safety, and stability of everything added since Phase 21.
+**Secondary**: Assess overall maintainability — flag anything that would be hard to understand,
+extend, or debug by a developer unfamiliar with the codebase. This is not just a bug hunt;
+the reviewer should flag unclear abstractions, dead code, missing error surfaces, inconsistent
+patterns, and anything that would slow down future development.
 
-This is a full review pass, not incremental.
+### Scope — files added or substantially rewritten since Phase 21
 
-### Checklist scope
+| File | Changed in phase | Key new surface |
+|------|-----------------|----------------|
+| `BrowseActivity.kt` | 19 | Series → season → episode drill-down |
+| `RailsAdapter.kt` | 19 | Outer vertical ListAdapter for home carousels |
+| `CardPresentation.kt` | 19 | Focus scale animation, card variants |
+| `ShimmerAdapter.kt` | 22 | Skeleton loading animation |
+| `UiMotion.kt` | 22 | ValueAnimator / ObjectAnimator helpers |
+| `UiTransitions.kt` | 22 | Activity-level fade/slide transitions |
+| `DpadEditText.kt` | 22 | Fire TV remote keyboard interception |
+| `DetailActivity.kt` | 23 | Hero image, metadata, watchlist toggle, trailer |
+| `AboutActivity.kt` | 20, 26 | Quality section, audio passthrough section |
+| `MainActivity.kt` | 19, 24 | Rail filter, tab nav, shimmer integration |
+| `PlayerActivity.kt` | 21–26 | Overlay sync, H265 fallback, format label, passthrough renderer |
+| `activity_about.xml` | 26 | AppCompatButton state-list buttons, passthrough section |
+| `settings_quality_option_background.xml` | 26 | State-list drawable (rest/selected/focused/focused+selected) |
 
-The review agent should open `dev/REVIEW.md` for the standard checklist and additionally cover
-the areas that are new since Phase 21:
+This is a **full pass**, not incremental. The reviewer must read the actual source, not rely on
+summaries.
 
-#### Security & auth
-- [ ] No token/credential values logged at any level (verify new activities and adapters)
-- [ ] `SharedPreferences("auth")` not read in UI layer outside `LoginActivity` / `AboutActivity`
-- [ ] `DpadEditText` input handling — no accidental logging of typed content
-- [ ] `DetailActivity` deep-link / intent data not trusted without validation
+---
 
-#### Memory & lifecycle
-- [ ] `RailsAdapter` / `ContentAdapter` — no anonymous `Handler` or `Runnable` that captures `Activity` context
-- [ ] `ShimmerAdapter` — animation drawables released in `onViewRecycled`
-- [ ] `UiMotion` / `UiTransitions` — `ValueAnimator` / `ObjectAnimator` instances cancelled on view detach
-- [ ] `PlayerActivity` — `BroadcastReceiver` for `AUDIO_CAPABILITIES_CHANGED_ACTION` (Phase 26) unregistered in `onStop`
-- [ ] `PlayerActivity` — coroutine `scopeJob` cancelled before re-creating player (H265 fallback path)
-- [ ] `DetailActivity` — coroutine scope cancelled in `onDestroy`
+### Checklist
 
-#### Network & API
-- [ ] `RailsAdapter` / `BrowseActivity` — no network calls on the main thread
-- [ ] Pagination / infinite scroll does not fire duplicate requests if the previous one is still in flight
-- [ ] `DetailActivity` — API errors surface to the user (not silently swallowed)
-- [ ] `ShimmerAdapter` shimmer is hidden on error as well as on success (no infinite spinner)
+#### 1. Security & auth
+- [ ] No token or credential values logged at any level in new activities or adapters
+- [ ] `SharedPreferences("auth")` not accessed outside `LoginActivity` / `AboutActivity`
+- [ ] `DpadEditText` — typed content not logged (search queries, login fields)
+- [ ] `DetailActivity` intent extras validated before use (ASIN, title not trusted as safe)
+- [ ] `AboutActivity` — Sign Out cannot be triggered accidentally (confirmation dialog present)
 
-#### D-pad / TV UX
-- [ ] All new interactive views declare `focusable="true"` and `focusableInTouchMode="false"`
-- [ ] `DpadEditText` — correct `imeOptions` and `inputType` for TV keyboard
-- [ ] `RailsAdapter` rail items — `nextFocusDown` from last rail row leads to nav bar, not into void
-- [ ] `DetailActivity` — D-pad can reach every interactive element (season tabs, episode list, play button)
-- [ ] `CardPresentation` focus scale animation does not leave views in a scaled-up state after fast scrolling
+#### 2. Memory & lifecycle
+- [ ] `RailsAdapter` / `ContentAdapter` — no anonymous `Handler` or `Runnable` retaining `Activity` context after detach
+- [ ] `ShimmerAdapter` — animation drawables / animators released in `onViewRecycled` or `onDetachedFromRecyclerView`
+- [ ] `UiMotion` / `UiTransitions` — `ValueAnimator` / `ObjectAnimator` cancelled when target view is detached
+- [ ] `PlayerActivity` — coroutine `scopeJob` cancelled before re-creating player on H265 fallback path
+- [ ] `DetailActivity` — coroutine scope cancelled in `onDestroy`; image loading cancelled on destroy
+- [ ] `PlayerActivity` — no stale reference to released `ExoPlayer` instance after `releasePlayer()`
 
-#### Quality & correctness
-- [ ] `PlaybackQuality.fromPrefValue` has a safe fallback for unknown/null pref values
-- [ ] H265 fallback in `PlayerActivity` — `h265FallbackAttempted` flag reset on `setupPlayer()` so it does not persist across content items
-- [ ] `MainActivity` filter state (`activeSourceFilter`, `activeTypeFilter`) reset or preserved correctly on back-stack pop
-- [ ] `UiMotion.revealFresh` handles views that are already `VISIBLE` without flickering
+#### 3. Network & API
+- [ ] No network calls dispatched on the main thread in any new code path
+- [ ] Pagination / infinite scroll guards against duplicate in-flight requests
+- [ ] `DetailActivity` — all API errors surfaced to the user; no silent swallowing
+- [ ] `ShimmerAdapter` shimmer hidden on both success and error (no infinite skeleton)
+- [ ] `RailsAdapter` — pagination token not reused after end-of-feed
 
-#### Audio passthrough (Phase 26, once implemented)
-- [ ] `PREF_AUDIO_PASSTHROUGH` read inside `buildPlayer()`, not cached at activity creation
-- [ ] Volume warning Toast shown at most once across all sessions
+#### 4. D-pad / TV UX
+- [ ] All new interactive views declare `android:focusable="true"` and `android:focusableInTouchMode="false"`
+- [ ] `DpadEditText` — correct `imeOptions` and `inputType` for TV on-screen keyboard
+- [ ] `RailsAdapter` rail items — `nextFocusDown` from last rail row leads somewhere sensible (not into void)
+- [ ] `DetailActivity` — every interactive element reachable by D-pad (metadata scroll, play, trailer, watchlist, seasons)
+- [ ] `CardPresentation` — focus scale animation leaves no views in a permanently scaled-up state after fast scrolling or rapid focus changes
+- [ ] `AboutActivity` — full D-pad traversal: Back → quality buttons → passthrough buttons → Sign Out, all reachable; Up from quality row goes to Back; Up from passthrough row goes to quality row
+
+#### 5. Correctness & edge cases
+- [ ] `PlaybackQuality.fromPrefValue` — safe fallback for unknown or null pref values
+- [ ] `PlayerActivity` — `h265FallbackAttempted` flag reset on each `setupPlayer()` call so it does not persist across content items in the same session
+- [ ] `MainActivity` — `activeSourceFilter` / `activeTypeFilter` preserved or reset correctly on back-stack pop
+- [ ] `UiMotion.revealFresh` — handles views already `VISIBLE` without flicker
+- [ ] `PREF_AUDIO_PASSTHROUGH` read inside `setupPlayer()` at player-creation time, not cached at activity start
+- [ ] Volume warning Toast fires at most once across all sessions (gated by `PREF_AUDIO_PASSTHROUGH_WARNED`)
+- [ ] `AboutActivity` — passthrough On button correctly disabled and dimmed when `supportsAny == false`; pref not saved as `true` when capability is absent
+- [ ] `settings_quality_option_background.xml` — state order correct: `focused+selected` before `selected` before `focused` before default; disabled before all
+
+#### 6. Maintainability (new goal)
+This section assesses whether the codebase is **easy to understand, extend, and debug** — not
+just whether it works today.
+
+- [ ] **Naming**: classes, functions, and variables named to convey intent without requiring inline comments
+- [ ] **Separation of concerns**: UI logic not mixed into adapters; API parsing not mixed into Activities
+- [ ] **Dead code**: no commented-out blocks, unused functions, unreachable branches, or stale TODOs left in production files
+- [ ] **Consistency**: similar problems solved the same way throughout (e.g. coroutine scope management, error display, pref keys)
+- [ ] **Magic values**: no unexplained hardcoded strings, numbers, or colours inline in Kotlin — constants or resources used throughout
+- [ ] **Error messages**: error Toasts / dialogs give the user (and developer reading logcat) enough context to understand what went wrong
+- [ ] **Complexity**: no function longer than ~60 lines or with cyclomatic complexity that would make it hard to test mentally; flag candidates for extraction
+- [ ] **Logging**: sufficient `Log.w` / `Log.e` at key decision points (player state changes, fallback triggers, auth events) that on-device debugging via `adb logcat` is practical; no noisy or redundant log lines
+- [ ] **SharedPreferences key hygiene**: all pref keys defined as constants (not inline string literals scattered across files); keys in `PlayerActivity`, `AboutActivity`, `MainActivity` consistent and documented
+- [ ] **Drawable / resource consistency**: `AppCompatButton` used consistently for all state-list-driven buttons; no remaining `<Button>` elements that rely on drawable state-lists in `Theme.MaterialComponents` activities
+
+---
 
 ### Output
 
-The review agent should write findings to `dev/review-findings-p27.md` using the same format as
-Phase 21 (severity: Critical / Warning / Info / OK, with file + line reference). All Critical and
-Warning findings must be fixed before Phase 27 is marked COMPLETE.
+Write findings to `dev/review/review-findings-p27.md` using the format:
+
+```
+## [Severity] Short title
+File: path/to/File.kt:line
+Issue: …
+Suggestion: …
+```
+
+Severity levels: **Critical** (correctness / security break), **Warning** (likely bug or
+maintainability blocker), **Info** (minor improvement), **OK** (verified clean).
+
+All **Critical** and **Warning** findings must be fixed before Phase 27 is marked COMPLETE.
 
 ### Definition of done
 
-- `dev/review-findings-p27.md` exists with all items assessed
+- `dev/review/review-findings-p27.md` exists with every checklist item assessed
 - 0 Critical, 0 unresolved Warning findings
-- Fix commit(s) referenced in this section
+- Fix commit(s) SHA referenced in this section
 
