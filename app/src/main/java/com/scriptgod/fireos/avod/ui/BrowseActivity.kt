@@ -375,6 +375,7 @@ class BrowseActivity : AppCompatActivity() {
                         putExtra(DetailActivity.EXTRA_TITLE, item.title)
                         putExtra(DetailActivity.EXTRA_CONTENT_TYPE, item.contentType)
                         putExtra(DetailActivity.EXTRA_IMAGE_URL, item.imageUrl.ifEmpty { parentImageUrl })
+                        putExtra(DetailActivity.EXTRA_IS_PRIME, item.isPrime)
                         putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
                     }
                 }

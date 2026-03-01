@@ -30,6 +30,7 @@ class DetailActivity : AppCompatActivity() {
         const val EXTRA_CONTENT_TYPE = "extra_content_type"
         const val EXTRA_IMAGE_URL = "extra_image_url"
         const val EXTRA_WATCHLIST_ASINS = "extra_watchlist_asins"
+        const val EXTRA_IS_PRIME = "extra_is_prime"
     }
 
     private lateinit var layoutContent: View
@@ -51,6 +52,7 @@ class DetailActivity : AppCompatActivity() {
     private lateinit var btnBrowse: Button
     private lateinit var btnSeasons: Button
     private lateinit var btnWatchlist: Button
+    private lateinit var tvPrimeBadge: TextView
 
     private lateinit var apiService: AmazonApiService
     private var watchlistAsins: MutableSet<String> = mutableSetOf()
@@ -58,6 +60,7 @@ class DetailActivity : AppCompatActivity() {
     private var currentContentType: String = ""
     private var fallbackImageUrl: String = ""
     private var detailInfo: DetailInfo? = null
+    private var isItemPrime: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,6 +85,7 @@ class DetailActivity : AppCompatActivity() {
         btnBrowse = findViewById(R.id.btn_browse)
         btnSeasons = findViewById(R.id.btn_seasons)
         btnWatchlist = findViewById(R.id.btn_watchlist)
+        tvPrimeBadge = findViewById(R.id.tv_prime_badge)
 
         val tokenFile = LoginActivity.findTokenFile(this) ?: run { finish(); return }
         apiService = AmazonApiService(AmazonAuthService(tokenFile))
@@ -90,6 +94,7 @@ class DetailActivity : AppCompatActivity() {
         currentContentType = intent.getStringExtra(EXTRA_CONTENT_TYPE) ?: ""
         fallbackImageUrl = intent.getStringExtra(EXTRA_IMAGE_URL) ?: ""
         watchlistAsins = (intent.getStringArrayListExtra(EXTRA_WATCHLIST_ASINS) ?: ArrayList()).toMutableSet()
+        isItemPrime = intent.getBooleanExtra(EXTRA_IS_PRIME, false)
 
         tvTitle.text = intent.getStringExtra(EXTRA_TITLE) ?: ""
 
@@ -145,6 +150,15 @@ class DetailActivity : AppCompatActivity() {
                        else info.title
         tvDetailEyebrow.text = detailEyebrow(info.contentType)
         tvDetailSupport.text = UiMetadataFormatter.detailSupportLine(info)
+
+        if (isItemPrime) {
+            tvPrimeBadge.text = "\u2713 Prime"
+            tvPrimeBadge.setTextColor(Color.parseColor("#2DC8E0"))
+        } else {
+            tvPrimeBadge.text = "Not Prime"
+            tvPrimeBadge.setTextColor(Color.parseColor("#5C7A86"))
+        }
+        tvPrimeBadge.visibility = View.VISIBLE
 
         // Metadata row: year · runtime · age rating · quality
         val meta = buildString {
