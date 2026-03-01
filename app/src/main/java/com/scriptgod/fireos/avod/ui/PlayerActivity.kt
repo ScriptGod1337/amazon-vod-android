@@ -51,6 +51,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.media.MediaCodecList
+import android.media.MediaDrm
 import java.io.File
 import java.util.UUID
 
@@ -74,6 +75,7 @@ class PlayerActivity : AppCompatActivity() {
 
         private const val PREF_AUDIO_PASSTHROUGH        = "audio_passthrough"
         private const val PREF_AUDIO_PASSTHROUGH_WARNED = "audio_passthrough_warned"
+        private const val PREF_WIDEVINE_L3_WARNED       = "widevine_l3_warned"
 
     }
 
@@ -240,6 +242,25 @@ class PlayerActivity : AppCompatActivity() {
         loadAndPlay(asin, materialType)
     }
 
+    /**
+     * Queries the Widevine CDM for its security level.
+     *
+     * Returns "L1" on real hardware with a TEE (Fire TV, phones with Widevine provisioning).
+     * Returns "L3" on Android emulators and un-provisioned hardware (software-only CDM).
+     *
+     * Why this matters: Amazon's license server enforces
+     *   HD quality + L3 + no HDCP  →  license DENIED
+     *   SD quality + L3 + no HDCP  →  license GRANTED
+     * Querying before player creation lets resolveQuality() select the right tier up-front
+     * rather than hitting a license error mid-playback.
+     */
+    private fun widevineSecurityLevel(): String = try {
+        MediaDrm(WIDEVINE_UUID).use { it.getPropertyString("securityLevel") }
+    } catch (e: Exception) {
+        Log.w(TAG, "Failed to query Widevine security level — assuming L3: ${e.message}")
+        "L3"
+    }
+
     /** Returns true if this device has any H265/HEVC video decoder. */
     private fun deviceSupportsH265(): Boolean =
         MediaCodecList(MediaCodecList.ALL_CODECS).codecInfos.any { info ->
@@ -259,21 +280,38 @@ class PlayerActivity : AppCompatActivity() {
      * HD_H265 (SDR) only needs an H265 decoder; falls back to HD on devices without HEVC.
      */
     private fun resolveQuality(): PlaybackQuality {
+        // L3 check runs before user preference: the license server rejects HD+L3 regardless
+        // of what the user selected.  Mirror the official Amazon APK behaviour: detect the
+        // CDM security level, fall back to SD when L1 is absent.
+        if (widevineSecurityLevel() != "L1") {
+            Log.w(TAG, "Widevine L3 detected — forcing SD quality (HD requires L1 + HDCP)")
+            val prefs = getSharedPreferences("settings", MODE_PRIVATE)
+            if (!prefs.getBoolean(PREF_WIDEVINE_L3_WARNED, false)) {
+                prefs.edit().putBoolean(PREF_WIDEVINE_L3_WARNED, true).apply()
+                Toast.makeText(
+                    this,
+                    "Widevine L3 device — SD quality only (HD requires hardware DRM)",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            return PlaybackQuality.SD
+        }
+
         val pref = getSharedPreferences("settings", MODE_PRIVATE)
             .getString(PlaybackQuality.PREF_KEY, null)
         val requested = PlaybackQuality.fromPrefValue(pref)
         if (requested == PlaybackQuality.UHD_HDR) {
             if (!deviceSupportsH265()) {
-                android.widget.Toast.makeText(this, "H265 not supported — using HD H264", android.widget.Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "H265 not supported — using HD H264", Toast.LENGTH_LONG).show()
                 return PlaybackQuality.HD
             }
             if (!displaySupportsHdr()) {
-                android.widget.Toast.makeText(this, "Display does not support HDR — using HD H264", android.widget.Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Display does not support HDR — using HD H264", Toast.LENGTH_LONG).show()
                 return PlaybackQuality.HD
             }
         }
         if (requested == PlaybackQuality.HD_H265 && !deviceSupportsH265()) {
-            android.widget.Toast.makeText(this, "H265 not supported — using HD H264", android.widget.Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "H265 not supported — using HD H264", Toast.LENGTH_LONG).show()
             return PlaybackQuality.HD
         }
         return requested
@@ -465,8 +503,9 @@ class PlayerActivity : AppCompatActivity() {
         val qualityLabel = when (currentQuality) {
             PlaybackQuality.UHD_HDR -> "4K HDR preset"
             PlaybackQuality.HD_H265 -> "HD H265 preset"
-            PlaybackQuality.HD -> "HD H264 preset"
-            else -> "Playback preset"
+            PlaybackQuality.HD      -> "HD H264 preset"
+            PlaybackQuality.SD      -> "SD (Widevine L3)"
+            else                    -> "HD H264 preset"
         }
         tvPlaybackStatus.text = "$materialLabel  ·  $qualityLabel"
     }

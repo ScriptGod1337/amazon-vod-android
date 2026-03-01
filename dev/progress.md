@@ -1373,3 +1373,50 @@ All **Critical** and **Warning** findings must be fixed before Phase 27 is marke
 - 0 Critical, 0 unresolved Warning findings
 - Fix commit(s) SHA referenced in this section
 
+---
+
+## Phase 28: COMPLETE — Widevine L3 / SD quality fallback
+
+### Problem
+
+Playback on Android emulators (and any un-provisioned hardware) failed with a DRM license
+error.  The root cause was confirmed by analysing the decompiled Amazon Prime APK
+(`prime-3.0.412.2947-smali/`):
+
+- Amazon's license server enforces: **HD + Widevine L3 + no HDCP → license DENIED**
+- SD quality bypasses the restriction: **SD + L3 + no HDCP → license GRANTED**
+- The official APK's `ConfigurablePlaybackSupportEvaluator` queries `HdcpLevelProvider` and
+  automatically falls back to SD when `HDCP = NO_HDCP_SUPPORT` is detected.
+- Our code hardcoded HD quality regardless of device capability, so every emulator playback
+  attempt returned a license denial.
+
+### Solution (mirrors official APK behaviour)
+
+Query `MediaDrm.getPropertyString("securityLevel")` before player creation.
+If the result is not `"L1"`, force `PlaybackQuality.SD` for the session regardless of the
+user's quality preference — the license server will not grant HD to an L3 device.
+
+A one-time Toast informs the user on first L3 detection; subsequent plays are silent.
+
+### Files changed
+
+- **`model/PlaybackQuality.kt`** — added `SD` preset (`"SD"`, `"H264"`, `"None"`) with doc
+  comment explaining the license server enforcement rule.  `videoQuality` comment updated to
+  list `"SD"` as a valid value.
+- **`ui/PlayerActivity.kt`**:
+  - `import android.media.MediaDrm` added
+  - `PREF_WIDEVINE_L3_WARNED` constant added to companion object
+  - `widevineSecurityLevel()` helper: opens `MediaDrm(WIDEVINE_UUID)`, reads `"securityLevel"`;
+    falls back to `"L3"` on any exception (safe-fail)
+  - `resolveQuality()`: L3 gate inserted before the user-preference check; returns `SD` when
+    security level is not `"L1"`; fires one-time Toast gated by `PREF_WIDEVINE_L3_WARNED`
+  - `updatePlaybackStatus()`: `PlaybackQuality.SD` case maps to label `"SD (Widevine L3)"`
+  - Cleaned up redundant `android.widget.Toast` fully-qualified references in `resolveQuality()`
+    (now uses the already-imported `Toast`)
+
+### Result
+
+- **Emulator**: playback now succeeds (SD quality, H264 manifest)
+- **Fire TV (L1)**: unaffected — L3 gate passes immediately, existing quality logic runs
+- **Decision 22** added to `decisions.md`
+

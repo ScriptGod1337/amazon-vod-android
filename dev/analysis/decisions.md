@@ -453,3 +453,34 @@ or vertically off-center inside a fixed-height button, producing a visually brok
 `ic_search.xml` vector drawable (standard Material magnifier path). `scaleType=centerInside`
 with explicit padding keeps the icon centred and unclipped at TV scale. Vector paths render
 independently of font metrics and emoji availability.
+
+---
+
+## Decision 22: Widevine L3 / SD quality fallback before player creation
+
+**Date**: Phase 28
+
+**Problem**: Playback failed on Android emulators (Widevine L3, no HDCP) because our code
+always requested HD quality. Amazon's license server rejects the combination
+`HD + L3 + no HDCP` with `PRSWidevine2LicenseDeniedException`. The official Prime APK avoids
+this via `ConfigurablePlaybackSupportEvaluator` + `HdcpLevelProvider`: it detects
+`HDCP = NO_HDCP_SUPPORT` and silently downgrades to SD. The Kodi plugin never ran on an
+emulator so the issue was never surfaced there either.
+
+**Decision**: In `resolveQuality()`, query `MediaDrm(WIDEVINE_UUID).getPropertyString("securityLevel")`
+before consulting the user's quality preference. If the result is not `"L1"`, return
+`PlaybackQuality.SD` immediately, bypassing all other quality checks.
+
+Rationale: the L3 gate is a hard server-side constraint, not a user preference. Showing an
+error message mid-playback (after a failed license request) would be a worse UX than
+pre-emptively downgrading. The downgrade is transparent except for a one-time Toast on first
+detection.
+
+**One-time Toast**: gated by `PREF_WIDEVINE_L3_WARNED` in `SharedPreferences("settings")`.
+Fires once, not on subsequent L3 sessions.
+
+**Fire TV (L1) impact**: none — `getPropertyString("securityLevel")` returns `"L1"` on
+hardware with a TEE; the gate is skipped and existing quality resolution logic runs unchanged.
+
+**SD preset added to `PlaybackQuality.kt`**: `PlaybackQuality("SD", "H264", "None")` —
+not exposed as a user-selectable option; only used by the L3 fallback path.

@@ -4,6 +4,25 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.03.01.4] - 2026-03-01
+
+### Added
+- **Widevine L3 / SD quality fallback** (Phase 28) — `PlayerActivity` now queries
+  `MediaDrm.getPropertyString("securityLevel")` before player creation; if the result is not
+  `"L1"` (e.g. Android emulator, un-provisioned hardware), quality is forced to
+  `PlaybackQuality.SD` regardless of the user's quality setting.  This mirrors the official
+  Amazon APK's `ConfigurablePlaybackSupportEvaluator` behaviour: Amazon's license server
+  rejects `HD + L3 + no HDCP` but grants `SD + L3 + no HDCP`.  A one-time Toast informs the
+  user on first detection, gated by `"widevine_l3_warned"` pref.
+- `PlaybackQuality.SD` preset (`"SD"`, `"H264"`, `"None"`) — 480p H264 SDR, not exposed as a
+  user-selectable option; used only by the automatic L3 fallback path.
+
+### Fixed
+- Playback on Android emulators and Widevine L3 devices now succeeds (was previously denied
+  by the license server with `PRSWidevine2LicenseDeniedException` due to HD quality + no HDCP)
+- Player overlay quality label now shows `"SD (Widevine L3)"` when the fallback is active
+- Cleaned up redundant `android.widget.Toast` fully-qualified references in `resolveQuality()`
+
 ## [2026.03.01.3] - 2026-03-01
 
 ### Added
