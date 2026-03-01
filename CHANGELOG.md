@@ -4,6 +4,24 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+## [2026.03.01.31] - 2026-03-01
+
+### Fixed
+- Player overlay (`track_buttons`) no longer flickers or lingers after the Media3 controller auto-hides — overlay visibility is now driven by polling the actual `exo_controller` view rather than a separate animation/timeout stack; `hideTrackButtonsRunnable` fires immediately on controller hide with no delay
+- Audio Description (AD) tracks are no longer selected by default at playback start — `DefaultTrackSelector` is configured with `ROLE_FLAG_MAIN` preference and `normalizeInitialAudioSelection()` switches away from AD on first track load
+
+### Changed
+- Audio track menu is now built from **Amazon's API metadata** (merged from `GetPlaybackResources` and detail API) instead of relying on ExoPlayer's weakly-described live tracks — produces correct human-readable names, proper AD labelling, and correct family grouping (main / AD / Dialogue Boost) on all titles
+- AD tracks are now visible in the audio menu alongside regular tracks, labelled from API metadata (`type=descriptive`), not hidden or auto-removed
+- Channel layout suffix (`2.0`, `5.1`, `7.1`) appended to audio track labels when ExoPlayer exposes `channelCount`
+- Dialogue Boost variants filtered out of the audio menu by default
+- MENU key auto-focus on `btnAudio` now uses a 120 ms guard so it only fires once the overlay is confirmed visible
+
+## [2026.03.01.30] - 2026-03-01
+
+### Fixed
+- Native ExoPlayer `exo_subtitle` and `exo_settings` buttons hidden on startup and re-hidden after every `onTracksChanged` — they re-appeared after each track change event
+
 ## [2026.02.28.29] - 2026-02-28
 
 ### Fixed

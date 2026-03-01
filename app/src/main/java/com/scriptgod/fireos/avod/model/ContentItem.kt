@@ -71,9 +71,20 @@ data class SubtitleTrack(
     val type: String // "sdh", "regular", "forced"
 )
 
+data class AudioTrack(
+    val displayName: String,
+    val languageCode: String = "",
+    val type: String = "",
+    val index: String = "",
+    val isOriginalLanguage: Boolean = false
+) {
+    fun isAudioDescription(): Boolean = displayName.contains("audio description", ignoreCase = true)
+}
+
 data class PlaybackInfo(
     val manifestUrl: String,
     val licenseUrl: String,
     val asin: String,
-    val subtitleTracks: List<SubtitleTrack> = emptyList()
+    val subtitleTracks: List<SubtitleTrack> = emptyList(),
+    val audioTracks: List<AudioTrack> = emptyList()
 )

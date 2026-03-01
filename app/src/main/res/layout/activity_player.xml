@@ -94,7 +94,7 @@
             android:layout_width="232dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Press MENU for tracks. Press Back to leave playback."
+            android:text="Press MENU for tracks. Press Back to exit."
             android:textColor="@color/text_tertiary"
             android:textSize="@dimen/meta_text_size" />
 
@@ -152,6 +152,7 @@
                 android:textAllCaps="false"
                 android:textColor="@color/button_secondary_text"
                 android:textSize="@dimen/compact_control_text_size" />
+
         </LinearLayout>
 
     </LinearLayout>

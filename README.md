@@ -18,7 +18,7 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 - Filter by source (All / Prime) and type (Movies / Series) — filters combine independently
 - Series drill-down: show → detail page → seasons → detail page → episodes → play
 - Widevine L1 hardware-secure playback (DASH/MPD)
-- **Audio & subtitle track selection** during playback — one entry per language/codec combination (e.g. `German (5.1)`, `German (5.1) · Dolby`, `English (Stereo)`); bitrate selected adaptively by ExoPlayer; MENU key or pause shows controls; player controls and track buttons always appear/hide together
+- **Audio & subtitle track selection** during playback — labels sourced from Amazon's API metadata for correct display names, Audio Description tagging, and family grouping (main / AD / Dialogue Boost); channel layout suffix shown (`2.0`, `5.1`, `7.1`); MENU key or pause shows controls; overlay follows Media3 controller visibility exactly with no flicker
 - **Video format label** in player overlay — shows active codec, resolution, and HDR status (e.g. `720p · H265 · SDR`, `4K · H265 · HDR10`), updated live as ABR ramps up
 - **Video quality selection** in About screen — choose between HD H264 (720p), H265 (720p SDR), or 4K/DV HDR; device capability checks disable unavailable options; H265 fallback to H264 on CDN error
 - **Seekbar seeking** — D-pad left/right seeks ±10 seconds per press (hold to repeat), matching standard Fire TV remote behaviour

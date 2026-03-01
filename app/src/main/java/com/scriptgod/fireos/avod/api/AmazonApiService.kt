@@ -7,6 +7,7 @@ import com.scriptgod.fireos.avod.model.ContentRail
 import com.scriptgod.fireos.avod.model.DetailInfo
 import com.scriptgod.fireos.avod.model.Availability
 import com.scriptgod.fireos.avod.model.ContentKind
+import com.scriptgod.fireos.avod.model.AudioTrack
 import com.scriptgod.fireos.avod.model.PlaybackInfo
 import com.scriptgod.fireos.avod.model.PlaybackQuality
 import com.scriptgod.fireos.avod.model.SubtitleTrack
@@ -625,6 +626,29 @@ class AmazonApiService(private val authService: AmazonAuthService) {
             val directors = data.getAsJsonArray("directors")
                 ?.mapNotNull { it?.asString }
                 ?: emptyList()
+            val audioTracks = data.getAsJsonArray("audioTracks")
+                ?.mapNotNull { elem ->
+                    val obj = elem?.asJsonObject ?: return@mapNotNull null
+                    val displayName = obj.safeString("displayName") ?: return@mapNotNull null
+                    AudioTrack(
+                        displayName = displayName,
+                        languageCode = obj.safeString("language")
+                            ?: obj.safeString("languageCode")
+                            ?: "",
+                        type = obj.safeString("type") ?: "",
+                        index = obj.safeString("index")
+                            ?: obj.safeString("id")
+                            ?: "",
+                        isOriginalLanguage = obj.get("isOriginalLanguage")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
+                    )
+                }
+                ?: emptyList()
+            if (audioTracks.isNotEmpty()) {
+                val summary = audioTracks.joinToString(" | ") {
+                    "name=${it.displayName}, lang=${it.languageCode}, type=${it.type}, index=${it.index}"
+                }
+                Log.i(TAG, "Detail audio tracks asin=$asin: $summary")
+            }
 
             val badges = data.getAsJsonObject("badges")
             val isUhd = badges?.get("uhd")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
@@ -655,7 +679,8 @@ class AmazonApiService(private val authService: AmazonAuthService) {
                 isHdr = isHdr,
                 isDolby51 = isDolby,
                 showTitle = showTitle,
-                showAsin = showAsin
+                showAsin = showAsin,
+                audioTracks = audioTracks
             )
         } catch (e: Exception) {
             Log.w(TAG, "parseDetailInfo error", e)
@@ -973,8 +998,21 @@ class AmazonApiService(private val authService: AmazonAuthService) {
 
         val licenseUrl = buildLicenseUrl(asin, did, quality)
         val subtitles = extractSubtitleTracks(body)
+        val audioTracks = extractAudioTracks(body)
+        if (audioTracks.isNotEmpty()) {
+            val summary = audioTracks.joinToString(" | ") {
+                "name=${it.displayName}, lang=${it.languageCode}, type=${it.type}, index=${it.index}"
+            }
+            Log.i(TAG, "Playback audio tracks asin=$asin: $summary")
+        }
 
-        return PlaybackInfo(manifestUrl = manifestUrl, licenseUrl = licenseUrl, asin = asin, subtitleTracks = subtitles)
+        return PlaybackInfo(
+            manifestUrl = manifestUrl,
+            licenseUrl = licenseUrl,
+            asin = asin,
+            subtitleTracks = subtitles,
+            audioTracks = audioTracks
+        )
     }
 
     /**
@@ -1034,6 +1072,42 @@ class AmazonApiService(private val authService: AmazonAuthService) {
             tracks
         } catch (e: Exception) {
             Log.w(TAG, "Failed to extract subtitles", e)
+            emptyList()
+        }
+    }
+
+    private fun extractAudioTracks(json: String): List<AudioTrack> {
+        return try {
+            val root = gson.fromJson(json, JsonObject::class.java)
+            val tracks = mutableListOf<AudioTrack>()
+
+            fun readArray(array: JsonArray?) {
+                array?.forEach { elem ->
+                    val obj = elem.asJsonObject
+                    val displayName = obj.get("displayName")?.asString?.trim().orEmpty()
+                    if (displayName.isBlank()) return@forEach
+                    tracks += AudioTrack(
+                        displayName = displayName,
+                        languageCode = obj.get("languageCode")?.asString
+                            ?: obj.get("language")?.asString
+                            ?: "",
+                        type = obj.get("type")?.asString
+                            ?: obj.get("audioSubtype")?.asString
+                            ?: "",
+                        index = obj.get("index")?.asString
+                            ?: obj.get("id")?.asString
+                            ?: "",
+                        isOriginalLanguage = obj.get("isOriginalLanguage")?.asBoolean ?: false
+                    )
+                }
+            }
+
+            readArray(root.getAsJsonArray("audioTracks"))
+            readArray(root.getAsJsonObject("playbackUrls")?.getAsJsonArray("audioTracks"))
+
+            tracks.distinctBy { "${it.displayName}|${it.languageCode}|${it.type}|${it.index}" }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to extract audio tracks", e)
             emptyList()
         }
     }

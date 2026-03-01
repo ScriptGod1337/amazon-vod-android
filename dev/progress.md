@@ -966,81 +966,84 @@ not yet parsed, add it during this phase.
 
 ---
 
-## Phase 25: PENDING — Player Controls Streamline
+## Phase 25: COMPLETE — Player Controls Streamline
 
-### Problem
+### What was done
 
-The player currently has **two parallel control systems** for audio and subtitle selection:
+#### Overlay visibility fix
 
-1. **Custom overlay buttons** (`btn_audio`, `btn_subtitle`) in the `track_buttons` LinearLayout —
-   our own `AlertDialog`-based track picker, synced with `PlayerView.ControllerVisibilityListener`.
-2. **ExoPlayer's built-in `PlayerControlView`** — can show its own audio, subtitle, and playback
-   speed controls via an overflow/settings menu when `useController = true`.
+The custom `track_buttons` overlay originally used `ControllerVisibilityListener` with its own
+animation + timeout logic, which drifted out of sync with the Media3 controller — especially when
+overlay buttons had focus and the controller auto-hide timer fired, causing flicker and the overlay
+lingering after controls hid.
 
-These are independent. If ExoPlayer's built-in audio/subtitle buttons are visible alongside ours,
-the user sees duplicate controls. Speed selection is currently absent entirely.
+Fix: the overlay now follows the **actual controller visibility** rather than managing its own
+lifetime.
 
-### Goal
+- `controllerView` is resolved once via `playerView.findViewById(exo_controller)`.
+- `syncTrackButtonsRunnable` polls every 120 ms while the controller is shown, keeping
+  `trackButtons` visible only while the real controller view is visible.
+- `hideTrackButtonsRunnable` runs immediately when the controller hides — no animation delay,
+  no alpha-reset flash.
+- Forced `controllerShowTimeoutMs = 0` / focus-listener approach was removed in favour of this
+  simpler poll-based sync, which handles all edge cases (focus, dialog dismiss, back-press).
+- MENU key still explicitly toggles controls; auto-focus on `btnAudio` was changed to a
+  `postDelayed(120 ms)` guard so it only fires once the overlay is confirmed visible.
+- Native `exo_subtitle` and `exo_settings` buttons are hidden on startup and re-hidden after every
+  `onTracksChanged` (they re-appear on track change).
 
-A single, consistent set of player controls:
-- One audio track selector (our custom dialog or native, not both)
-- One subtitle track selector (same)
-- Playback speed control (currently missing)
-- No duplicate or orphaned buttons
+#### Audio track selection and labelling fix
 
-### Option A — Integrate into ExoPlayer's native controls (preferred if feasible)
+The original code built the audio menu entirely from live ExoPlayer track metadata, which on
+Fire TV is unreliable: blank labels, repeated language groups, repeated bitrate blocks, no stable
+index. This caused:
+- Audio Description (AD) tracks selected by default on some titles.
+- AD tracks disappearing from the menu after an auto-switch attempt.
+- Track labels showing language codes instead of human-readable names.
 
-ExoPlayer's `PlayerControlView` allows custom button injection via `app:controller_layout_id`
-pointing to a custom layout that replaces the default one. Our `btn_audio` and `btn_subtitle`
-buttons would be placed **inside** that custom layout instead of in a separate overlay.
+Fix: audio metadata is now sourced primarily from **Amazon's own APIs**, merged with live player
+data for selection.
 
-Benefits: transport bar + track buttons animate together natively; speed control is trivial to
-add (`setShowSpeedButton(true)` or a custom button calling `player.setPlaybackSpeed()`).
+- `AmazonApiService` parses audio track metadata from `GetPlaybackResources` (playback audio
+  tracks) and the detail API, including `displayName`, `languageCode`, `type` (dialog /
+  descriptive / dialogue-boost), and `index`.
+- `PlayerActivity` merges both sources and logs them (`Merged audio metadata: ...`).
+- Audio families are normalised as: `main`, `ad`, `boost-medium`, `boost-high`.
+- The menu is built by mapping live ExoPlayer groups onto metadata families, keeping the best
+  candidate (by selection status, then bitrate) per family.
+- AD labelling is metadata-first: if Amazon says `type=descriptive`, the track is labelled AD
+  regardless of weak ExoPlayer role flags.
+- `normalizeInitialAudioSelection()` replaces the old `autoTrackSelectionDone` auto-switch —
+  it runs on first `onTracksChanged`, switches away from AD if selected, and never fires again.
+- Language base-code matching (`de` vs `de-de`) ensures live Fire TV tracks can be matched to
+  API metadata correctly.
+- Channel layout suffixes (`2.0`, `5.1`, `7.1`) are appended when ExoPlayer exposes
+  `channelCount`.
+- Dialogue Boost entries are filtered out of the menu by default.
+- `DefaultTrackSelector` is configured with `setPreferredAudioRoleFlags(C.ROLE_FLAG_MAIN)` to
+  bias initial selection toward main-dialogue tracks.
 
-Steps:
-1. Create `res/layout/player_control_view.xml` — copy of ExoPlayer's default layout with our
-   audio/subtitle buttons added where the native ones appear, and a speed button added.
-2. Set `app:controller_layout_id="@layout/player_control_view"` on the `PlayerView` in
-   `activity_player.xml`.
-3. In `PlayerActivity.kt`, find the buttons by id inside `playerView` and wire `setOnClickListener`
-   to `showTrackSelectionDialog()` (same as today).
-4. Remove the separate `track_buttons` LinearLayout from `activity_player.xml`.
-5. Remove the `ControllerVisibilityListener` syncing logic — no longer needed.
-6. Add speed button: open a simple `AlertDialog` with options (0.5×, 0.75×, 1×, 1.25×, 1.5×,
-   2×); call `player.setPlaybackSpeed(speed)`.
+#### Speed control — not implemented
 
-**Verify**: `app:show_subtitle_button` and `app:show_audio_button` on `PlayerView` in layout —
-set to `false` to suppress the native icons if they appear alongside our custom ones.
+`player.setPlaybackSpeed()` has no effect on Fire TV: Amazon's EMP (Extras Media Player) system
+service intercepts it via a hidden MediaSession proxy and resets speed to 1.0× every ~80 ms for
+DRM content. Feature omitted.
 
-Option B — Suppress native controls, keep custom overlay (simpler, lower risk)
-
-If Option A proves fragile (ExoPlayer layout IDs change between versions), the fallback is:
-- Set `app:show_subtitle_button="false"` and `app:show_audio_button="false"` on `PlayerView`
-  to remove native duplicates.
-- Keep existing `btn_audio` / `btn_subtitle` overlay buttons (no change needed).
-- Add speed selection as a third custom button `btn_speed` in the `track_buttons` row, calling
-  `player.setPlaybackSpeed()`.
-
-### Files to change (Option A)
+### Files changed
 
 | File | Change |
 |------|--------|
-| `res/layout/activity_player.xml` | Set `controller_layout_id`; remove `track_buttons` LinearLayout |
-| `res/layout/player_control_view.xml` | New file — custom PlayerControlView layout with audio, subtitle, speed buttons |
-| `ui/PlayerActivity.kt` | Wire buttons inside `playerView`; remove `ControllerVisibilityListener` sync; add speed dialog |
+| `ui/PlayerActivity.kt` | Overlay sync via `syncTrackButtonsRunnable`; audio metadata merge; `buildAudioTrackOptions` using Amazon metadata families; `normalizeInitialAudioSelection`; channel-layout suffix; native button suppression |
+| `api/AmazonApiService.kt` | Parse and expose audio track metadata from playback + detail APIs |
+| `res/layout/activity_player.xml` | `setShowSubtitleButton(false)` enforced in code |
 
-### Files to change (Option B — fallback)
+### Debug logs kept
 
-| File | Change |
-|------|--------|
-| `res/layout/activity_player.xml` | Add `show_subtitle_button="false"`, `show_audio_button="false"`; add `btn_speed` to `track_buttons` row |
-| `ui/PlayerActivity.kt` | Wire `btn_speed` to speed dialog |
-
-### Decision to make at implementation time
-
-Attempt Option A first. If ExoPlayer's `player_control_view.xml` internal IDs (`exo_audio`,
-`exo_subtitle`, etc.) are stable for Media3 1.3.x and the layout merges cleanly, proceed.
-If the build fails or the layout breaks D-pad focus order, fall back to Option B.
+- `Playback audio tracks asin=...`
+- `Detail audio tracks asin=...`
+- `Merged audio metadata: ...`
+- `Live audio tracks: ...`
+- `Audio menu options: ...`
 
 ---
 

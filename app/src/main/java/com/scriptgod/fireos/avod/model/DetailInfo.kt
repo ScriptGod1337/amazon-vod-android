@@ -1,5 +1,7 @@
 package com.scriptgod.fireos.avod.model
 
+import com.scriptgod.fireos.avod.model.AudioTrack
+
 data class DetailInfo(
     val asin: String,
     val title: String,
@@ -20,5 +22,6 @@ data class DetailInfo(
     val isDolby51: Boolean,
     // For series/season detail
     val showTitle: String = "",
-    val showAsin: String = ""
+    val showAsin: String = "",
+    val audioTracks: List<AudioTrack> = emptyList()
 )

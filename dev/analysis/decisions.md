@@ -322,3 +322,65 @@ Set to `true` for PrimeVideo domains, `false` for retail Amazon domains. Since w
 | `android_api.py` | Catalog browsing (Android-native API) | 108-300 | `AmazonApiService.kt` |
 | `proxy.py` | MPD/subtitle proxy (not needed for native) | all | Not needed |
 | `users.py` | User/account management | all | Simplified to `.device-token` |
+
+---
+
+## Decision 17: Audio track labelling — metadata-first, Amazon API over ExoPlayer flags
+
+**Date**: Phase 25
+
+**Problem**: ExoPlayer audio track metadata on Fire TV is unreliable — blank `format.label`,
+repeated language groups, duplicate bitrate blocks, and no stable index. This caused:
+- Audio Description (AD) tracks selected by default on some titles.
+- AD label disappearing from the menu after an auto-switch (changing the representative track
+  index changed the label to the non-AD variant of the same group).
+- Human-readable names missing (language code shown instead of display name).
+
+**Decision**: Build the audio menu from **Amazon's own audio track metadata** rather than
+inferring everything from ExoPlayer live tracks.
+
+Two API sources are merged at playback start:
+1. Audio tracks from `GetPlaybackResources` response (playback metadata).
+2. Audio tracks from the detail API (richer display names, `type` field).
+
+Metadata is normalised into **audio families**: `main`, `ad`, `boost-medium`, `boost-high`.
+Live ExoPlayer groups are mapped onto families by language + family kind, keeping the
+best candidate (selected > highest bitrate) per family.
+
+AD detection is metadata-first: `type == "descriptive"` from Amazon's API takes precedence
+over `ROLE_FLAG_DESCRIBES_VIDEO` from ExoPlayer, which is often absent or mis-set on Fire TV.
+
+Language matching uses base-code normalisation (`de-de` → `de`) so Fire TV tracks (which use
+BCP-47 subtags) can be matched to API metadata (which may use just the two-letter code).
+
+**Speed control — impossible on Fire TV**: `player.setPlaybackSpeed()` is intercepted by
+Amazon's EMP (Extras Media Player) system service via a hidden MediaSession proxy, which
+resets speed to 1.0× every ~80 ms on DRM content. Not implemented.
+
+**Files**: `AmazonApiService.kt` (parse audio metadata), `PlayerActivity.kt` (merge, family
+resolution, `buildAudioTrackOptions`, `normalizeInitialAudioSelection`).
+
+---
+
+## Decision 18: Player overlay visibility — follow exo_controller, not a separate timer
+
+**Date**: Phase 25
+
+**Problem**: The custom `track_buttons` overlay used its own `ControllerVisibilityListener` +
+animation + timeout stack to show/hide alongside the Media3 controller. This drifted out of
+sync when overlay buttons had focus (auto-hide timer fired, focus jumped to playerView,
+controller re-showed, causing flicker) or when a dialog was dismissed.
+
+**Decision**: Make `trackButtons` follow the **actual `exo_controller` view visibility** via a
+polling runnable (`syncTrackButtonsRunnable`, 120 ms interval), not a separate timer or focus
+listener. The overlay is visible if and only if `exo_controller` is visible.
+
+- `controllerView` is resolved once via `playerView.post { playerView.findViewById(exo_controller) }`.
+- On controller show: `syncTrackButtonsRunnable` starts polling.
+- On controller hide: `hideTrackButtonsRunnable` fires immediately (no animation delay).
+- Forced `controllerShowTimeoutMs` manipulation removed — Media3 manages its own timeout.
+- MENU key calls `playerView.showController()` / `hideController()` as before; auto-focus on
+  `btnAudio` delayed 120 ms to align with the poll cycle.
+
+**Files**: `PlayerActivity.kt` (`syncTrackButtonsRunnable`, `hideTrackButtonsRunnable`,
+`controllerView`, updated `ControllerVisibilityListener`, updated `onKeyDown`).
