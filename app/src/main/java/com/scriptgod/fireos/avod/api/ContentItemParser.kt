@@ -51,11 +51,18 @@ internal object ContentItemParser {
             || (model.safeString("videoMaterialType")
                 ?.equals("LiveStreaming", ignoreCase = true) ?: false)
 
+        // Hero carousel items (Featured rail) carry Prime entitlement in
+        // messagePresentationModel.entitlementMessageSlotCompact[].imageId == "ENTITLED_ICON"
+        val hasEntitledIcon = model.getAsJsonObject("messagePresentationModel")
+            ?.getAsJsonArray("entitlementMessageSlotCompact")
+            ?.any { el -> el.isJsonObject && el.asJsonObject.safeString("imageId") == "ENTITLED_ICON" }
+            ?: false
+
         val isPrime = (model.getAsJsonObject("badges")?.safeBoolean("prime")
             ?: model.safeBoolean("showPrimeEmblem")
             ?: model.safeBoolean("isPrime")
             ?: model.safeBoolean("primeOnly")
-            ?: badgeText.contains("PRIME", ignoreCase = true))
+            ?: (badgeText.contains("PRIME", ignoreCase = true) || hasEntitledIcon))
             && !isFreeWithAds
             && !isLive
         val availability = when {
