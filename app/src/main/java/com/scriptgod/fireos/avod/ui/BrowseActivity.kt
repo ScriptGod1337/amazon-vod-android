@@ -272,7 +272,10 @@ class BrowseActivity : AppCompatActivity() {
         if (currentList.isNotEmpty()) {
             val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
             val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
-            val updated = currentList.map { it.copy(watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs) }
+            val updated = currentList.map { it.copy(
+            watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs,
+            isInWatchlist = watchlistAsins.contains(it.asin)
+        ) }
             adapter.submitList(updated)
         }
         recyclerView.post {
