@@ -78,15 +78,6 @@ class BrowseActivity : AppCompatActivity() {
 
         watchlistAsins = (intent.getStringArrayListExtra(EXTRA_WATCHLIST_ASINS) ?: ArrayList()).toMutableSet()
 
-        adapter = ContentAdapter(
-            onItemClick = { item -> onItemSelected(item) },
-            onMenuKey = { item -> showItemMenu(item) },
-            nextFocusUpId = R.id.btn_browse_back,
-            onVerticalFocusMove = { position, direction -> handleGridVerticalMove(position, direction) }
-        )
-        recyclerView.layoutManager = GridLayoutManager(this, 4)
-        recyclerView.adapter = adapter
-        recyclerView.itemAnimator = null
         shimmerRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         shimmerRecyclerView.adapter = ShimmerAdapter()
         btnBack.setOnClickListener { UiTransitions.close(this) }
@@ -102,6 +93,7 @@ class BrowseActivity : AppCompatActivity() {
         val filter = intent.getStringExtra(EXTRA_FILTER)
             ?: if (AmazonApiService.isSeriesContentType(contentType)) "seasons" else null
         preferHeaderFocus = filter == "seasons"
+        configureGridForFilter(filter)
 
         applyBrowseHeader(filter, contentType)
         loadDetails(asin, filterType = filter, fallbackImage = parentImageUrl)
@@ -130,12 +122,13 @@ class BrowseActivity : AppCompatActivity() {
                         if (seasons.isNotEmpty()) seasons
                         else {
                             // No seasons — might be episodes directly
-                        val episodes = items.filter { AmazonApiService.isEpisodeContentType(it.contentType) }
-                        if (episodes.isNotEmpty()) {
-                            applyBrowseHeader("episodes", "EPISODE")
-                            episodes
-                        } else items // show all
-                    }
+                            val episodes = items.filter { AmazonApiService.isEpisodeContentType(it.contentType) }
+                            if (episodes.isNotEmpty()) {
+                                applyBrowseHeader("episodes", "EPISODE")
+                                configureGridForFilter("episodes")
+                                episodes
+                            } else items // show all
+                        }
                     }
                     "episodes" -> {
                         val episodes = items.filter { AmazonApiService.isEpisodeContentType(it.contentType) }
@@ -220,6 +213,24 @@ class BrowseActivity : AppCompatActivity() {
         tvSubtitle.text = subtitle
         tvSubtitle.visibility = View.VISIBLE
         tvHint.text = hint
+    }
+
+    private fun configureGridForFilter(filter: String?) {
+        val presentation = when (filter) {
+            "seasons", "episodes" -> CardPresentation.LANDSCAPE
+            else -> CardPresentation.POSTER
+        }
+        val spanCount = if (presentation == CardPresentation.LANDSCAPE) 5 else 4
+        adapter = ContentAdapter(
+            onItemClick = { item -> onItemSelected(item) },
+            onMenuKey = { item -> showItemMenu(item) },
+            nextFocusUpId = R.id.btn_browse_back,
+            onVerticalFocusMove = { position, direction -> handleGridVerticalMove(position, direction) },
+            presentation = presentation
+        )
+        recyclerView.layoutManager = GridLayoutManager(this, spanCount)
+        recyclerView.adapter = adapter
+        recyclerView.itemAnimator = null
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {

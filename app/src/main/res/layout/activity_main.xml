@@ -481,6 +481,70 @@
             </LinearLayout>
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/home_featured_strip"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/featured_strip_height"
+            android:layout_marginStart="@dimen/page_padding"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="@dimen/page_padding"
+            android:layout_marginBottom="4dp"
+            android:background="@drawable/detail_panel_background"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/iv_home_featured"
+                android:layout_width="@dimen/featured_strip_image_width"
+                android:layout_height="match_parent"
+                android:adjustViewBounds="true"
+                android:background="#1A1A1A"
+                android:scaleType="centerCrop" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_home_featured_eyebrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:letterSpacing="0.14"
+                    android:textAllCaps="true"
+                    android:textColor="#8AA4B2"
+                    android:textSize="@dimen/section_eyebrow_size"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_home_featured_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/body_text_size"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_home_featured_meta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/compact_control_text_size" />
+            </LinearLayout>
+        </LinearLayout>
+
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"

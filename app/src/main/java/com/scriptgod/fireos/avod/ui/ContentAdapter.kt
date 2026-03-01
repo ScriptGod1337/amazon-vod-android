@@ -59,6 +59,7 @@ class ContentAdapter(
         val displaySubtitle = progressSubtitle ?: secondaryLine(item)
         holder.subtitle.text = displaySubtitle
         holder.subtitle.visibility = if (displaySubtitle.isBlank()) View.GONE else View.VISIBLE
+        holder.subtitle.maxLines = if (presentation == CardPresentation.LANDSCAPE) 1 else 2
         if (item.imageUrl.isNotEmpty()) {
             holder.poster.load(item.imageUrl) {
                 crossfade(true)
@@ -207,23 +208,19 @@ class ContentAdapter(
 
     private fun overlineText(item: ContentItem, isProgress: Boolean): String {
         if (isProgress) return "Continue Watching"
-        val typeLabel = when {
+        return when {
             item.isLive -> "Live"
             ContentTypeMatcher.isEpisode(item.contentType) -> "Episode"
             ContentTypeMatcher.isSeries(item.contentType) -> "Series"
             ContentTypeMatcher.isMovie(item.contentType) -> "Movie"
             else -> "Featured"
         }
-        val accessLabel = when {
-            item.isFreeWithAds -> "Freevee"
-            item.isPrime && !item.isLive -> "Prime"
-            else -> null
-        }
-        return listOfNotNull(typeLabel, accessLabel).joinToString("  ·  ")
     }
 
     private fun secondaryLine(item: ContentItem): String {
-        if (item.subtitle.isNotBlank()) return item.subtitle.replace(" • ", "  ·  ")
+        if (item.subtitle.isNotBlank()) {
+            return sanitizeSubtitle(item.subtitle)
+        }
         val parts = mutableListOf<String>()
         if (ContentTypeMatcher.isEpisode(item.contentType)) parts += "Playable episode"
         else if (ContentTypeMatcher.isSeries(item.contentType)) parts += "Series overview"
@@ -233,6 +230,18 @@ class ContentAdapter(
             item.isLive -> parts += "Live channel"
         }
         return parts.joinToString("  ·  ")
+    }
+
+    private fun sanitizeSubtitle(subtitle: String): String {
+        return subtitle
+            .replace("Included with Prime", "", ignoreCase = true)
+            .replace("Prime Video", "", ignoreCase = true)
+            .replace("  ·   ·  ", "  ·  ")
+            .replace(" • ", "  ·  ")
+            .replace(Regex("\\s+·\\s*$"), "")
+            .replace(Regex("^\\s*·\\s+"), "")
+            .replace(Regex("\\s{2,}"), " ")
+            .trim()
     }
 
     private object ContentTypeMatcher {

@@ -56,8 +56,9 @@ class RailsAdapter(
     override fun onBindViewHolder(holder: RailViewHolder, position: Int) {
         val rail = getItem(position)
         val hasProgressItems = rail.items.any { it.watchProgressMs > 0 || it.watchProgressMs == -1L }
-        holder.eyebrow.visibility = if (hasProgressItems) View.VISIBLE else View.GONE
-        holder.eyebrow.text = if (hasProgressItems) "Continue Watching" else ""
+        val eyebrowLabel = railEyebrow(rail, position, hasProgressItems)
+        holder.eyebrow.visibility = if (eyebrowLabel != null) View.VISIBLE else View.GONE
+        holder.eyebrow.text = eyebrowLabel ?: ""
         holder.header.text = rail.headerText
         holder.seeAll.visibility = View.GONE
         holder.seeAll.setOnClickListener(null)
@@ -81,13 +82,28 @@ class RailsAdapter(
         return when {
             hasProgressItems -> CardPresentation.LANDSCAPE
             position == 0 -> CardPresentation.LANDSCAPE
+            header.contains("top 10") -> CardPresentation.LANDSCAPE
             header.contains("continue") -> CardPresentation.LANDSCAPE
             header.contains("watch next") -> CardPresentation.LANDSCAPE
             header.contains("because") -> CardPresentation.LANDSCAPE
+            header.contains("award") || header.contains("preis") -> CardPresentation.LANDSCAPE
             header.contains("episode") -> CardPresentation.LANDSCAPE
             header.contains("season") -> CardPresentation.LANDSCAPE
             header.contains("live") -> CardPresentation.LANDSCAPE
             else -> CardPresentation.POSTER
+        }
+    }
+
+    private fun railEyebrow(rail: ContentRail, position: Int, hasProgressItems: Boolean): String? {
+        if (hasProgressItems) return "Continue Watching"
+        val header = rail.headerText.lowercase()
+        return when {
+            position == 0 -> "Featured Now"
+            header.contains("top 10") -> "Top 10"
+            header.contains("award") || header.contains("preis") -> "Award Picks"
+            header.contains("kürzlich") || header.contains("new") || header.contains("added") -> "Just Added"
+            header.contains("because") || header.contains("empfehl") -> "Recommended"
+            else -> null
         }
     }
 

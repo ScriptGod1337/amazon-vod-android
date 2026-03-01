@@ -21,6 +21,8 @@
 - [x] About copy pass: title and supporting copy now identify the app as `ScriptGod's AmazonVOD for FireOS`
 - [x] Home density pass: rail headers, card heights, recycler padding, and inter-rail spacing were reduced so lower rows remain visible on the emulator
 - [x] Card metadata cleanup: redundant `Included with Prime` subtitle text was removed in favor of badge-only Prime signaling
+- [x] Home editorial pass: added a compact featured strip and stronger rail eyebrow taxonomy without reintroducing the oversized hero
+- [x] Browse density pass: season and episode browse now use a shorter header and a denser 5-column landscape grid so cards are fully visible
 
 ## Known issues / deviations from spec
 - `See All` remains intentionally hidden. The current app still has no safe full-collection browse contract for `collectionId` without API/model work.
@@ -36,8 +38,10 @@
 - Home no longer renders the oversized hero; rails start directly below the compact filter panel.
 - Home shows only the `Type` controls. Watchlist shows separate `Availability` and `Type` groups.
 - Header tabs are now top-aligned on Home, use underline-only for the active page, and leave more vertical room for content rails.
+- Home now includes a compact non-focusable featured strip above the rails instead of a full hero banner.
 - Focus states are differentiated for selected vs focused nav and filter controls.
 - Browse uses a dedicated page header with `Back`, context chips, and item count, and `UP` from the first grid item returns to `Back`.
+- Season and episode browse use a denser landscape grid, giving more visible card height and fitting five episode cards across on the emulator.
 - Non-home surfaces now share the same page-title, supporting-text, panel-title, and compact-control scale.
 - Detail, Browse, and About now use the same page transition helper for open/close navigation, and content-card focus animation timing is normalized.
 - `UP` from the Home grid returns to `All Types`.
@@ -47,6 +51,7 @@
 - Closing search now removes the search summary card and restores the underlying page instead of leaving stale search state visible in Home or Watchlist.
 - About now uses the explicit app title `ScriptGod's AmazonVOD for FireOS` in the header copy.
 - Home rails use a denser layout so lower sections like `Die Top 10 in Deutschland` and `Kürzlich hinzugefügt` have more room to remain visible on the emulator.
+- Home rail eyebrows now distinguish editorial groups like `Featured Now`, `Top 10`, `Just Added`, and `Award Picks`.
 - Prime titles no longer repeat `Included with Prime` in card subtitles when the Prime badge is already shown.
 - Player overlay audio/subtitle controls use the updated redesign styling.
 

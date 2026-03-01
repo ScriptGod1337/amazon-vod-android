@@ -22,6 +22,8 @@
     <dimen name="card_spacing">8dp</dimen>
     <dimen name="nav_bar_height">48dp</dimen>
     <dimen name="hero_height">176dp</dimen>
+    <dimen name="featured_strip_height">84dp</dimen>
+    <dimen name="featured_strip_image_width">132dp</dimen>
     <dimen name="rail_header_size">16sp</dimen>
     <dimen name="rail_vertical_spacing">10dp</dimen>
     <dimen name="page_motion_offset">18dp</dimen>

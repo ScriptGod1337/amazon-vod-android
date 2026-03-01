@@ -9,6 +9,7 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -19,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
 import com.scriptgod.fireos.avod.R
 import com.scriptgod.fireos.avod.api.AmazonApiService
 import com.scriptgod.fireos.avod.model.ContentRail
@@ -54,6 +56,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnWatchlist: Button
     private lateinit var btnLibrary: Button
     private lateinit var btnAbout: Button
+    private lateinit var homeFeaturedStrip: LinearLayout
+    private lateinit var homeFeaturedImage: ImageView
+    private lateinit var tvHomeFeaturedEyebrow: TextView
+    private lateinit var tvHomeFeaturedTitle: TextView
+    private lateinit var tvHomeFeaturedMeta: TextView
 
     // Category buttons — two independent groups
     private lateinit var categoryFilterRow: LinearLayout
@@ -83,6 +90,7 @@ class MainActivity : AppCompatActivity() {
     private var homeNextPageParams: String = ""
     private var homePageLoading: Boolean = false
     private var unfilteredRails: List<ContentRail> = emptyList()
+    private var featuredHomeItem: ContentItem? = null
 
     // Two independent filter dimensions
     private var sourceFilter: String = "all"   // "all" or "prime"
@@ -118,6 +126,11 @@ class MainActivity : AppCompatActivity() {
         btnWatchlist = findViewById(R.id.btn_watchlist)
         btnLibrary = findViewById(R.id.btn_library)
         btnAbout = findViewById(R.id.btn_about)
+        homeFeaturedStrip = findViewById(R.id.home_featured_strip)
+        homeFeaturedImage = findViewById(R.id.iv_home_featured)
+        tvHomeFeaturedEyebrow = findViewById(R.id.tv_home_featured_eyebrow)
+        tvHomeFeaturedTitle = findViewById(R.id.tv_home_featured_title)
+        tvHomeFeaturedMeta = findViewById(R.id.tv_home_featured_meta)
 
         categoryFilterRow = findViewById(R.id.category_filter_row)
         sourceFilterSection = findViewById(R.id.source_filter_section)
@@ -478,6 +491,7 @@ class MainActivity : AppCompatActivity() {
                 sourceFilterGroup.visibility = View.GONE
                 typeFilterSection.visibility = View.GONE
                 libraryFilterRow.visibility = View.VISIBLE
+                homeFeaturedStrip.visibility = View.GONE
                 setNavFocusTarget(R.id.btn_lib_all)
             }
             "home" -> {
@@ -486,6 +500,7 @@ class MainActivity : AppCompatActivity() {
                 sourceFilterGroup.visibility = View.GONE
                 typeFilterSection.visibility = View.VISIBLE
                 libraryFilterRow.visibility = View.GONE
+                homeFeaturedStrip.visibility = if (!isSearchActive && featuredHomeItem != null) View.VISIBLE else View.GONE
                 setNavFocusTarget(R.id.btn_type_all)
             }
             "watchlist" -> {
@@ -494,6 +509,7 @@ class MainActivity : AppCompatActivity() {
                 sourceFilterGroup.visibility = View.VISIBLE
                 typeFilterSection.visibility = View.VISIBLE
                 libraryFilterRow.visibility = View.GONE
+                homeFeaturedStrip.visibility = View.GONE
                 setNavFocusTarget(R.id.btn_cat_all)
             }
             else -> {
@@ -502,6 +518,7 @@ class MainActivity : AppCompatActivity() {
                 sourceFilterGroup.visibility = View.GONE
                 typeFilterSection.visibility = View.GONE
                 libraryFilterRow.visibility = View.GONE
+                homeFeaturedStrip.visibility = View.GONE
                 setNavFocusTarget(R.id.recycler_view)
             }
         }
@@ -779,6 +796,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     unfilteredRails = unfilteredRails + markedRails
                     val filtered = applyTypeFilterToRails(unfilteredRails)
+                    updateHomeFeaturedStrip(filtered)
                     railsAdapter.submitList(filtered)
                     Log.i(TAG, "Appended ${newRails.size} rails, total unfiltered=${unfilteredRails.size}")
                 } else {
@@ -824,11 +842,13 @@ class MainActivity : AppCompatActivity() {
             }
             unfilteredRails = markedRails
             val filtered = applyTypeFilterToRails(markedRails)
+            updateHomeFeaturedStrip(filtered)
             railsAdapter.submitList(filtered)
             val animatedViews = mutableListOf<View>()
             if (searchStateCard.visibility == View.VISIBLE) animatedViews += searchStateCard
             if (categoryFilterRow.visibility == View.VISIBLE) animatedViews += categoryFilterRow
             if (libraryFilterRow.visibility == View.VISIBLE) animatedViews += libraryFilterRow
+            if (homeFeaturedStrip.visibility == View.VISIBLE) animatedViews += homeFeaturedStrip
             animatedViews += recyclerView
             UiMotion.revealFresh(*animatedViews.toTypedArray())
             recyclerView.post {
@@ -841,6 +861,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyRailsTypeFilter() {
         val filtered = applyTypeFilterToRails(unfilteredRails)
+        updateHomeFeaturedStrip(filtered)
         if (filtered.isEmpty()) {
             tvError.text = "No content found"
             tvError.visibility = View.VISIBLE
@@ -872,6 +893,7 @@ class MainActivity : AppCompatActivity() {
         shimmerRecyclerView.visibility = View.VISIBLE
         recyclerView.visibility = View.GONE
         tvError.visibility = View.GONE
+        homeFeaturedStrip.visibility = View.GONE
         if (isRailsMode) railsAdapter.submitList(emptyList())
         else adapter.submitList(emptyList())
     }
@@ -887,6 +909,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             recyclerView.visibility = View.VISIBLE
             tvError.visibility = View.GONE
+            homeFeaturedStrip.visibility = View.GONE
             // Merge watchlist flags and watch progress into items
             val resumePrefs = getSharedPreferences("resume_positions", MODE_PRIVATE)
             val resumeMap = resumePrefs.all.mapValues { (it.value as? Long) ?: 0L }
@@ -933,9 +956,59 @@ class MainActivity : AppCompatActivity() {
         progressBar.visibility = View.GONE
         shimmerRecyclerView.visibility = View.GONE
         recyclerView.visibility = View.GONE
+        homeFeaturedStrip.visibility = View.GONE
         tvError.text = msg
         tvError.visibility = View.VISIBLE
         updateSearchState(etSearch.text.toString().trim(), null)
+    }
+
+    private fun updateHomeFeaturedStrip(rails: List<ContentRail>) {
+        val featuredRail = rails.firstOrNull { it.items.isNotEmpty() }
+        val featuredItem = featuredRail?.items?.firstOrNull()
+        featuredHomeItem = featuredItem
+        val shouldShow = currentNavPage == "home" &&
+            etSearch.text.toString().trim().isEmpty() &&
+            featuredRail != null &&
+            featuredItem != null
+        if (!shouldShow) {
+            homeFeaturedStrip.visibility = View.GONE
+            return
+        }
+
+        val nonNullFeaturedRail = featuredRail ?: return
+        val nonNullFeaturedItem = featuredItem ?: return
+
+        tvHomeFeaturedEyebrow.text = when {
+            nonNullFeaturedRail.headerText.isBlank() -> "Featured Now"
+            nonNullFeaturedRail.headerText.length <= 28 -> nonNullFeaturedRail.headerText.uppercase()
+            else -> "Featured Now"
+        }
+        tvHomeFeaturedTitle.text = nonNullFeaturedItem.title
+        tvHomeFeaturedMeta.text = buildFeaturedMeta(nonNullFeaturedRail, nonNullFeaturedItem)
+        if (nonNullFeaturedItem.imageUrl.isNotEmpty()) {
+            homeFeaturedImage.load(nonNullFeaturedItem.imageUrl) {
+                crossfade(true)
+            }
+        } else {
+            homeFeaturedImage.setImageDrawable(null)
+            homeFeaturedImage.setBackgroundColor(Color.parseColor("#1A1A1A"))
+        }
+        homeFeaturedStrip.visibility = View.VISIBLE
+    }
+
+    private fun buildFeaturedMeta(rail: ContentRail, item: ContentItem): String {
+        val parts = mutableListOf<String>()
+        parts += when {
+            item.isLive -> "Live"
+            AmazonApiService.isEpisodeContentType(item.contentType) -> "Episode"
+            AmazonApiService.isSeriesContentType(item.contentType) -> "Series"
+            AmazonApiService.isMovieContentType(item.contentType) -> "Movie"
+            else -> "Featured"
+        }
+        if (item.isFreeWithAds) parts += "Freevee"
+        else if (item.isPrime && !item.isLive) parts += "Prime"
+        if (rail.headerText.isNotBlank()) parts += rail.headerText
+        return parts.joinToString("  ·  ")
     }
 
     private fun updateSearchState(query: String, resultCount: Int?) {
@@ -1004,6 +1077,7 @@ class MainActivity : AppCompatActivity() {
                     ) })
                 }
                 val filtered = applyTypeFilterToRails(unfilteredRails)
+                updateHomeFeaturedStrip(filtered)
                 railsAdapter.submitList(filtered)
             }
         } else {
