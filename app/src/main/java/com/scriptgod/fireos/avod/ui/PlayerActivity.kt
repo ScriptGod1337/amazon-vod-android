@@ -127,6 +127,7 @@ class PlayerActivity : AppCompatActivity() {
         btnSubtitle = findViewById(R.id.btn_subtitle)
         tvPlaybackTitle.text = intent.getStringExtra(EXTRA_TITLE) ?: "Now Playing"
         tvPlaybackHint.text = "Press MENU for tracks. Press Back to leave playback."
+        tvVideoFormat.visibility = View.GONE
         applyDeviceOverlayTuning()
 
         // Fix D-pad seek increment: default is duration/20 (~6 min on a 2h film).
@@ -363,7 +364,9 @@ class PlayerActivity : AppCompatActivity() {
             codecs.startsWith("hvc1.2") || codecs.startsWith("hev1.2") -> "HDR10"
             else -> "SDR"
         }
-        tvVideoFormat.text = listOf(res, codec, hdr).filter { it.isNotEmpty() }.joinToString(" · ")
+        val label = listOf(res, codec, hdr).filter { it.isNotEmpty() }.joinToString(" · ")
+        tvVideoFormat.text = label
+        tvVideoFormat.visibility = if (label.isBlank()) View.GONE else View.VISIBLE
     }
 
     private fun updatePlaybackStatus() {
@@ -669,6 +672,10 @@ class PlayerActivity : AppCompatActivity() {
         updateMargins(trackButtons, topDp = 20, endDp = 28)
         updateMargins(tvError, startDp = 36, bottomDp = 44)
         tvError.maxLines = 4
+        updateWidth(tvPlaybackTitle, 224)
+        updateWidth(tvPlaybackHint, 224)
+        updateHeight(btnAudio, 38)
+        updateHeight(btnSubtitle, 38)
     }
 
     private fun updateMargins(view: View, startDp: Int? = null, topDp: Int? = null, endDp: Int? = null, bottomDp: Int? = null) {
@@ -678,6 +685,18 @@ class PlayerActivity : AppCompatActivity() {
         topDp?.let { params.topMargin = (it * density).toInt() }
         endDp?.let { params.marginEnd = (it * density).toInt() }
         bottomDp?.let { params.bottomMargin = (it * density).toInt() }
+        view.layoutParams = params
+    }
+
+    private fun updateWidth(view: View, widthDp: Int) {
+        val params = view.layoutParams ?: return
+        params.width = (widthDp * resources.displayMetrics.density).toInt()
+        view.layoutParams = params
+    }
+
+    private fun updateHeight(view: View, heightDp: Int) {
+        val params = view.layoutParams ?: return
+        params.height = (heightDp * resources.displayMetrics.density).toInt()
         view.layoutParams = params
     }
 

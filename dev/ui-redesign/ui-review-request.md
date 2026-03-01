@@ -33,6 +33,7 @@
 - [x] Shared availability helpers: card badges and featured-strip metadata now use one `included with Prime / Freevee / Live` rule across Home, Browse, and Watchlist
 - [x] Detail metadata cleanup: empty metadata rows now collapse cleanly, and support text is more context-aware for seasons and episodes
 - [x] Player overlay tuning pass: Fire TV-safe overlay margins were tightened and MENU now routes track focus to `Audio`
+- [x] Player compactness pass: the track overlay is now narrower, denser, and hides the format pill when no real playback format is available
 
 ## Known issues / deviations from spec
 - `See All` remains intentionally hidden. The current app still has no safe full-collection browse contract for `collectionId` without API/model work.
@@ -71,8 +72,10 @@
 - The final Home state now includes a verified `Continue Watching` rail using the dedicated progress-first card presentation.
 - Detail metadata now collapses empty rows cleanly and keeps season/episode support text more relevant to the current content type.
 - Player overlay audio/subtitle controls use the updated redesign styling.
+- Player overlay now uses a denser track panel with shorter hint copy, smaller buttons, and conditional video-format visibility.
 - Fire TV validation confirms Home still renders with the compact top-aligned geometry on `192.168.0.12:5555` (`nav_bar [0,0][1920,96]`, `category_filter_row [64,104][1856,200]`).
 - Emulator validation confirms the metadata/badge pass on `Borderlands` and `The Good Doctor - Staffel 7`, and Home still exposes the dedicated `Continue Watching` treatment.
+- Emulator validation confirms the latest player run still reaches `PlayerActivity`; on DRM failure only the tuned error panel remains visible, without the unused track panel.
 
 ## Screenshots
 - Captured under `dev/ui-redesign/review-screenshots/`:

@@ -39,27 +39,27 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|end"
         android:layout_marginTop="@dimen/safe_top_inset"
-        android:layout_marginEnd="20dp"
+        android:layout_marginEnd="18dp"
         android:background="@drawable/player_overlay_panel"
         android:orientation="vertical"
-        android:paddingStart="14dp"
-        android:paddingTop="14dp"
-        android:paddingEnd="14dp"
-        android:paddingBottom="14dp"
+        android:paddingStart="12dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="12dp"
         android:visibility="gone">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:letterSpacing="0.16"
-            android:text="PLAYBACK"
+            android:text="TRACKS"
             android:textAllCaps="true"
             android:textColor="#7E9CAA"
             android:textSize="@dimen/section_eyebrow_size" />
 
         <TextView
             android:id="@+id/tv_playback_title"
-            android:layout_width="260dp"
+            android:layout_width="232dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:ellipsize="end"
@@ -72,15 +72,15 @@
             android:id="@+id/tv_playback_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="8dp"
             android:textColor="@color/text_secondary"
             android:textSize="@dimen/meta_text_size" />
 
         <TextView
             android:id="@+id/tv_video_format"
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:layout_marginTop="10dp"
+            android:layout_height="32dp"
+            android:layout_marginTop="8dp"
             android:background="@drawable/player_track_label"
             android:gravity="center_vertical"
             android:minWidth="0dp"
@@ -91,38 +91,38 @@
 
         <TextView
             android:id="@+id/tv_playback_hint"
-            android:layout_width="260dp"
+            android:layout_width="232dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="Press MENU to toggle controls and choose audio or subtitle tracks."
+            android:layout_marginTop="8dp"
+            android:text="Press MENU for tracks. Press Back to leave playback."
             android:textColor="@color/text_tertiary"
             android:textSize="@dimen/meta_text_size" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="6dp"
             android:text="Audio &amp; subtitles"
             android:textColor="#AFC0CA"
             android:textSize="@dimen/meta_text_size" />
 
         <View
-            android:layout_width="260dp"
+            android:layout_width="232dp"
             android:layout_height="1dp"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="8dp"
             android:background="@color/surface_outline" />
 
         <LinearLayout
-            android:layout_width="260dp"
+            android:layout_width="232dp"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
             <Button
                 android:id="@+id/btn_audio"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:layout_marginBottom="8dp"
+                android:layout_height="38dp"
+                android:layout_marginBottom="6dp"
                 android:background="@drawable/player_track_button"
                 android:backgroundTint="@null"
                 app:backgroundTint="@null"
@@ -139,7 +139,7 @@
             <Button
                 android:id="@+id/btn_subtitle"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="38dp"
                 android:background="@drawable/player_track_button"
                 android:backgroundTint="@null"
                 app:backgroundTint="@null"
