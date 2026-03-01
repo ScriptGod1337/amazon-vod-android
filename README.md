@@ -12,6 +12,7 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
   - **▶ Trailer** button (shown only when `isTrailerAvailable: true`)
   - **Browse Episodes** + **All Seasons** buttons for series/seasons — All Seasons lets you jump to any other season without navigating back
   - **☆ / ★ Watchlist** toggle on every detail page
+  - **Prime badge** — every detail page shows "✓ Included with Prime" (teal) or "✗ Not included with Prime" (grey), sourced from the ATF v3 detail API for accurate per-title, per-territory status
 - **Watch progress bars** on content cards — amber for in-progress, synced with server-side `remainingTimeInSeconds` so progress from the official app shows up here too
 - Browse home catalog, watchlist, and personal library
 - Search with instant results
@@ -91,17 +92,25 @@ com.scriptgod.fireos.avod
 See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history and upcoming work.
 
 **Recently completed:**
+- **Phase 24** — Home rail source filter: Prime / All chips now work on home carousels; Featured
+  rail Prime false negatives fixed (hero items use `ENTITLED_ICON` + `"prime"` text check in
+  `messagePresentationModel` — ENTITLED_ICON alone is insufficient as it is also used for channel
+  subscriptions)
+- **Phase 25** — Player overlay sync: overlay now tracks Media3 controller visibility exactly via
+  `syncTrackButtonsRunnable`; audio track metadata sourced from Amazon APIs for accurate labels, AD
+  tagging, and channel layout suffixes; native ExoPlayer subtitle/settings buttons suppressed
+- **Fix** — Prime badge on detail page: `"✓ Included with Prime"` / `"✗ Not included with Prime"`
+  shown on every detail screen; uses `badges.prime` from ATF v3 detail API (authoritative, not the
+  unreliable catalog-level `showPrimeEmblem`)
+- **Fix** — Watchlist star state now survives navigation back to the All Seasons browse grid;
+  `BrowseActivity.onResume()` refreshes `isInWatchlist` from the in-memory `watchlistAsins` set
 - **Phase 22** — Full UI redesign: animated focus ring + glow, shimmer skeleton loading, page
   fade/slide transitions, pill nav bar, four card variants, gradient player overlay, watchlist
   action overlay, `UiMetadataFormatter`, `ContentItemParser` (with unit tests)
 - **Phase 23** — Content overview / detail page (`DetailActivity`) — hero image, poster, IMDb rating, genres, synopsis, Play/Trailer/Browse/Watchlist buttons; All Seasons button for quick season switching; trailer playback via `videoMaterialType=Trailer`
-- **Fix** — Audio track menu: one entry per language/codec, no bitrate duplicates; codec qualifier shown only when needed; adaptive bitrate within chosen group; seekbar D-pad seeks ±10 s per press
-- **Fix** — Video quality and codec label in player overlay (`720p · H265 · SDR`); H265 CDN fallback to H264 on HTTP 400; display HDR capability check prevents blank screen on SDR TVs
 - **Phase 21** — AI code review (10 warnings, 0 critical); all warnings fixed — lifecycle leaks, password hygiene, header scoping, CI keystore cleanup, monotonic versionCode, server-order preservation
 
 **Next up:**
-- **Phase 24** — Home rail source filter (Prime / All chips on home carousels)
-- **Phase 25** — Player controls streamline (consolidate audio/subtitle/speed into one set of controls)
 - **Phase 26** — Configurable audio passthrough (Dolby AC3/EAC3 to AV receiver)
 - **Phase 27** — AI code review (all code added since Phase 21)
 

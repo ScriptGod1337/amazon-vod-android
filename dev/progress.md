@@ -912,7 +912,7 @@ BrowseActivity (episodes list) → episode card → PlayerActivity (unchanged, d
 
 ---
 
-## Phase 24: PENDING — Home Rail Source Filter
+## Phase 24: COMPLETE — Home Rail Source Filter
 
 ### Problem
 
@@ -963,6 +963,28 @@ not yet parsed, add it during this phase.
 | `ui/RailsAdapter.kt` | Expose a `submitFilteredData(rails)` method; hide empty rails |
 | `model/ContentItem.kt` | Confirm `isPrime: Boolean` field exists; add if missing |
 | `api/AmazonApiService.kt` | Confirm rail item parser populates `isPrime`; add if missing |
+
+### What was done
+
+- `MainActivity.kt`: `category_filter_row` is now shown on the Home tab as well as flat-grid
+  tabs. The full unfiltered rail data is stored in `allRailsData`; applying a filter calls
+  `applyRailFilters()` which rebuilds each rail's item list client-side, hiding empty rails.
+- `RailsAdapter.kt`: added `submitFilteredData(rails)` that sets visibility `GONE` on rails
+  with no items after filtering; outer rail header is also hidden.
+- `ContentItem.kt` / `AmazonApiService.kt`: `isPrime` and `isFreeWithAds` already populated —
+  no change needed.
+
+### Prime filter false negatives (fix, same commit)
+
+Hero / Featured carousel items use a different JSON schema — they carry Prime entitlement via
+`messagePresentationModel.entitlementMessageSlotCompact[].imageId == "ENTITLED_ICON"` with
+slot text containing `"prime"`. The `ENTITLED_ICON` alone is not sufficient: it also appears for
+channel subscription content (e.g., Paramount+). The `text` field must contain `"prime"` to
+distinguish genuine Prime inclusion.
+
+Fix in `ContentItemParser.kt`: `hasEntitledIcon` now requires **both** `imageId ==
+"ENTITLED_ICON"` **and** `text.contains("prime", ignoreCase = true)`. This allowed Featured
+rail items like *F-Valentine's Day* and *Wilhelm Tell* to pass the Prime filter correctly.
 
 ---
 
@@ -1044,6 +1066,83 @@ DRM content. Feature omitted.
 - `Merged audio metadata: ...`
 - `Live audio tracks: ...`
 - `Audio menu options: ...`
+
+---
+
+## Fix: Prime badge on detail page + accurate Prime detection
+
+### Problem
+
+Two separate issues discovered after Phase 24:
+
+1. **`showPrimeEmblem` is unreliable** — Amazon sets this field to `true` on all catalog season
+   items, including seasons available only via channel subscriptions (e.g., The Handmaid's Tale
+   Season 6 via Paramount+). Using it as the Prime indicator for the detail page produced false
+   positives.
+
+2. **No Prime status shown on detail page** — There was no way to quickly verify whether a title
+   is included with Prime from the detail screen; users had to infer it from the home filter.
+
+### Solution
+
+- **`DetailInfo.isPrime: Boolean = false`** — new field added to the model.
+- **`AmazonApiService.parseDetailInfo()`** — parses `badges.prime` from the ATF v3 detail
+  endpoint response. This field is authoritative: it reflects actual Prime inclusion for the
+  requesting account and territory, not just content tagging. Example: *The Handmaid's Tale
+  Season 5* returns `badges.prime = true` in Germany (it IS included with Prime); Season 6
+  returns `false` (it requires a Paramount+ subscription).
+- **`DetailActivity.bindDetail()`** — uses `info.isPrime` (from the detail API) rather than
+  the catalog-level `isItemPrime` intent extra that came from `showPrimeEmblem`.
+- **`activity_detail.xml`** — added `tv_prime_badge` TextView in the right content panel
+  (after IMDb rating). Shows `"✓ Included with Prime"` in teal or `"✗ Not included with
+  Prime"` in grey; always visible when the detail page loads.
+
+### Files changed
+
+| File | Change |
+|------|--------|
+| `model/DetailInfo.kt` | Added `isPrime: Boolean = false` |
+| `api/AmazonApiService.kt` | Parse `badges.prime` in `parseDetailInfo()`; pass to `DetailInfo` |
+| `res/layout/activity_detail.xml` | Added `tv_prime_badge` TextView |
+| `ui/DetailActivity.kt` | Added `tvPrimeBadge` binding; `bindDetail()` uses `info.isPrime` |
+
+---
+
+## Fix: watchlist star state lost on BrowseActivity resume
+
+### Problem
+
+After toggling a watchlist star on a season card in the All Seasons browse grid, the star
+updated immediately (API call succeeded, `adapter.submitList` called). However, navigating away
+(e.g., into a season detail page) and returning to the All Seasons grid caused all stars to
+revert to their pre-toggle state.
+
+### Root cause
+
+`BrowseActivity.onResume()` rebuilt the adapter list with:
+```kotlin
+currentList.map { it.copy(watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs) }
+```
+This `.copy()` call preserved `isInWatchlist` from the stale snapshot, effectively overwriting
+the in-memory `watchlistAsins` set that `toggleWatchlist()` had already updated.
+
+### Fix
+
+`onResume()` now also syncs `isInWatchlist` from `watchlistAsins`:
+```kotlin
+val updated = currentList.map { it.copy(
+    watchProgressMs = resumeMap[it.asin] ?: it.watchProgressMs,
+    isInWatchlist = watchlistAsins.contains(it.asin)
+) }
+```
+The `watchlistAsins` set is always kept current by `toggleWatchlist()`, so this one-liner is
+sufficient — no extra API call needed.
+
+### Files changed
+
+| File | Change |
+|------|--------|
+| `ui/BrowseActivity.kt` | `onResume()` refreshes `isInWatchlist` from `watchlistAsins` |
 
 ---
 
