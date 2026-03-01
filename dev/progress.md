@@ -862,6 +862,138 @@ BrowseActivity (episodes list) → episode card → PlayerActivity (unchanged, d
 
 ---
 
+## Phase 24: PENDING — Home Rail Source Filter
+
+### Problem
+
+The home tab shows horizontal content rails. The existing Prime / All source filter chips
+(`btn_cat_all`, `btn_cat_prime`) are wired only to the **flat-grid** view (Watchlist, Search,
+Library). When the Home tab is active the `category_filter_row` is hidden and the filter has no
+effect on rails content.
+
+Users want to be able to filter home rails to Prime-only content, matching the behaviour they
+already get on the Watchlist tab.
+
+### Scope
+
+| Screen | Filter behaviour today | Target behaviour |
+|--------|----------------------|-----------------|
+| Home (rails) | No filter visible | Prime / All chips visible, filter items within each rail |
+| Watchlist / Library / Freevee / Search (flat grid) | Prime / All chips work | Unchanged |
+
+### Implementation notes
+
+**Show filter row on Home tab**: In `MainActivity.kt`, unhide `category_filter_row` when the
+Home tab is selected (currently it is only shown on non-Home tabs).
+
+**Filter rail items client-side**: After `loadHomeRails()` fills the `RailsAdapter`, re-apply
+the current source filter (`activeSourceFilter` = `"all"` or `"prime"`) to each rail's item list.
+Keep the full unfiltered list in a backing field (`allRailsData`) so toggling the chip does not
+require a network re-fetch.
+
+A rail whose items are all filtered out should be hidden entirely (set rail visibility to GONE)
+rather than showing an empty horizontal strip.
+
+**Type filter (Movies / Series)**: Same approach — apply the `activeTypeFilter` to rail items.
+This is already supported on flat-grid via `ContentItem.contentType`; the same field is available
+on rail items.
+
+**Filter field on `ContentItem`**: The `isPrime` flag is already parsed from the catalog response
+(check `ContentItem.kt` and the rail parser in `AmazonApiService.kt`). If the field is absent or
+not yet parsed, add it during this phase.
+
+**State to preserve**: The filter selection must survive tab switches. `activeSourceFilter` and
+`activeTypeFilter` are already tracked in `MainActivity` — no new state needed.
+
+### Files to change
+
+| File | Change |
+|------|--------|
+| `ui/MainActivity.kt` | Show `category_filter_row` on Home tab; apply filter to `allRailsData` on chip click |
+| `ui/RailsAdapter.kt` | Expose a `submitFilteredData(rails)` method; hide empty rails |
+| `model/ContentItem.kt` | Confirm `isPrime: Boolean` field exists; add if missing |
+| `api/AmazonApiService.kt` | Confirm rail item parser populates `isPrime`; add if missing |
+
+---
+
+## Phase 25: PENDING — Player Controls Streamline
+
+### Problem
+
+The player currently has **two parallel control systems** for audio and subtitle selection:
+
+1. **Custom overlay buttons** (`btn_audio`, `btn_subtitle`) in the `track_buttons` LinearLayout —
+   our own `AlertDialog`-based track picker, synced with `PlayerView.ControllerVisibilityListener`.
+2. **ExoPlayer's built-in `PlayerControlView`** — can show its own audio, subtitle, and playback
+   speed controls via an overflow/settings menu when `useController = true`.
+
+These are independent. If ExoPlayer's built-in audio/subtitle buttons are visible alongside ours,
+the user sees duplicate controls. Speed selection is currently absent entirely.
+
+### Goal
+
+A single, consistent set of player controls:
+- One audio track selector (our custom dialog or native, not both)
+- One subtitle track selector (same)
+- Playback speed control (currently missing)
+- No duplicate or orphaned buttons
+
+### Option A — Integrate into ExoPlayer's native controls (preferred if feasible)
+
+ExoPlayer's `PlayerControlView` allows custom button injection via `app:controller_layout_id`
+pointing to a custom layout that replaces the default one. Our `btn_audio` and `btn_subtitle`
+buttons would be placed **inside** that custom layout instead of in a separate overlay.
+
+Benefits: transport bar + track buttons animate together natively; speed control is trivial to
+add (`setShowSpeedButton(true)` or a custom button calling `player.setPlaybackSpeed()`).
+
+Steps:
+1. Create `res/layout/player_control_view.xml` — copy of ExoPlayer's default layout with our
+   audio/subtitle buttons added where the native ones appear, and a speed button added.
+2. Set `app:controller_layout_id="@layout/player_control_view"` on the `PlayerView` in
+   `activity_player.xml`.
+3. In `PlayerActivity.kt`, find the buttons by id inside `playerView` and wire `setOnClickListener`
+   to `showTrackSelectionDialog()` (same as today).
+4. Remove the separate `track_buttons` LinearLayout from `activity_player.xml`.
+5. Remove the `ControllerVisibilityListener` syncing logic — no longer needed.
+6. Add speed button: open a simple `AlertDialog` with options (0.5×, 0.75×, 1×, 1.25×, 1.5×,
+   2×); call `player.setPlaybackSpeed(speed)`.
+
+**Verify**: `app:show_subtitle_button` and `app:show_audio_button` on `PlayerView` in layout —
+set to `false` to suppress the native icons if they appear alongside our custom ones.
+
+Option B — Suppress native controls, keep custom overlay (simpler, lower risk)
+
+If Option A proves fragile (ExoPlayer layout IDs change between versions), the fallback is:
+- Set `app:show_subtitle_button="false"` and `app:show_audio_button="false"` on `PlayerView`
+  to remove native duplicates.
+- Keep existing `btn_audio` / `btn_subtitle` overlay buttons (no change needed).
+- Add speed selection as a third custom button `btn_speed` in the `track_buttons` row, calling
+  `player.setPlaybackSpeed()`.
+
+### Files to change (Option A)
+
+| File | Change |
+|------|--------|
+| `res/layout/activity_player.xml` | Set `controller_layout_id`; remove `track_buttons` LinearLayout |
+| `res/layout/player_control_view.xml` | New file — custom PlayerControlView layout with audio, subtitle, speed buttons |
+| `ui/PlayerActivity.kt` | Wire buttons inside `playerView`; remove `ControllerVisibilityListener` sync; add speed dialog |
+
+### Files to change (Option B — fallback)
+
+| File | Change |
+|------|--------|
+| `res/layout/activity_player.xml` | Add `show_subtitle_button="false"`, `show_audio_button="false"`; add `btn_speed` to `track_buttons` row |
+| `ui/PlayerActivity.kt` | Wire `btn_speed` to speed dialog |
+
+### Decision to make at implementation time
+
+Attempt Option A first. If ExoPlayer's `player_control_view.xml` internal IDs (`exo_audio`,
+`exo_subtitle`, etc.) are stable for Media3 1.3.x and the layout merges cleanly, proceed.
+If the build fails or the layout breaks D-pad focus order, fall back to Option B.
+
+---
+
 ## Phase 22: PENDING — UI Redesign
 
 Redesign the app UI from functional prototype to a polished, modern streaming experience.
