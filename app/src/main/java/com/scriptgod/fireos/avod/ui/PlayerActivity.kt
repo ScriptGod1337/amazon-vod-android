@@ -71,6 +71,7 @@ class PlayerActivity : AppCompatActivity() {
         const val EXTRA_CONTENT_TYPE = "extra_content_type"
         const val EXTRA_MATERIAL_TYPE = "extra_material_type"
         const val EXTRA_RESUME_MS = "extra_resume_ms"
+        const val EXTRA_SERIES_ASIN = "extra_series_asin"
         private val CHANNEL_SUFFIX_REGEX = Regex("""\s+\d\.\d(\s*(surround|atmos))?""", RegexOption.IGNORE_CASE)
 
         // Widevine UUID
@@ -103,6 +104,7 @@ class PlayerActivity : AppCompatActivity() {
     private var heartbeatJob: Job? = null
     private var playbackJob: Job? = null
     private var currentAsin: String = ""
+    private var currentSeriesAsin: String = ""
     private var currentMaterialType: String = "Feature"
     private var currentQuality: PlaybackQuality = PlaybackQuality.HD
     private var h265FallbackAttempted: Boolean = false
@@ -265,6 +267,7 @@ class PlayerActivity : AppCompatActivity() {
         val asin = intent.getStringExtra(EXTRA_ASIN)
             ?: run { showError("No ASIN provided"); return }
         currentAsin = asin
+        currentSeriesAsin = intent.getStringExtra(EXTRA_SERIES_ASIN) ?: ""
 
         val tokenFile = LoginActivity.findTokenFile(this)
             ?: run { finish(); return }
@@ -753,7 +756,7 @@ class PlayerActivity : AppCompatActivity() {
         val posMs = p.currentPosition
         if (!force && posMs <= 0L) return
         if (!force && posMs - lastResumeSaveElapsedMs < 25_000L) return
-        ProgressRepository.update(currentAsin, posMs, p.duration, currentMaterialType)
+        ProgressRepository.update(currentAsin, posMs, p.duration, currentMaterialType, currentSeriesAsin)
         lastResumeSaveElapsedMs = posMs
     }
 

@@ -117,7 +117,11 @@ class DetailActivity : AppCompatActivity() {
         val info = detailInfo ?: return
         // Re-read progress after returning from PlayerActivity — repository is already updated
         // in-memory by PlayerActivity so no network call is needed.
-        if (btnPlay.isVisible) {
+        val isSeries = AmazonApiService.isSeriesContentType(info.contentType)
+        val isSeason = info.contentType.uppercase().contains("SEASON")
+        if (isSeries && !isSeason) {
+            updateSeriesResumeCta(info)
+        } else if (btnPlay.isVisible) {
             val posMs = ProgressRepository.get(info.asin)?.positionMs ?: 0L
             btnPlay.text = if (posMs > 10_000L) "▶  Resume" else "▶  Play"
         }
@@ -257,17 +261,7 @@ class DetailActivity : AppCompatActivity() {
                 }
             } else {
                 // Series overview → Resume Episode (if in progress) + Browse Seasons
-                val resumeEpisode = ProgressRepository.getInProgressItems()
-                    .filter { it.seriesAsin == info.asin }
-                    .maxByOrNull { it.watchProgressMs }
-                if (resumeEpisode != null) {
-                    val label = if (resumeEpisode.seasonNumber != null && resumeEpisode.episodeNumber != null)
-                        "▶  Resume S${resumeEpisode.seasonNumber}E${resumeEpisode.episodeNumber}"
-                    else "▶  Resume Episode"
-                    btnPlay.text = label
-                    btnPlay.visibility = View.VISIBLE
-                    btnPlay.setOnClickListener { onResumeEpisodeClicked(resumeEpisode) }
-                }
+                updateSeriesResumeCta(info)
                 btnBrowse.text = "Browse Seasons"
                 btnBrowse.visibility = View.VISIBLE
                 btnBrowse.setOnClickListener { onBrowseClicked(info) }
@@ -386,8 +380,37 @@ class DetailActivity : AppCompatActivity() {
             putExtra(PlayerActivity.EXTRA_TITLE, episode.title)
             putExtra(PlayerActivity.EXTRA_CONTENT_TYPE, episode.contentType)
             putExtra(PlayerActivity.EXTRA_RESUME_MS, resumeMs)
+            if (episode.seriesAsin.isNotEmpty()) putExtra(PlayerActivity.EXTRA_SERIES_ASIN, episode.seriesAsin)
         }
         UiTransitions.open(this, intent)
+    }
+
+    /** Finds the most recent in-progress episode for a series and wires up the Resume CTA.
+     *  Checks server-backed items first; falls back to local-only progress map entries. */
+    private fun updateSeriesResumeCta(info: DetailInfo) {
+        val serverEpisode = ProgressRepository.getInProgressItems()
+            .filter { it.seriesAsin == info.asin }
+            .maxByOrNull { it.watchProgressMs }
+        val resumeEpisode: ContentItem? = serverEpisode ?: run {
+            val local = ProgressRepository.getLocalProgressForSeries(info.asin) ?: return@run null
+            ContentItem(
+                asin = local.first,
+                title = "Episode",
+                contentType = "Episode",
+                watchProgressMs = local.second.positionMs,
+                seriesAsin = info.asin
+            )
+        }
+        if (resumeEpisode != null) {
+            val label = if (resumeEpisode.seasonNumber != null && resumeEpisode.episodeNumber != null)
+                "▶  Resume S${resumeEpisode.seasonNumber}E${resumeEpisode.episodeNumber}"
+            else "▶  Resume Episode"
+            btnPlay.text = label
+            btnPlay.visibility = View.VISIBLE
+            btnPlay.setOnClickListener { onResumeEpisodeClicked(resumeEpisode) }
+        } else {
+            btnPlay.visibility = View.GONE
+        }
     }
 
     private fun onTrailerClicked(info: DetailInfo) {

@@ -1179,6 +1179,8 @@ class MainActivity : AppCompatActivity() {
                         val displayList = if (cwRail != null) listOf(cwRail) + filtered else filtered
                         updateHomeFeaturedStrip(displayList)
                         railsAdapter.submitList(displayList)
+                    } else if (adapter.currentList.isNotEmpty()) {
+                        adapter.submitList(adapter.currentList.map(::withRepositoryProgress))
                     }
                 } catch (e: Exception) {
                     Log.w(TAG, "TTL progress refresh failed", e)

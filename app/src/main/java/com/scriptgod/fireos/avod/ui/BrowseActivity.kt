@@ -398,6 +398,7 @@ class BrowseActivity : AppCompatActivity() {
                     putExtra(PlayerActivity.EXTRA_TITLE, item.title)
                     putExtra(PlayerActivity.EXTRA_CONTENT_TYPE, item.contentType)
                     putExtra(PlayerActivity.EXTRA_RESUME_MS, item.watchProgressMs.coerceAtLeast(0L))
+                    if (item.seriesAsin.isNotEmpty()) putExtra(PlayerActivity.EXTRA_SERIES_ASIN, item.seriesAsin)
                 }
                 UiTransitions.open(this, intent)
             }
