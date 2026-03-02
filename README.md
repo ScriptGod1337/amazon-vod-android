@@ -121,9 +121,9 @@ Current redesigned UI, captured from the Android TV emulator:
 |:---:|:---:|
 | ![Player Controls](screenshots/09_player_overlay_emulator.png) | ![Continue Watching](screenshots/10_continue_watching_emulator.png) |
 
-| Detail page — progress + Resume | Detail page — Play + Trailer |
+| Detail page — Resume + Trailer + progress bar | Detail page — Play + Trailer (no progress) |
 |:---:|:---:|
-| ![Detail with progress](screenshots/11_detail_movie_progress_emulator.png) | ![Detail no progress](screenshots/06_detail_season_emulator.png) |
+| ![Detail with progress](screenshots/11_detail_movie_progress_emulator.png) | ![Detail play + trailer](screenshots/12_detail_movie_play_emulator.png) |
 
 ## Known limitations
 
