@@ -47,16 +47,9 @@ object ProgressRepository {
             progressMap.clear()
             progressMap.putAll(loadPersistedEntries())
             for ((asin, progress) in serverProgress) {
-                val newEntry = ProgressEntry(progress.first, progress.second)
-                val existing = progressMap[asin]
-                // -1L (fully watched) always wins. Otherwise keep whichever position is
-                // further along — guards against server returning a stale older position
-                // when the user watched more locally between two refreshes.
-                if (existing == null
-                    || newEntry.positionMs == -1L
-                    || (existing.positionMs != -1L && newEntry.positionMs > existing.positionMs)) {
-                    progressMap[asin] = newEntry
-                }
+                // Repository contract: server wins on refresh. Local writes only become
+                // authoritative again during the active playback session after refresh.
+                progressMap[asin] = ProgressEntry(progress.first, progress.second)
             }
             inProgressItems = serverInProgressItems.map { item ->
                 val entry = progressMap[item.asin]

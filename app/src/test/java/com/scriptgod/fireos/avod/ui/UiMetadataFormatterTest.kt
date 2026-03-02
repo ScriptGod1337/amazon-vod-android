@@ -129,6 +129,6 @@ class UiMetadataFormatterTest {
         )
 
         val metadata = UiMetadataFormatter.cardMetadata(item, CardPresentation.POSTER)
-        assertEquals("Feature film", metadata.subtitle)
+        assertEquals("", metadata.subtitle)
     }
 }

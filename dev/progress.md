@@ -1832,7 +1832,7 @@ body as a separate property (not always present; varies by title and region).
 | Play/Resume button | `DetailActivity.kt` | `bindDetail()` sets text to "▶  Resume" when `posMs > 10 s`, "▶  Play" otherwise |
 | Trailer icon | `activity_detail.xml` | Changed `▶  Trailer` → `▷  Trailer` (outline triangle = preview/trailer semantic) |
 | Hero strip progress bar | `activity_main.xml`, `MainActivity.kt` | `iv_home_featured` wrapped in `FrameLayout`; amber `ProgressBar` at bottom; wired via `ProgressRepository.get()` in `updateHomeFeaturedStrip()` |
-| Seekbar thumbnail preview | — | Deferred to Phase 32 — requires DASH trick-play track investigation per title |
+| Seekbar thumbnail preview | — | Deferred to a later phase — requires DASH trick-play track investigation per title |
 
 ### Post-ship analysis
 
@@ -1861,7 +1861,7 @@ P0 and P1 fixes are planned for the next phase alongside the seekbar thumbnail f
 
 
 ## Phase 32: COMPLETE
-- Applied all P0, P1, P2 fixes identified in the Phase 31 post-ship analysis
+- Applied the high-value P0/P1 fixes and selected low-risk P2 fixes identified in the Phase 31 post-ship analysis
 - See `dev/phase31-analysis.md` for issue details and fix rationale
 
 ### What was fixed
@@ -1876,7 +1876,6 @@ P0 and P1 fixes are planned for the next phase alongside the seekbar thumbnail f
 | P2-A Redundant `pbWatchProgress.max = 1000` | Removed from `bindProgress()`; XML declaration is the single source of truth |
 | P2-B Watchlist double-tap sends duplicate API call | Added `watchlistUpdateInFlight` boolean with `try/finally` in `onWatchlistClicked()` |
 | P2-C `getInProgressEntries()` redundant `!= -1L` | Simplified to `positionMs > 0L` (the extra condition was already implied) |
-| P2-D `refresh()` overwrites newer local progress | Changed to max-position-wins merge: `-1L` always wins, otherwise keep the larger positive position |
 
 ### Emulator test results
 
@@ -1892,4 +1891,5 @@ P0 and P1 fixes are planned for the next phase alongside the seekbar thumbnail f
 - P3-A: Series detail last-episode resume shortcut
 - P3-B: Background progress refresh / TTL
 - P3-C: `seriesAsin` not set in `detailInfoToContentItem()`
+- P2-D alternative merge policy — server-first refresh was kept to preserve Decision 25 and README behavior
 - Seekbar thumbnail preview (deferred from Phase 31)
