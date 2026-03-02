@@ -499,13 +499,29 @@
             android:padding="8dp"
             android:visibility="gone">
 
-            <ImageView
-                android:id="@+id/iv_home_featured"
+            <FrameLayout
                 android:layout_width="@dimen/featured_strip_image_width"
-                android:layout_height="match_parent"
-                android:adjustViewBounds="true"
-                android:background="#1A1A1A"
-                android:scaleType="centerCrop" />
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/iv_home_featured"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:adjustViewBounds="true"
+                    android:background="#1A1A1A"
+                    android:scaleType="centerCrop" />
+
+                <ProgressBar
+                    android:id="@+id/pb_home_featured_progress"
+                    style="@android:style/Widget.ProgressBar.Horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom"
+                    android:max="1000"
+                    android:progressTint="#F3A600"
+                    android:progressBackgroundTint="#3A3A3A"
+                    android:visibility="gone" />
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="0dp"

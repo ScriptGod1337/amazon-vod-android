@@ -124,7 +124,6 @@ internal object UiMetadataFormatter {
         when {
             item.isEpisode() -> parts += "Playable episode"
             item.isSeriesContainer() -> parts += "Series overview"
-            item.isMovie() -> parts += "Feature film"
         }
         when (item.primaryAvailabilityBadge()) {
             "Freevee" -> parts += "Ad-supported"

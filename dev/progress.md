@@ -1625,3 +1625,212 @@ After Phase 30 landed, one regression remained:
 - emulator: Continue Watching movie direct-play opened `PlayerActivity` directly
 - Fire TV: `Fallout` episode resume worked again from server-backed progress even after local
   cache was cleared
+
+---
+
+## Phase 31: COMPLETE — Minor UI Improvements
+
+Four focused polish items spanning the detail page, home hero strip, content card labels, and
+the player seekbar.
+
+---
+
+### Item 1: Detail page — watch progress + distinct Play/Resume/Trailer icons
+
+#### 1a. Watch progress on the detail page
+
+**Goal**: When the user opens a detail page for a title they have partially watched, show a
+progress indicator so they can see where they left off before tapping Play.
+
+**What to show**:
+- An amber horizontal `ProgressBar` directly below the hero image or above the Play button area
+- A text label using the same format as card subtitles: `"X% watched · Y min left"` or `"Resume from Xh Ym"`
+- When `watchProgressMs == -1L` or fully watched (≥ 90%): show `"Finished recently"` and no bar
+
+**Data source**: `ProgressRepository.get(asin)` is already called in `onCreate()` (the
+`serverResumeMs` field stores the intent-passed resume ms; fall back to repository if not set).
+Runtime is available from `DetailInfo.runtimeSeconds * 1000`.
+
+**Files to change**:
+
+| File | Change |
+|------|--------|
+| `res/layout/activity_detail.xml` | Add `ProgressBar` (horizontal, amber tint, 0dp height=4dp) + `TextView` above the button row |
+| `ui/DetailActivity.kt` | Bind both views; after `loadDetail()` resolves `DetailInfo`, call `bindProgress()` which reads `ProgressRepository.get(asin)` and either shows or hides the bar |
+| `ui/UiMetadataFormatter.kt` | Add `detailProgressLine(posMs, runtimeMs): String?` — same logic as `progressSubtitle()` but returns null when no progress |
+
+**Edge cases**:
+- `runtimeMs == 0L`: hide progress bar (can't draw a meaningful fraction)
+- `watchProgressMs > 0L && runtimeMs > 0L && fraction >= 0.9`: show "Finished recently", no bar
+- `materialType == "Trailer"`: never show resume state
+
+#### 1b. Distinct icons for Play and Trailer buttons
+
+**Goal**: The two buttons currently differ only in text. Make them visually distinct at a glance.
+
+| Button | Current | Target |
+|--------|---------|--------|
+| Play / Resume | Text only | Leading `▶` vector icon (filled play triangle) |
+| Trailer | Text only | Leading `◻` / filmstrip-style icon (hollow play or clapper icon) |
+
+**Implementation**:
+- Add `ic_play_filled.xml` vector drawable (standard Material `play_arrow` path, 20dp)
+- Add `ic_trailer.xml` vector drawable (outline play circle or `movie` icon, 20dp)
+- Set `android:drawableStart` on each `AppCompatButton` in `activity_detail.xml`
+- In `DetailActivity.bindDetail()`, swap `btnPlay` text to `"▶ Resume"` when `posMs > 10_000`,
+  `"▶ Play"` otherwise (icon stays the same; text signals resume vs fresh start)
+- `btnTrailer` always shows its film icon regardless of progress
+
+---
+
+### Item 2: Progress bar on the home screen hero strip
+
+**Goal**: The featured hero image at the top of the home screen should show an amber progress
+bar at the bottom of the image when the featured item has watch progress, matching the progress
+bar on the Continue Watching rail cards.
+
+**Current state**: The hero `FrameLayout` (`home_featured_strip`) has a hero image, gradient
+overlay, eyebrow/title/meta `TextViews`, and a click handler. No progress indication.
+
+**Implementation**:
+
+| File | Change |
+|------|--------|
+| `res/layout/activity_main.xml` | Add `ProgressBar` (horizontal, `layout_gravity="bottom"`, full width, 4dp height, amber tint, `visibility="gone"`) inside `home_featured_strip` FrameLayout, z-ordered above the gradient overlay |
+| `ui/MainActivity.kt` | In `updateHomeFeaturedStrip()`: after resolving `nonNullFeaturedItem`, call `ProgressRepository.get(item.asin)` and set bar progress / visibility. Use `max=1000`, `progress=(posMs * 1000 / runtimeMs).toInt()`. Hide when `watchProgressMs == 0L` or `runtimeMs == 0L` |
+
+**Note**: The bar should be shown for the CW hero (which always has progress) AND for any other
+featured item that happens to have partial progress.
+
+---
+
+### Item 3: Remove misleading "Feature film" fallback label from content cards
+
+**Current state**: `UiMetadataFormatter.secondaryLine()` (line 127) falls back to
+`"Feature film"` for movies when the API-sourced `subtitle` field is empty. This text is
+redundant — the card overline already says `"Movie"` — and slightly formal/awkward.
+
+**Source**: `UiMetadataFormatter.kt`, `secondaryLine()`:
+```kotlin
+item.isMovie() -> parts += "Feature film"
+```
+
+**Fix**: Remove this fallback line. When a movie has no API subtitle and no watch progress,
+the subtitle area on the card will be blank rather than showing a redundant label. The overline
+`"Movie"` (or `"Continue Watching"` if in progress) provides sufficient context.
+
+Also check `landscapeSubtitle()` — it delegates to `secondaryLine()` for movies so the same
+fix covers landscape cards (e.g., Continue Watching cards with no progress).
+
+| File | Change |
+|------|--------|
+| `ui/UiMetadataFormatter.kt` | Remove `item.isMovie() -> parts += "Feature film"` line from `secondaryLine()` |
+
+Unit test `UiMetadataFormatterTest.kt` should be updated to verify blank subtitle for movies
+with no subtitle and no progress.
+
+---
+
+### Item 4: Player seekbar — thumbnail preview during scrubbing
+
+**Goal**: Show a small image preview above the seekbar while the user scrubs (as in the
+official Prime Video app), so they can see what scene they are seeking to before releasing.
+
+#### How Amazon implements it
+
+Amazon DASH manifests typically include an image adaptation set — a "trick play" track — that
+provides thumbnail sprite sheets at regular intervals:
+
+```xml
+<AdaptationSet mimeType="image/jpeg" contentType="image">
+  <SegmentTemplate media="$Number$" timescale="1" duration="10" startNumber="1">
+    ...
+  </SegmentTemplate>
+  <Representation id="thumbnail" width="1920" height="90" bandwidth="512">
+    ...
+  </Representation>
+</AdaptationSet>
+```
+
+Each sprite sheet image contains multiple frames arranged in a grid. The number of columns and
+rows per sprite and the per-frame width/height are encoded in the adaptation set attributes or
+in a `<EssentialProperty>` with scheme `urn:mpeg:dash:thumbnail:2013`.
+
+Amazon also sometimes includes a dedicated thumbnails URL in the `GetPlaybackResources` response
+body as a separate property (not always present; varies by title and region).
+
+#### Investigation required (before implementation)
+
+1. Capture a live `GetPlaybackResources` response for a HD title and a 4K title — check if
+   there is a thumbnail/trickplay track in the MPD XML.
+2. If present in the MPD, parse:
+   - `SegmentTemplate duration` → interval between frames (seconds)
+   - `Representation width`/`height` → sprite sheet total dimensions
+   - Number of columns and rows (often found in `@sar` or essential property)
+   - Template URL pattern
+3. If not in the MPD, check the `GetPlaybackResources` JSON response top level for a
+   `thumbnailTrack` / `trickPlayTrack` property.
+
+#### UI implementation plan
+
+1. **`PlayerActivity.kt`**:
+   - After manifest is loaded, extract `thumbnailTrackUrl`, `frameIntervalSec`, `frameWidth`,
+     `frameHeight`, `framesPerRow` from the `PlaybackInfo` model (add new fields)
+   - Attach `DefaultTimeBar.OnScrubListener` to the seekbar:
+     - `onScrubStart` / `onScrubMove(position: Long)` → `showThumbnailAt(position)`
+     - `onScrubStop` → `hideThumbnail()`
+
+2. **`showThumbnailAt(positionMs)`**:
+   - `frameIndex = (positionMs / 1000 / frameIntervalSec).toInt()`
+   - `sheetIndex = frameIndex / (framesPerRow * framesPerRow)` (frames per sheet)
+   - `col = frameIndex % framesPerRow`
+   - `row = (frameIndex / framesPerRow) % framesPerRow`
+   - Request the sprite sheet image URL via `Coil` (cacheable), crop the frame as a `Bitmap`
+     using `BitmapRegionDecoder`
+   - Display in a floating `ImageView` / `CardView` above the seekbar at the x-position
+     corresponding to the seek position
+
+3. **Layout (`activity_player.xml`)**:
+   - Add a `CardView` + `ImageView` (`id=iv_seek_thumbnail`) with `visibility="gone"`, fixed
+     size (e.g., 160×90dp), positioned above the `exo_progress` bar
+   - `alpha=0` while hidden; fade in on scrub start
+
+4. **`AmazonApiService.kt` / `PlaybackInfo.kt`**:
+   - Add `thumbnailTrackUrl: String`, `frameIntervalSec: Int`, `spriteColumns: Int`,
+     `spriteRows: Int`, `frameWidthPx: Int`, `frameHeightPx: Int` to `PlaybackInfo`
+   - Parse from DASH manifest (or `GetPlaybackResources` JSON) in `getPlaybackInfo()`
+
+#### Known constraints
+
+- `BitmapRegionDecoder` decodes only JPEG and PNG — matches Amazon's sprite format
+- Coil image loading must be done off the main thread; `BitmapRegionDecoder` must not be called
+  on UI thread
+- The `DefaultTimeBar.OnScrubListener` interface must be set via
+  `(playerView.findViewById<DefaultTimeBar>(R.id.exo_progress))?.addListener(scrubListener)`
+- If no thumbnail track is found for a title, the feature degrades gracefully (no preview shown)
+- Trailer playback: thumbnails should be disabled (thumbnail track likely absent for trailers)
+
+---
+
+### Definition of done (Phase 31)
+
+- [x] Detail page shows progress bar + "X% watched · Y min left" for partially watched titles
+- [x] Play button shows `▶ Resume` when progress > 10 s; `▶ Play` otherwise
+- [x] Trailer button has a distinct icon (`▷` outline triangle vs `▶` filled)
+- [x] Home hero strip shows amber progress bar when featured item has watch progress
+- [x] `"Feature film"` fallback text removed from movie cards
+- [ ] Thumbnail preview appears above seekbar on scrub for titles that have a trick play track (deferred — requires DASH manifest investigation)
+- [ ] Thumbnail degrades gracefully (no crash, no UI artifact) when track is absent (deferred)
+- [x] `./gradlew assembleRelease` passes; no new warnings
+
+### Completed items
+
+| Item | File(s) changed | Notes |
+|------|-----------------|-------|
+| Remove "Feature film" | `UiMetadataFormatter.kt` | Removed fallback from `secondaryLine()`; overline already says "Movie" |
+| Detail page progress | `activity_detail.xml`, `DetailActivity.kt` | Amber `ProgressBar` + "X% watched · Y min left" `TextView` below metadata; reads `ProgressRepository.get(asin)` |
+| Play/Resume button | `DetailActivity.kt` | `bindDetail()` sets text to "▶  Resume" when `posMs > 10 s`, "▶  Play" otherwise |
+| Trailer icon | `activity_detail.xml` | Changed `▶  Trailer` → `▷  Trailer` (outline triangle = preview/trailer semantic) |
+| Hero strip progress bar | `activity_main.xml`, `MainActivity.kt` | `iv_home_featured` wrapped in `FrameLayout`; amber `ProgressBar` at bottom; wired via `ProgressRepository.get()` in `updateHomeFeaturedStrip()` |
+| Seekbar thumbnail preview | — | Deferred to Phase 32 — requires DASH trick-play track investigation per title |
+

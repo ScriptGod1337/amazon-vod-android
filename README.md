@@ -9,12 +9,13 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 - **Continue Watching row** — first rail on the home screen, built from centralized `ProgressRepository` data; shows amber progress bars and remaining-time subtitles; hero strip overrides to "X% watched · Y min left" when CW is active; bypasses source/type filters. Server watchlist progress is loaded on refresh, local in-progress ASINs can be backfilled into the row by fetching detail metadata when needed, and direct-play from Continue Watching passes the current resume position explicitly into the player
 - **Home page horizontal carousels** — categorised rails (Featured, Trending, Top 10, etc.) matching the real Prime Video home layout, with page-level infinite scroll for more rails
 - **Content overview / detail page** — selecting any movie or series opens a full detail screen before playback: hero backdrop image, poster, year/runtime/age rating, quality badges (4K/HDR/5.1), IMDb rating, genres, synopsis, director credit
-  - **▶ Play** button for movies
-  - **▶ Trailer** button (shown only when `isTrailerAvailable: true`)
+  - **▶ Resume / ▶ Play** button for movies — shows "Resume" when progress > 10 s, "Play" otherwise
+  - **▷ Trailer** button (distinct outline icon, shown only when `isTrailerAvailable: true`)
+  - **Amber progress bar + "X% watched · Y min left"** on the detail page for partially-watched titles
   - **Browse Episodes** + **All Seasons** buttons for series/seasons — All Seasons lets you jump to any other season without navigating back
   - **☆ / ★ Watchlist** toggle on every detail page
   - **Prime badge** — every detail page shows "✓ Included with Prime" (teal) or "✗ Not included with Prime" (grey), sourced from the ATF v3 detail API for accurate per-title, per-territory status
-- **Watch progress bars** on content cards — amber for in-progress, sourced from centralized server-first progress state with immediate local updates during playback
+- **Watch progress bars** on content cards and hero strip thumbnail — amber for in-progress, sourced from centralized server-first progress state with immediate local updates during playback
 - Browse home catalog, watchlist, and personal library
 - Search with instant results
 - Filter by source (All / Prime) and type (Movies / Series) — filters combine independently
@@ -97,6 +98,10 @@ Current redesigned UI, captured from the Android TV emulator:
 |:---:|:---:|
 | ![Player Controls](screenshots/09_player_overlay_emulator.png) | ![Continue Watching](screenshots/10_continue_watching_emulator.png) |
 
+| Detail page — progress + Resume | Detail page — Play + Trailer |
+|:---:|:---:|
+| ![Detail with progress](screenshots/11_detail_movie_progress_emulator.png) | ![Detail no progress](screenshots/06_detail_season_emulator.png) |
+
 ## Known limitations
 
 ### Watch progress — centralized cache with server-first refresh
@@ -152,23 +157,24 @@ system service via a hidden MediaSession proxy on Fire OS. Not implemented.
 See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history and upcoming work.
 
 **Recently completed:**
-- **Phase 29** — Continue Watching row: first rail on the home screen built from server-side
-  watchlist progress; amber progress bars + remaining-time subtitles; hero strip overrides to
-  progress meta; bypasses source/type filters; `RailsAdapter` adapter-reuse fix eliminates
-  first-item flicker; pool contamination fix in `ContentAdapter`
+- **Phase 31** — Minor UI polish: detail page amber progress bar + "X% watched · Y min left" for
+  partially watched titles; **▶ Resume** / **▶ Play** distinction on the Play button; **▷ Trailer**
+  distinct outline icon; amber progress bar on home hero strip thumbnail; removed redundant
+  "Feature film" fallback label from movie cards (overline already says "Movie")
 - **Phase 30** — Centralized `ProgressRepository`: single source of truth for all ASIN progress;
   server-first refresh + local fallback cache; periodic local writes during playback; no more
   progress intent chain; Home can backfill local-only Continue Watching items by ASIN; Continue
   Watching movies and episodes now direct-play and pass explicit resume positions to the player
+- **Phase 29** — Continue Watching row: first rail on the home screen built from server-side
+  watchlist progress; amber progress bars + remaining-time subtitles; hero strip overrides to
+  progress meta; bypasses source/type filters; `RailsAdapter` adapter-reuse fix eliminates
+  first-item flicker; pool contamination fix in `ContentAdapter`
 - **Phase 28** — Widevine L3/SD fallback: emulator playback enabled; L3 device detected at
   player-creation time and forced to SD quality (mirrors official APK `ConfigurablePlaybackSupportEvaluator`)
-- **Phase 27** — AI code review (5 warnings + 4 info); all findings fixed — keep-screen-on flags,
-  seek recovery via `onPositionDiscontinuity` + `onRenderedFirstFrame`, `h265FallbackAttempted`
-  reset, `SharedPreferences` key hygiene, AppCompatButton consistency
-- **Phase 26** — Configurable audio passthrough: Off (PCM decode) / On (AC3/EAC3 Dolby bitstream
-  to AV receiver); live HDMI capability badge; `DefaultRenderersFactory.buildAudioSink()` override
 
 **Next up:**
+- Seekbar thumbnail preview during scrubbing (Phase 32) — requires DASH trick-play track
+  investigation per title before UI implementation
 - Deeper cross-device progress conflict resolution if Amazon exposes a trustworthy backend
   progress timestamp in a future API path
 

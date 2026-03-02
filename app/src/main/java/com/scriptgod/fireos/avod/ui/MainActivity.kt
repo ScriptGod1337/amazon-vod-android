@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnAbout: Button
     private lateinit var homeFeaturedStrip: LinearLayout
     private lateinit var homeFeaturedImage: ImageView
+    private lateinit var pbHomeFeaturedProgress: ProgressBar
     private lateinit var tvHomeFeaturedEyebrow: TextView
     private lateinit var tvHomeFeaturedTitle: TextView
     private lateinit var tvHomeFeaturedMeta: TextView
@@ -133,6 +134,7 @@ class MainActivity : AppCompatActivity() {
         btnAbout = findViewById(R.id.btn_about)
         homeFeaturedStrip = findViewById(R.id.home_featured_strip)
         homeFeaturedImage = findViewById(R.id.iv_home_featured)
+        pbHomeFeaturedProgress = findViewById(R.id.pb_home_featured_progress)
         tvHomeFeaturedEyebrow = findViewById(R.id.tv_home_featured_eyebrow)
         tvHomeFeaturedTitle = findViewById(R.id.tv_home_featured_title)
         tvHomeFeaturedMeta = findViewById(R.id.tv_home_featured_meta)
@@ -1065,6 +1067,18 @@ class MainActivity : AppCompatActivity() {
             homeFeaturedImage.setImageDrawable(null)
             homeFeaturedImage.setBackgroundColor(Color.parseColor("#1A1A1A"))
         }
+
+        val featuredProgress = ProgressRepository.get(nonNullFeaturedItem.asin)
+        val featuredPosMs = featuredProgress?.positionMs ?: 0L
+        val featuredRuntimeMs = featuredProgress?.runtimeMs ?: 0L
+        if (featuredPosMs > 0L && featuredRuntimeMs > 0L) {
+            val fraction = (featuredPosMs * 1000L / featuredRuntimeMs).toInt().coerceIn(0, 1000)
+            pbHomeFeaturedProgress.progress = fraction
+            pbHomeFeaturedProgress.visibility = View.VISIBLE
+        } else {
+            pbHomeFeaturedProgress.visibility = View.GONE
+        }
+
         homeFeaturedStrip.setOnClickListener {
             onItemSelected(
                 nonNullFeaturedItem,

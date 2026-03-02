@@ -10,6 +10,7 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.isVisible
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import coil.load
@@ -54,6 +55,8 @@ class DetailActivity : AppCompatActivity() {
     private lateinit var btnSeasons: Button
     private lateinit var btnWatchlist: Button
     private lateinit var tvPrimeBadge: TextView
+    private lateinit var pbWatchProgress: ProgressBar
+    private lateinit var tvWatchProgress: TextView
 
     private lateinit var apiService: AmazonApiService
     private var watchlistAsins: MutableSet<String> = mutableSetOf()
@@ -87,6 +90,8 @@ class DetailActivity : AppCompatActivity() {
         btnSeasons = findViewById(R.id.btn_seasons)
         btnWatchlist = findViewById(R.id.btn_watchlist)
         tvPrimeBadge = findViewById(R.id.tv_prime_badge)
+        pbWatchProgress = findViewById(R.id.pb_watch_progress)
+        tvWatchProgress = findViewById(R.id.tv_watch_progress)
 
         val tokenFile = LoginActivity.findTokenFile(this) ?: run { finish(); return }
         apiService = AmazonApiService(AmazonAuthService(tokenFile))
@@ -244,9 +249,13 @@ class DetailActivity : AppCompatActivity() {
             }
         } else {
             // Movie / Feature → play
+            val resumeMs = ProgressRepository.get(info.asin)?.positionMs ?: 0L
+            btnPlay.text = if (resumeMs > 10_000L) "▶  Resume" else "▶  Play"
             btnPlay.visibility = View.VISIBLE
             btnPlay.setOnClickListener { onPlayClicked(info) }
         }
+
+        bindProgress(info)
 
         // Trailer button (only if trailer is available and not a pure series overview)
         if (info.isTrailerAvailable && !isSeries) {
@@ -268,6 +277,34 @@ class DetailActivity : AppCompatActivity() {
                 else -> btnWatchlist.requestFocus()
             }
         }
+    }
+
+    private fun bindProgress(info: DetailInfo) {
+        val runtimeMs = info.runtimeSeconds * 1000L
+        val entry = ProgressRepository.get(info.asin)
+        val posMs = entry?.positionMs ?: 0L
+        if (runtimeMs <= 0L || posMs <= 0L) {
+            pbWatchProgress.isVisible = false
+            tvWatchProgress.isVisible = false
+            return
+        }
+        val fraction = (posMs * 1000L / runtimeMs).toInt().coerceIn(0, 1000)
+        if (fraction >= 900) {
+            pbWatchProgress.isVisible = false
+            tvWatchProgress.text = "Finished recently"
+            tvWatchProgress.isVisible = true
+            return
+        }
+        pbWatchProgress.max = 1000
+        pbWatchProgress.progress = fraction
+        pbWatchProgress.isVisible = true
+        val progressPercent = (fraction / 10).coerceIn(1, 99)
+        val remainingMinutes = ((runtimeMs - posMs).coerceAtLeast(0L) / 60_000L).toInt()
+        tvWatchProgress.text = if (remainingMinutes > 0)
+            "$progressPercent% watched · ${remainingMinutes} min left"
+        else
+            "$progressPercent% watched"
+        tvWatchProgress.isVisible = true
     }
 
     private fun updateWatchlistButton(isIn: Boolean) {
