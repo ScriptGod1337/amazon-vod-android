@@ -300,6 +300,10 @@ class DetailActivity : AppCompatActivity() {
             putExtra(PlayerActivity.EXTRA_ASIN, info.asin)
             putExtra(PlayerActivity.EXTRA_TITLE, info.title)
             putExtra(PlayerActivity.EXTRA_CONTENT_TYPE, info.contentType)
+            putExtra(
+                PlayerActivity.EXTRA_RESUME_MS,
+                ProgressRepository.get(info.asin)?.positionMs?.coerceAtLeast(0L) ?: 0L
+            )
         }
         UiTransitions.open(this, intent)
     }

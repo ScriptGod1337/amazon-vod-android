@@ -68,6 +68,7 @@ class PlayerActivity : AppCompatActivity() {
         const val EXTRA_TITLE = "extra_title"
         const val EXTRA_CONTENT_TYPE = "extra_content_type"
         const val EXTRA_MATERIAL_TYPE = "extra_material_type"
+        const val EXTRA_RESUME_MS = "extra_resume_ms"
         private val CHANNEL_SUFFIX_REGEX = Regex("""\s+\d\.\d(\s*(surround|atmos))?""", RegexOption.IGNORE_CASE)
 
         // Widevine UUID
@@ -437,7 +438,9 @@ class PlayerActivity : AppCompatActivity() {
 
         // Trailers always start from beginning. For real content prefer the h265 fallback
         // position set during a manifest restart, then the shared ProgressRepository.
+        val intentResumeMs = intent.getLongExtra(EXTRA_RESUME_MS, 0L).coerceAtLeast(0L)
         val serverResumeMs = h265FallbackPositionMs.takeIf { it > 0L }
+            ?: intentResumeMs.takeIf { it > 0L }
             ?: ProgressRepository.get(currentAsin)?.positionMs?.coerceAtLeast(0L)
             ?: 0L
         h265FallbackPositionMs = 0L

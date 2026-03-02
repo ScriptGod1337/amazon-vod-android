@@ -32,6 +32,7 @@ import com.scriptgod.fireos.avod.auth.AmazonAuthService
 import com.scriptgod.fireos.avod.model.ContentItem
 import com.scriptgod.fireos.avod.model.ContentKind
 import com.scriptgod.fireos.avod.model.DetailInfo
+import com.scriptgod.fireos.avod.model.isSeriesContainer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -167,7 +168,7 @@ class MainActivity : AppCompatActivity() {
             onMenuKey = { item -> showItemMenu(item) }
         )
         railsAdapter = RailsAdapter(
-            onItemClick = { item -> onItemSelected(item) },
+            onItemClick = { item, railHeader -> onItemSelected(item, railHeader) },
             onMenuKey = { item -> showItemMenu(item) }
         )
         shimmerRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
@@ -675,9 +676,15 @@ class MainActivity : AppCompatActivity() {
 
     // --- Item selection ---
 
-    private fun onItemSelected(item: ContentItem) {
-        Log.i(TAG, "Selected: ${item.asin} — ${item.title} (type=${item.contentType})")
-        // All items go to DetailActivity first (overview page with description, trailer, rating)
+    private fun onItemSelected(item: ContentItem, sourceRailHeader: String? = null) {
+        Log.i(TAG, "Selected: ${item.asin} — ${item.title} (type=${item.contentType}, rail=$sourceRailHeader)")
+        val isContinueWatching = sourceRailHeader.equals("Continue Watching", ignoreCase = true)
+        if (isContinueWatching && !item.isSeriesContainer()) {
+            openPlayer(item)
+            return
+        }
+
+        // All other items go to DetailActivity first (overview page with description, trailer, rating)
         val intent = Intent(this, DetailActivity::class.java).apply {
             putExtra(DetailActivity.EXTRA_ASIN, item.asin)
             putExtra(DetailActivity.EXTRA_TITLE, item.title)
@@ -685,6 +692,16 @@ class MainActivity : AppCompatActivity() {
             putExtra(DetailActivity.EXTRA_IMAGE_URL, item.imageUrl)
             putExtra(DetailActivity.EXTRA_IS_PRIME, item.isPrime)
             putStringArrayListExtra(DetailActivity.EXTRA_WATCHLIST_ASINS, ArrayList(watchlistAsins))
+        }
+        UiTransitions.open(this, intent)
+    }
+
+    private fun openPlayer(item: ContentItem) {
+        val intent = Intent(this, PlayerActivity::class.java).apply {
+            putExtra(PlayerActivity.EXTRA_ASIN, item.asin)
+            putExtra(PlayerActivity.EXTRA_TITLE, item.title)
+            putExtra(PlayerActivity.EXTRA_CONTENT_TYPE, item.contentType)
+            putExtra(PlayerActivity.EXTRA_RESUME_MS, item.watchProgressMs.coerceAtLeast(0L))
         }
         UiTransitions.open(this, intent)
     }
@@ -844,6 +861,11 @@ class MainActivity : AppCompatActivity() {
         return candidateAsins.mapNotNull { asin ->
             val progress = ProgressRepository.get(asin) ?: return@mapNotNull null
             try {
+                val directItem = apiService.getDetailPage(asin)
+                    .firstOrNull { it.asin == asin }
+                    ?.let { withRepositoryProgress(it.copy(isInWatchlist = watchlistAsins.contains(it.asin) || it.isInWatchlist)) }
+                if (directItem != null) return@mapNotNull directItem
+
                 val info = apiService.getDetailInfo(asin) ?: return@mapNotNull null
                 detailInfoToContentItem(info, progress)
             } catch (e: Exception) {
@@ -1043,7 +1065,12 @@ class MainActivity : AppCompatActivity() {
             homeFeaturedImage.setImageDrawable(null)
             homeFeaturedImage.setBackgroundColor(Color.parseColor("#1A1A1A"))
         }
-        homeFeaturedStrip.setOnClickListener { onItemSelected(nonNullFeaturedItem) }
+        homeFeaturedStrip.setOnClickListener {
+            onItemSelected(
+                nonNullFeaturedItem,
+                if (nonNullFeaturedRail.headerText == "Continue Watching") "Continue Watching" else null
+            )
+        }
         syncFeaturedStripFocus(true)
         homeFeaturedStrip.visibility = View.VISIBLE
     }

@@ -1600,3 +1600,28 @@ Home, Browse, Detail, Player, and logout handling.
 
 - there is still no trustworthy backend `lastUpdatedAt`, so cross-device conflict resolution is
   still server-first on refresh rather than true newest-wins
+
+### Post-completion fix — Continue Watching direct-play + server-backed episode resume
+
+After Phase 30 landed, one regression remained:
+- Continue Watching clicks always went through `DetailActivity`
+- server-backed episode progress could be visible on the CW card but lost at playback start if the
+  local cache had been cleared
+
+**Fix**:
+- `MainActivity` / `BrowseActivity` / `DetailActivity` now pass `PlayerActivity.EXTRA_RESUME_MS`
+  when they already have a visible resume position for the selected item
+- `PlayerActivity` now prefers:
+  - H265 fallback resume
+  - explicit intent resume
+  - repository resume
+- Home Continue Watching is now rail-aware:
+  - movies / episodes direct-play
+  - series / seasons still open overview flows
+- local-only CW metadata resolution now prefers `getDetailPage(asin)` exact-item matches before
+  falling back to `getDetailInfo(asin)`, which helps preserve episode identity
+
+**Validation**:
+- emulator: Continue Watching movie direct-play opened `PlayerActivity` directly
+- Fire TV: `Fallout` episode resume worked again from server-backed progress even after local
+  cache was cleared

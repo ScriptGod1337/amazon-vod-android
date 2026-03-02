@@ -635,3 +635,32 @@ rule.
 - this is not a general offline metadata cache
 - if a local-progress ASIN cannot be resolved by the detail API, it is skipped
 - broader metadata caching can be added later if multiple features need it
+
+---
+
+## Decision 27: Continue Watching direct-play uses explicit resume handoff
+
+**Date**: Phase 30 follow-up
+
+After Phase 30, Continue Watching direct-play for movies worked, but server-backed episode resume
+could still fail when local cache was cleared. The underlying issue was that direct-play depended
+on `ProgressRepository.get(asin)` inside `PlayerActivity`, even though the selected CW item itself
+already carried the correct server-backed `watchProgressMs`.
+
+**Decision**:
+- `PlayerActivity` accepts `EXTRA_RESUME_MS`
+- direct-play surfaces pass the selected item's current `watchProgressMs` explicitly
+- player resume precedence is:
+  1. H265 fallback position
+  2. explicit intent resume
+  3. `ProgressRepository.get(currentAsin)`
+
+**Additional CW routing rule**:
+- Continue Watching items that are directly playable (`movie` / `episode`) open `PlayerActivity`
+  directly from Home
+- season/series containers still open overview/browse flows
+
+**Why**:
+- direct-play should honor the exact progress already shown on the card
+- this keeps server-backed episode resume working even when local progress cache is empty or stale
+- it also removes an unnecessary dependency on repository re-read timing during player startup

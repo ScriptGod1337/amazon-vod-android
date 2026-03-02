@@ -6,7 +6,7 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 
 - **In-app login** with Amazon email/password + MFA support (PKCE OAuth device registration)
 - **Sign Out** via About screen (⚙ gear button) — clears tokens and returns to login
-- **Continue Watching row** — first rail on the home screen, built from centralized `ProgressRepository` data; shows amber progress bars and remaining-time subtitles; hero strip overrides to "X% watched · Y min left" when CW is active; bypasses source/type filters. Server watchlist progress is loaded on refresh, and local in-progress ASINs can be backfilled into the row by fetching detail metadata when needed (see [Known limitations](#known-limitations))
+- **Continue Watching row** — first rail on the home screen, built from centralized `ProgressRepository` data; shows amber progress bars and remaining-time subtitles; hero strip overrides to "X% watched · Y min left" when CW is active; bypasses source/type filters. Server watchlist progress is loaded on refresh, local in-progress ASINs can be backfilled into the row by fetching detail metadata when needed, and direct-play from Continue Watching passes the current resume position explicitly into the player
 - **Home page horizontal carousels** — categorised rails (Featured, Trending, Top 10, etc.) matching the real Prime Video home layout, with page-level infinite scroll for more rails
 - **Content overview / detail page** — selecting any movie or series opens a full detail screen before playback: hero backdrop image, poster, year/runtime/age rating, quality badges (4K/HDR/5.1), IMDb rating, genres, synopsis, director credit
   - **▶ Play** button for movies
@@ -26,7 +26,7 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 - **Audio passthrough toggle** in About screen — Off (default, PCM decode) / On (sends encoded AC3/EAC3 Dolby bitstream directly to AV receiver over HDMI); live HDMI capability badge shows supported formats; On button disabled when device output does not report passthrough support; one-time volume warning on first passthrough session
 - **Seekbar seeking** — D-pad left/right seeks ±10 seconds per press (hold to repeat), matching standard Fire TV remote behaviour
 - **Watch progress tracking** via UpdateStream API (START/PLAY/PAUSE/STOP)
-- **Resume from last position** — automatically seeks to where you left off
+- **Resume from last position** — automatically seeks to where you left off; direct-play surfaces pass the visible progress position into the player explicitly so server-backed episode resume still works even after local cache is cleared
 - Watchlist management (long-press / hold SELECT to add/remove via styled action overlay)
 - Library with pagination, sub-filters (Movies / TV Shows), and sort (Recent / A-Z / Z-A)
 - Freevee section (territory-dependent)
@@ -158,7 +158,8 @@ See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history
   first-item flicker; pool contamination fix in `ContentAdapter`
 - **Phase 30** — Centralized `ProgressRepository`: single source of truth for all ASIN progress;
   server-first refresh + local fallback cache; periodic local writes during playback; no more
-  progress intent chain; Home can backfill local-only Continue Watching items by ASIN
+  progress intent chain; Home can backfill local-only Continue Watching items by ASIN; Continue
+  Watching movies and episodes now direct-play and pass explicit resume positions to the player
 - **Phase 28** — Widevine L3/SD fallback: emulator playback enabled; L3 device detected at
   player-creation time and forced to SD quality (mirrors official APK `ConfigurablePlaybackSupportEvaluator`)
 - **Phase 27** — AI code review (5 warnings + 4 info); all findings fixed — keep-screen-on flags,

@@ -28,6 +28,9 @@ class ContentAdapter(
     private val presentation: CardPresentation = CardPresentation.POSTER
 ) : ListAdapter<ContentItem, ContentAdapter.ViewHolder>(DIFF_CALLBACK) {
 
+    var onItemClickHandler: (ContentItem) -> Unit = onItemClick
+    var onMenuKeyHandler: ((ContentItem) -> Unit)? = onMenuKey
+
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val poster: ImageView = itemView.findViewById(R.id.iv_poster)
         val overline: TextView = itemView.findViewById(R.id.tv_overline)
@@ -194,10 +197,10 @@ class ContentAdapter(
             holder.surface?.animate()?.alpha(if (hasFocus) 1f else 0.96f)?.setDuration(duration)?.start()
             view.elevation = if (hasFocus) view.resources.displayMetrics.density * 18f else 0f
         }
-        holder.itemView.setOnClickListener { onItemClick(item) }
+        holder.itemView.setOnClickListener { onItemClickHandler(item) }
         // Long-press SELECT (standard Fire TV context-menu gesture on remotes without a Menu button)
         holder.itemView.setOnLongClickListener {
-            onMenuKey?.invoke(item)
+            onMenuKeyHandler?.invoke(item)
             true
         }
         // KEYCODE_MENU for remotes that have a physical Menu button
@@ -206,7 +209,7 @@ class ContentAdapter(
 
             when (keyCode) {
                 KeyEvent.KEYCODE_MENU -> {
-                    onMenuKey?.invoke(item)
+                    onMenuKeyHandler?.invoke(item)
                     true
                 }
                 KeyEvent.KEYCODE_DPAD_UP,

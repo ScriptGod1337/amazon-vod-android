@@ -14,7 +14,7 @@ import com.scriptgod.fireos.avod.model.ContentItem
 import com.scriptgod.fireos.avod.model.ContentRail
 
 class RailsAdapter(
-    private val onItemClick: (ContentItem) -> Unit,
+    private val onItemClick: (ContentItem, String) -> Unit,
     private val onMenuKey: ((ContentItem) -> Unit)? = null
 ) : ListAdapter<ContentRail, RailsAdapter.RailViewHolder>(DIFF_CALLBACK) {
 
@@ -80,7 +80,7 @@ class RailsAdapter(
             holder.contentAdapter!!
         } else {
             val newAdapter = ContentAdapter(
-                onItemClick = onItemClick,
+                onItemClick = {},
                 onMenuKey = onMenuKey,
                 nextFocusUpId = itemNextFocusUpId,
                 presentation = presentation,
@@ -94,6 +94,8 @@ class RailsAdapter(
             newAdapter
         }
         innerAdapter.nextFocusUpId = itemNextFocusUpId
+        innerAdapter.onItemClickHandler = { item -> onItemClick(item, rail.headerText) }
+        innerAdapter.onMenuKeyHandler = onMenuKey
         innerAdapter.submitList(displayItems)
     }
 
