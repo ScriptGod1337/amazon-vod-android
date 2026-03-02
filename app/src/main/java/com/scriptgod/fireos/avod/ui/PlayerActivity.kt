@@ -120,6 +120,7 @@ class PlayerActivity : AppCompatActivity() {
     private var currentPlaybackInfo: PlaybackInfo? = null
     private lateinit var cardSeekThumbnail: androidx.cardview.widget.CardView
     private lateinit var ivSeekThumbnail: android.widget.ImageView
+    private lateinit var tvSeekTime: android.widget.TextView
     private val thumbnailCache = android.util.LruCache<String, android.graphics.Bitmap>(8)
     private val dpadSeekHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val hideThumbnailRunnable = Runnable { hideThumbnail() }
@@ -208,6 +209,7 @@ class PlayerActivity : AppCompatActivity() {
         btnSubtitle = findViewById(R.id.btn_subtitle)
         cardSeekThumbnail = findViewById(R.id.card_seek_thumbnail)
         ivSeekThumbnail = findViewById(R.id.iv_seek_thumbnail)
+        tvSeekTime = findViewById(R.id.tv_seek_time)
         tvPlaybackTitle.text = intent.getStringExtra(EXTRA_TITLE) ?: "Now Playing"
         tvPlaybackHint.text = "Press MENU for tracks. Press Back to exit."
         tvVideoFormat.visibility = View.GONE
@@ -751,6 +753,12 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun showThumbnailAt(posMs: Long) {
+        // Always show the time label so the user gets seek feedback even without a thumbnail track.
+        val totalSec = posMs / 1000L
+        val h = totalSec / 3600; val m = (totalSec % 3600) / 60; val s = totalSec % 60
+        tvSeekTime.text = if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
+        cardSeekThumbnail.visibility = View.VISIBLE
+
         val info = currentPlaybackInfo ?: return
         if (!info.hasThumbnails) return
 
@@ -764,9 +772,7 @@ class PlayerActivity : AppCompatActivity() {
 
         val cached = thumbnailCache.get(url)
         if (cached != null) {
-            val frame = cropFrame(cached, col, row, info.frameWidthPx, info.frameHeightPx)
-            ivSeekThumbnail.setImageBitmap(frame)
-            cardSeekThumbnail.visibility = View.VISIBLE
+            ivSeekThumbnail.setImageBitmap(cropFrame(cached, col, row, info.frameWidthPx, info.frameHeightPx))
             return
         }
 
@@ -780,10 +786,7 @@ class PlayerActivity : AppCompatActivity() {
                     ?: return@launch
                 thumbnailCache.put(url, sheet)
                 val frame = cropFrame(sheet, col, row, info.frameWidthPx, info.frameHeightPx)
-                withContext(Dispatchers.Main) {
-                    ivSeekThumbnail.setImageBitmap(frame)
-                    cardSeekThumbnail.visibility = View.VISIBLE
-                }
+                withContext(Dispatchers.Main) { ivSeekThumbnail.setImageBitmap(frame) }
             } catch (e: Exception) {
                 Log.w(TAG, "Thumbnail load failed: $url", e)
             }
@@ -800,6 +803,7 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun hideThumbnail() {
         cardSeekThumbnail.visibility = View.GONE
+        ivSeekThumbnail.setImageBitmap(null)
     }
 
     private fun updatePlaybackWakeState(isPlaying: Boolean) {
