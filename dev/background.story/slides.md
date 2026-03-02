@@ -192,6 +192,8 @@ How did it know? `adb shell screencap` → pull → look at screenshot → repea
 🐢 **Claude Sonnet doesn't give up.** Keeps iterating until it works.
 🐇 **Codex is faster** but stops at checkpoints.
 
+🤝 **Let AIs review each other.** Claude writes, Codex reviews → faster, better results. Less defensive than humans.
+
 🏠 **Sandbox your AI.** Mine turned on my TV. Unannounced.
 
 🗣️ **Prompting is a skill.** "Fix the UI" → nothing. "Crashes when scrolling past 20 items on the remote" → fixed.

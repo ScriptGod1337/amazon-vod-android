@@ -103,6 +103,7 @@ Total cost: ~$500 in AI subscriptions (shared across other projects). Total huma
 - **Could I have done this myself?** Reverse engineering the API: no chance. Building the 80% PoC: no chance. Debugging? Maybe — but the AI picked Kotlin and I'm not exactly fluent. So: also no.
 - **The 80% solution is fast. The last 20% is where your money goes.** The PoC took half a day. The production-quality debug loop took three.
 - **Claude Sonnet doesn't give up.** It will keep iterating on a broken DRM handshake until it works or until you tell it to stop. Codex is faster but stops at checkpoints and asks permission. Pick your fighter.
+- **Let AIs review each other.** Claude wrote it, Codex reviewed it, things got fixed faster than either would have managed alone. Turns out AIs are less defensive about criticism than humans.
 - **Sandbox your AI.** Seriously. Mine tried to download half the internet before I put it in a container. It also turned on my TV unannounced. These are features, apparently.
 - **Learning to talk to the AI is a skill.** Vague prompts produce vague results. "Fix the UI" gets you nowhere. "The episode list crashes when I scroll past 20 items on the FireTV remote" gets you a fix.
 - **Amazon only tracks watch progress for items in your watchlist.** This one is just a fun fact. Add things to your watchlist.

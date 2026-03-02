@@ -161,6 +161,7 @@ Real Claude Max + ChatGPT Pro for 1 month - shared for another project
 - Claude Sonnet is a good orchestrator
 - Codex **fast**/good coder
 - Claude Sonnet tries to solve problems to the end vs. Codex stops more at intermediate steps and confirms the next step
+- AI should review each other - gives good result fast
 - AI can debug via adb and screenshot interpretation
 - How to tell the AI what I need
 - Amazon Prime tracks progress only for items in watchlist at the server ;)
