@@ -4,39 +4,62 @@ Native Android/Kotlin app for Fire TV that streams Amazon Prime Video content wi
 
 ## Features
 
-- **In-app login** with Amazon email/password + MFA support (PKCE OAuth device registration)
-- **Sign Out** via About screen (⚙ gear button) — clears tokens and returns to login
-- **Continue Watching row** — first rail on the home screen, built from centralized `ProgressRepository` data; shows amber progress bars and remaining-time subtitles; hero strip overrides to "X% watched · Y min left" when CW is active; bypasses source/type filters. Server watchlist progress is loaded on refresh, local in-progress ASINs can be backfilled into the row by fetching detail metadata when needed, and direct-play from Continue Watching passes the current resume position explicitly into the player
+### Authentication & Account
+
+- **In-app login** — Amazon email/password + MFA/TOTP support via PKCE OAuth device registration
+- **Sign Out** via About screen (⚙ gear button) — clears tokens, records logout timestamp, returns to login
+- **Automatic token refresh** on 401/403 — transparent re-auth via OkHttp interceptor chain
+
+### Home Screen & Discovery
+
 - **Home page horizontal carousels** — categorised rails (Featured, Trending, Top 10, etc.) matching the real Prime Video home layout, with page-level infinite scroll for more rails
-- **Content overview / detail page** — selecting any movie or series opens a full detail screen before playback: hero backdrop image, poster, year/runtime/age rating, quality badges (4K/HDR/5.1), IMDb rating, genres, synopsis, director credit
-  - **▶ Resume / ▶ Play** button for movies — shows "Resume" when progress > 10 s, "Play" otherwise
-  - **▷ Trailer** button (distinct outline icon, shown only when `isTrailerAvailable: true`)
-  - **Amber progress bar + "X% watched · Y min left"** on the detail page for partially-watched titles
-  - **Browse Episodes** + **All Seasons** buttons for series/seasons — All Seasons lets you jump to any other season without navigating back
-  - **☆ / ★ Watchlist** toggle on every detail page
-  - **Prime badge** — every detail page shows "✓ Included with Prime" (teal) or "✗ Not included with Prime" (grey), sourced from the ATF v3 detail API for accurate per-title, per-territory status
-- **Watch progress bars** on content cards and hero strip thumbnail — amber for in-progress, sourced from centralized server-first progress state with immediate local updates during playback
-- Browse home catalog, watchlist, and personal library
-- Search with instant results
-- Filter by source (All / Prime) and type (Movies / Series) — filters combine independently
-- Series drill-down: show → detail page → seasons → detail page → episodes → play
-- Widevine L1 hardware-secure playback (DASH/MPD)
-- **Audio & subtitle track selection** during playback — labels sourced from Amazon's API metadata for correct display names, Audio Description tagging, and family grouping (main / AD / Dialogue Boost); channel layout suffix shown (`2.0`, `5.1`, `7.1`); MENU key or pause shows controls; overlay follows Media3 controller visibility exactly with no flicker
-- **Video format label** in player overlay — shows active codec, resolution, and HDR status (e.g. `720p · H265 · SDR`, `4K · H265 · HDR10`), updated live as ABR ramps up
-- **Video quality selection** in About screen — choose between HD H264 (720p), H265 (720p SDR), or 4K/DV HDR; device capability checks disable unavailable options; H265 fallback to H264 on CDN error
-- **Audio passthrough toggle** in About screen — Off (default, PCM decode) / On (sends encoded AC3/EAC3 Dolby bitstream directly to AV receiver over HDMI); live HDMI capability badge shows supported formats; On button disabled when device output does not report passthrough support; one-time volume warning on first passthrough session
-- **Seekbar seeking** — D-pad left/right seeks ±10 seconds per press (hold to repeat), matching standard Fire TV remote behaviour
-- **Watch progress tracking** via UpdateStream API (START/PLAY/PAUSE/STOP)
-- **Resume from last position** — automatically seeks to where you left off; direct-play surfaces pass the visible progress position into the player explicitly so server-backed episode resume still works even after local cache is cleared
-- Watchlist management (long-press / hold SELECT to add/remove via styled action overlay)
-- Library with pagination, sub-filters (Movies / TV Shows), and sort (Recent / A-Z / Z-A)
-- Freevee section (territory-dependent)
-- D-pad navigation optimized for Fire TV remote
-- Automatic token refresh on 401/403
-- **Polished TV UI** — animated focus ring + glow on cards, shimmer skeleton loading, page
-  fade/slide transitions, pill-shaped nav bar, four card variants (portrait, landscape, episode,
-  season), semi-transparent gradient player overlay, consistent colour palette and dimension tokens
-- **CI/CD** via GitHub Actions with date-based versioning and automatic APK releases
+- **Continue Watching row** — first rail on the home screen, built from centralized `ProgressRepository` data; shows amber progress bars and remaining-time subtitles; hero strip overrides to "X% watched · Y min left" when CW is active; bypasses source/type filters; direct-play passes the current resume position explicitly into the player
+- **Search** with instant results
+- **Filter** by source (All / Prime) and type (Movies / Series) — filters combine independently
+- **Freevee section** (territory-dependent)
+- **D-pad navigation** optimized for Fire TV remote
+
+### Content Detail Page
+
+Selecting any movie or series opens a full detail screen before playback:
+
+- Hero backdrop image, poster, year / runtime / age rating, quality badges (4K / HDR / 5.1), IMDb rating (colour-coded), genres, synopsis, director credit
+- **▶ Resume / ▶ Play** — shows "Resume" when progress > 10 s, "Play" otherwise
+- **▷ Trailer** button (distinct outline icon, shown only when `isTrailerAvailable: true`)
+- **Amber progress bar + "X% watched · Y min left"** for partially-watched titles
+- **Browse Episodes** + **All Seasons** buttons for series/seasons — All Seasons lets you jump directly to any other season
+- **☆ / ★ Watchlist** toggle
+- **Prime badge** — "✓ Included with Prime" (teal) or "✗ Not included with Prime" (grey), sourced from the ATF v3 detail API
+
+### Playback
+
+- **Widevine L1** hardware-secure playback (DASH / MPD); automatic L3/SD fallback on emulators
+- **Audio & subtitle track selection** — labels from Amazon's API metadata; Audio Description tagging; family grouping (main / AD / Dialogue Boost); channel layout suffix (`2.0`, `5.1`, `7.1`); MENU key or pause shows controls; overlay follows Media3 controller visibility with no flicker
+- **Video format label** in overlay — active codec, resolution, and HDR status (e.g. `720p · H265 · SDR`, `4K · H265 · HDR10`), updated live as ABR ramps up
+- **Seekbar seeking** — D-pad left/right seeks ±10 seconds per press (hold to repeat)
+- **Resume from last position** — auto-seeks to where you left off; direct-play surfaces pass the saved position explicitly so resume works even after local cache is cleared
+- **Watch progress tracking** via UpdateStream API (START / PLAY / PAUSE / STOP) + PES V2 session reporting
+
+### Progress & Watchlist
+
+- **Watch progress bars** on content cards and hero strip thumbnail — amber, sourced from centralized `ProgressRepository` (server-first on refresh, local cache during playback)
+- **Watchlist management** — long-press / hold SELECT on any card to add/remove via styled confirmation overlay; also togglable from every detail page
+- **Library** — purchases and rentals with pagination, sub-filters (Movies / TV Shows), and sort (Recent / A-Z / Z-A)
+
+### Settings (About Screen)
+
+- **Video quality selection** — HD H264 (720p), H265 (720p SDR), or 4K/DV HDR; device capability checks disable unavailable options; H265 fallback to H264 on CDN error
+- **Audio passthrough toggle** — Off (default, PCM decode) / On (sends encoded AC3/EAC3 Dolby bitstream to AV receiver over HDMI); live HDMI capability badge; On disabled when device lacks passthrough support; one-time volume warning on first passthrough session
+
+### UI Polish
+
+- Animated focus ring + glow on cards, shimmer skeleton loading, page fade/slide transitions
+- Pill-shaped nav bar; four card variants (portrait, landscape, episode, season)
+- Semi-transparent gradient player overlay; consistent colour palette and dimension tokens
+
+### CI/CD
+
+- **GitHub Actions** — builds on version tags (`v*`), PRs to `main`, and manual dispatch; date-based versioning (`YYYY.MM.DD.N`); automatic signed APK releases
 
 ## Architecture
 
