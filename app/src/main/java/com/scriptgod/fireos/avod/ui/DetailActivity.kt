@@ -65,6 +65,7 @@ class DetailActivity : AppCompatActivity() {
     private var fallbackImageUrl: String = ""
     private var detailInfo: DetailInfo? = null
     private var isItemPrime: Boolean = false
+    private var watchlistUpdateInFlight = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,6 +109,18 @@ class DetailActivity : AppCompatActivity() {
         tvTitle.text = intent.getStringExtra(EXTRA_TITLE) ?: ""
 
         loadDetail()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val info = detailInfo ?: return
+        // Re-read progress after returning from PlayerActivity — repository is already updated
+        // in-memory by PlayerActivity so no network call is needed.
+        if (btnPlay.isVisible) {
+            val posMs = ProgressRepository.get(info.asin)?.positionMs ?: 0L
+            btnPlay.text = if (posMs > 10_000L) "▶  Resume" else "▶  Play"
+        }
+        bindProgress(info)
     }
 
     private fun loadDetail() {
@@ -257,8 +270,8 @@ class DetailActivity : AppCompatActivity() {
 
         bindProgress(info)
 
-        // Trailer button (only if trailer is available and not a pure series overview)
-        if (info.isTrailerAvailable && !isSeries) {
+        // Trailer button — shown for movies and seasons (not for series overview pages)
+        if (info.isTrailerAvailable && (!isSeries || isSeason)) {
             btnTrailer.visibility = View.VISIBLE
             btnTrailer.setOnClickListener { onTrailerClicked(info) }
         }
@@ -281,29 +294,38 @@ class DetailActivity : AppCompatActivity() {
 
     private fun bindProgress(info: DetailInfo) {
         val runtimeMs = info.runtimeSeconds * 1000L
-        val entry = ProgressRepository.get(info.asin)
-        val posMs = entry?.positionMs ?: 0L
-        if (runtimeMs <= 0L || posMs <= 0L) {
+        val posMs = ProgressRepository.get(info.asin)?.positionMs ?: 0L
+
+        // No runtime or no position — nothing to show.
+        if (runtimeMs <= 0L || posMs == 0L) {
             pbWatchProgress.isVisible = false
             tvWatchProgress.isVisible = false
             return
         }
-        val fraction = (posMs * 1000L / runtimeMs).toInt().coerceIn(0, 1000)
-        if (fraction >= 900) {
+
+        // -1L sentinel means fully watched (stored by ProgressRepository.update when pos ≥ 90%).
+        if (posMs == -1L) {
             pbWatchProgress.isVisible = false
             tvWatchProgress.text = "Finished recently"
             tvWatchProgress.isVisible = true
             return
         }
-        pbWatchProgress.max = 1000
-        pbWatchProgress.progress = fraction
+
+        // Bar fraction on 0–1000 scale (XML already declares max="1000").
+        val fraction = (posMs * 1000L / runtimeMs).toInt().coerceIn(0, 1000)
+
+        // Text — delegate to the canonical formatter so card subtitles and detail page agree.
+        val text = UiMetadataFormatter.progressText(posMs, runtimeMs)
+        if (text == "Finished recently" || text == null) {
+            pbWatchProgress.isVisible = false
+            tvWatchProgress.text = text ?: ""
+            tvWatchProgress.isVisible = text != null
+            return
+        }
+
+        pbWatchProgress.progress = fraction   // max already set to 1000 in XML
         pbWatchProgress.isVisible = true
-        val progressPercent = (fraction / 10).coerceIn(1, 99)
-        val remainingMinutes = ((runtimeMs - posMs).coerceAtLeast(0L) / 60_000L).toInt()
-        tvWatchProgress.text = if (remainingMinutes > 0)
-            "$progressPercent% watched · ${remainingMinutes} min left"
-        else
-            "$progressPercent% watched"
+        tvWatchProgress.text = text
         tvWatchProgress.isVisible = true
     }
 
@@ -381,6 +403,7 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun onWatchlistClicked() {
+        if (watchlistUpdateInFlight) return   // guard against double-tap
         val isIn = watchlistAsins.contains(currentAsin)
         val overlayItem = com.scriptgod.fireos.avod.model.ContentItem(
             asin = currentAsin,
@@ -392,19 +415,24 @@ class DetailActivity : AppCompatActivity() {
             item = overlayItem,
             isInWatchlist = isIn
         ) {
+            watchlistUpdateInFlight = true
             lifecycleScope.launch {
-                val success = withContext(Dispatchers.IO) {
-                    if (isIn) apiService.removeFromWatchlist(currentAsin)
-                    else apiService.addToWatchlist(currentAsin)
-                }
-                if (success) {
-                    if (isIn) watchlistAsins.remove(currentAsin)
-                    else watchlistAsins.add(currentAsin)
-                    updateWatchlistButton(watchlistAsins.contains(currentAsin))
-                    val msg = if (isIn) "Removed from watchlist" else "Added to watchlist"
-                    Toast.makeText(this@DetailActivity, msg, Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@DetailActivity, "Watchlist update failed", Toast.LENGTH_SHORT).show()
+                try {
+                    val success = withContext(Dispatchers.IO) {
+                        if (isIn) apiService.removeFromWatchlist(currentAsin)
+                        else apiService.addToWatchlist(currentAsin)
+                    }
+                    if (success) {
+                        if (isIn) watchlistAsins.remove(currentAsin)
+                        else watchlistAsins.add(currentAsin)
+                        updateWatchlistButton(watchlistAsins.contains(currentAsin))
+                        val msg = if (isIn) "Removed from watchlist" else "Added to watchlist"
+                        Toast.makeText(this@DetailActivity, msg, Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this@DetailActivity, "Watchlist update failed", Toast.LENGTH_SHORT).show()
+                    }
+                } finally {
+                    watchlistUpdateInFlight = false
                 }
             }
         }

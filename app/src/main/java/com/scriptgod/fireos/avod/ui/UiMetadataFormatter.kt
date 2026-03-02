@@ -81,18 +81,25 @@ internal object UiMetadataFormatter {
             .ifBlank { "Start playback, browse related titles, or manage watchlist status." }
     }
 
-    fun progressSubtitle(item: ContentItem): String? {
-        if (item.watchProgressMs == 0L || item.runtimeMs <= 0L) return null
-        return when (item.watchProgressMs) {
-            -1L -> "Finished recently"
-            else -> {
-                if (item.isFullyWatched()) return "Finished recently"
-                val progressPercent = ((item.watchProgressMs * 100) / item.runtimeMs).toInt().coerceIn(1, 99)
-                val remainingMinutes = ((item.runtimeMs - item.watchProgressMs).coerceAtLeast(0L) / 60000L).toInt()
-                if (remainingMinutes > 0) "$progressPercent% watched · ${remainingMinutes} min left"
-                else "$progressPercent% watched"
-            }
-        }
+    fun progressSubtitle(item: ContentItem): String? =
+        progressText(item.watchProgressMs, item.runtimeMs)
+            ?: if (item.isFullyWatched()) "Finished recently" else null
+
+    /**
+     * Canonical progress text formatter. Used by both card subtitles (via [progressSubtitle])
+     * and the detail page, so both surfaces always show the same string for the same position.
+     *
+     * Returns null when there is no meaningful progress to display.
+     * Returns "Finished recently" for [posMs] == -1L (fully-watched sentinel) or ≥ 95% of runtime.
+     */
+    fun progressText(posMs: Long, runtimeMs: Long): String? {
+        if (posMs == 0L || runtimeMs <= 0L) return null
+        if (posMs == -1L) return "Finished recently"
+        val progressPercent = ((posMs * 100) / runtimeMs).toInt().coerceIn(1, 99)
+        if (progressPercent >= 95) return "Finished recently"
+        val remainingMinutes = ((runtimeMs - posMs).coerceAtLeast(0L) / 60_000L).toInt()
+        return if (remainingMinutes > 0) "$progressPercent% watched · ${remainingMinutes} min left"
+               else "$progressPercent% watched"
     }
 
     private fun defaultOverline(item: ContentItem, hasProgress: Boolean): String {
@@ -101,8 +108,7 @@ internal object UiMetadataFormatter {
             item.isLiveChannel() -> "Live"
             item.isEpisode() -> "Episode"
             item.isSeriesContainer() -> "Series"
-            item.isMovie() -> "Movie"
-            else -> "Featured"
+            else -> "Movie"   // movies and unknown content types
         }
     }
 
@@ -111,8 +117,7 @@ internal object UiMetadataFormatter {
             item.isLiveChannel() -> "Live"
             item.isEpisode() -> "Episode"
             item.isSeriesContainer() -> "Series"
-            item.isMovie() -> "Movie"
-            else -> "Featured"
+            else -> "Movie"   // movies and unknown content types
         }
     }
 

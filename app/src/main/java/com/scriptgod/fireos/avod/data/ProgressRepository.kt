@@ -47,7 +47,16 @@ object ProgressRepository {
             progressMap.clear()
             progressMap.putAll(loadPersistedEntries())
             for ((asin, progress) in serverProgress) {
-                progressMap[asin] = ProgressEntry(progress.first, progress.second)
+                val newEntry = ProgressEntry(progress.first, progress.second)
+                val existing = progressMap[asin]
+                // -1L (fully watched) always wins. Otherwise keep whichever position is
+                // further along — guards against server returning a stale older position
+                // when the user watched more locally between two refreshes.
+                if (existing == null
+                    || newEntry.positionMs == -1L
+                    || (existing.positionMs != -1L && newEntry.positionMs > existing.positionMs)) {
+                    progressMap[asin] = newEntry
+                }
             }
             inProgressItems = serverInProgressItems.map { item ->
                 val entry = progressMap[item.asin]
@@ -85,9 +94,7 @@ object ProgressRepository {
 
     fun getInProgressEntries(): Map<String, ProgressEntry> {
         ensureInitialized()
-        return progressMap.filterValues { entry ->
-            entry.positionMs > 0L && entry.positionMs != -1L
-        }
+        return progressMap.filterValues { entry -> entry.positionMs > 0L }
     }
 
     private fun ensureInitialized() {
