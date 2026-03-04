@@ -48,7 +48,6 @@ Amazon Prime app can control FireTV remotely maybe. Maybe we can skip ads by rem
 1. Did not work: it showed Ads
 1. AI analysis of the Amazon Prime app for remote control confirmed the Ads are controlled by the FireTV (https://github.com/ScriptGod1337/amazon-vod-noads/blob/main/analysis/primevideo_cast_ads_ai_prompt.md)
 
-
 ### Firebat APK
 Ok but I doubt that Amazon develops a complete own code base for FireTV - probably a similar app exists.
 After some AI research it pointed me to Firebat. Let's analyze this..
@@ -134,13 +133,14 @@ AI estimated the costs for one flat rate
 1. AI started implementing basic features from Kodi - already looked good
 1. Add missing feature from Kodi by prompting the AI
     1. AI implemented
-    1. AI reverse engineered how to implement it
+    1. AI reverse engineered how to implement it - reverse-engineered the APIs
 Testing happened on FireTV as well as emulator.
 
 ## Fancy Phase + bugfix
 I wanted to have fancy UI and features not really necessary.
-This phase took quite a while - especially bugfixes after UI redesign. I need several guidance here over days
-Testing happened on FireTV as well as emulator.
+This phase took quite a while - especially bugfixes after UI redesign. I need several guidance here over days.
+More API defintion popped-up. Internals of AmazonAPI discovered, explaining why features not implemented on Kodi.
+Testing happened on FireTV as well as emulator by AI as well as by myself.
 
 ### Costs
 Theoretical token costs
