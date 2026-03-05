@@ -32,6 +32,7 @@ ADB must be forwarded and listen in the host
 On the host - to listen on any IP
 ```bash
 ANDROID_SDK_ROOT=/home/$USER/Android/Sdk # example of SDK root
+ANDROID_SDK_ROOT/platform-tools/adb kill-server # stop current deamon
 $ANDROID_SDK_ROOT/platform-tools/adb -a nodaemon server start # listen on all IPs
 ```
 
