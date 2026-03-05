@@ -49,6 +49,6 @@ Total ads watched since: **0**
 Times TV turned on uninvited: **1** (acceptable)
 
 👉 github.com/ScriptGod1337/amazon-vod-noads
-👉 github.com/ScriptGod1337/amazon-vod-android
+👉 github.com/ScriptGod1337/amazon-vod-fireos
 
 #AI #VibeCoding #AndroidDev #Claude #ClaudeCode #OpenAI #SideProject #FireTV #AmazonPrime
