@@ -3,6 +3,7 @@ package com.scriptgod.fireos.avod.ui
 import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
 import android.widget.Toast
 import android.util.Log
 import android.view.KeyEvent
@@ -27,6 +28,7 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.audio.AudioCapabilities
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
+import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
@@ -110,7 +112,6 @@ class PlayerActivity : AppCompatActivity() {
     private var currentSeasonAsin: String = ""
     private var currentMaterialType: String = "Feature"
     private var currentQuality: PlaybackQuality = PlaybackQuality.HD
-    private var h265FallbackAttempted: Boolean = false
     private var watchSessionId: String = UUID.randomUUID().toString()
     private var pesSessionToken: String = ""
     private var heartbeatIntervalMs: Long = 60_000
@@ -119,7 +120,6 @@ class PlayerActivity : AppCompatActivity() {
     private var normalizedInitialAudioSelection: Boolean = false
     private var availableAudioTracks: List<AudioTrack> = emptyList()
     private var lastLoggedAudioTrackSignature: String = ""
-    private var h265FallbackPositionMs: Long = 0L
     private var lastResumeSaveElapsedMs: Long = 0L
     private var seekResyncPending: Boolean = false
     private var currentPlaybackInfo: PlaybackInfo? = null
@@ -366,18 +366,17 @@ class PlayerActivity : AppCompatActivity() {
         return requested
     }
 
-    private fun loadAndPlay(asin: String, materialType: String = "Feature", qualityOverride: PlaybackQuality? = null) {
+    private fun loadAndPlay(asin: String, materialType: String = "Feature") {
         Log.w(TAG, "loadAndPlay asin=$asin type=$materialType season=$currentSeasonAsin")
         progressBar.visibility = View.VISIBLE
         tvError.visibility = View.GONE
         tvVideoFormat.text = ""   // clear stale label until new player reports its format
         playerView.useController = true
 
-        val quality = qualityOverride ?: resolveQuality()
+        val quality = resolveQuality()
         currentMaterialType = materialType
         currentQuality = quality
         updatePlaybackStatus()
-        if (qualityOverride == null) h265FallbackAttempted = false  // fresh start resets guard
         Log.i(TAG, "Playback quality: ${quality.videoQuality} codec=${quality.codecOverride} hdr=${quality.hdrOverride}")
 
         playbackJob?.cancel()
@@ -385,7 +384,7 @@ class PlayerActivity : AppCompatActivity() {
             try {
                 val (info, detailAudioTracks) = withContext(Dispatchers.IO) {
                     apiService.detectTerritory()
-                val playbackInfo = apiService.getPlaybackInfo(asin, materialType, quality)
+                val playbackInfo = apiService.getPlaybackInfo(asin, materialType, quality, watchSessionId)
                 val detailAudio = apiService.getDetailInfo(asin)?.audioTracks ?: emptyList()
                 playbackInfo to detailAudio
             }
@@ -415,26 +414,22 @@ class PlayerActivity : AppCompatActivity() {
 
         val drmSessionManager = DefaultDrmSessionManager.Builder()
             .setUuidAndExoMediaDrmProvider(WIDEVINE_UUID, FrameworkMediaDrm.DEFAULT_PROVIDER)
-            .setMultiSession(false)
+            .setMultiSession(false) // single session reused across periods — matches Amazon default (mediadrm_multiSessionEnabled_2=false)
             .build(licenseCallback)
 
         val passthroughEnabled = getSharedPreferences("settings", MODE_PRIVATE)
             .getBoolean(PREF_AUDIO_PASSTHROUGH, false)
 
-        val renderersFactory = if (passthroughEnabled) {
-            object : DefaultRenderersFactory(this) {
-                init { setExtensionRendererMode(EXTENSION_RENDERER_MODE_OFF) }
-                override fun buildAudioSink(
-                    context: Context,
-                    enableFloatOutput: Boolean,
-                    enableAudioTrackPlaybackParams: Boolean
-                ): AudioSink = DefaultAudioSink.Builder(context)
-                    .setAudioCapabilities(AudioCapabilities.getCapabilities(context))
-                    .build()
-            }
-        } else {
-            DefaultRenderersFactory(this)
-                .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF)
+        val renderersFactory = object : DefaultRenderersFactory(this) {
+            init { setExtensionRendererMode(EXTENSION_RENDERER_MODE_OFF) }
+            override fun buildAudioSink(
+                context: Context,
+                enableFloatOutput: Boolean,
+                enableAudioTrackPlaybackParams: Boolean
+            ): AudioSink = DefaultAudioSink.Builder(context)
+                .setAudioCapabilities(AudioCapabilities.getCapabilities(context))
+                .setEnableAudioTrackPlaybackParams(passthroughEnabled)
+                .build()
         }
 
         val dataSourceFactory = androidx.media3.datasource.okhttp.OkHttpDataSource.Factory(
@@ -476,14 +471,11 @@ class PlayerActivity : AppCompatActivity() {
         trackSelector = selector
         normalizedInitialAudioSelection = false
 
-        // Trailers always start from beginning. For real content prefer the h265 fallback
-        // position set during a manifest restart, then the shared ProgressRepository.
+        // Trailers always start from beginning. For real content resume from ProgressRepository.
         val intentResumeMs = intent.getLongExtra(EXTRA_RESUME_MS, 0L).coerceAtLeast(0L)
-        val serverResumeMs = h265FallbackPositionMs.takeIf { it > 0L }
-            ?: intentResumeMs.takeIf { it > 0L }
+        val serverResumeMs = intentResumeMs.takeIf { it > 0L }
             ?: ProgressRepository.get(currentAsin)?.positionMs?.coerceAtLeast(0L)
             ?: 0L
-        h265FallbackPositionMs = 0L
         val resumeMs = if (currentMaterialType == "Trailer") 0L else serverResumeMs
 
         player = ExoPlayer.Builder(this, renderersFactory)
@@ -494,7 +486,7 @@ class PlayerActivity : AppCompatActivity() {
                 exoPlayer.setMediaSource(mediaSource)
                 exoPlayer.addListener(playerListener)
                 exoPlayer.prepare()
-                if (resumeMs > 10_000 && resumeMs > 0) {
+                if (resumeMs > 10_000) {
                     exoPlayer.seekTo(resumeMs)
                     resumeSeeked = true
                 }
@@ -609,7 +601,8 @@ class PlayerActivity : AppCompatActivity() {
             if (isPlaying) {
                 startHeartbeat()
                 startResumeProgressUpdates()
-            } else if (player?.playbackState == Player.STATE_READY) {
+            }
+            if (!isPlaying && player?.playbackState == Player.STATE_READY) {
                 // Paused — PlayerView keeps its controller visible automatically
                 persistPlaybackProgress(force = true)
                 sendProgressEvent("PAUSE")
@@ -652,35 +645,20 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         override fun onPlayerError(error: PlaybackException) {
-            Log.e(TAG, "Player error: ${error.errorCodeName}", error)
+            val httpCause = generateSequence(error.cause) { it.cause }
+                .filterIsInstance<HttpDataSource.InvalidResponseCodeException>()
+                .firstOrNull()
+            val failingUrl = httpCause?.dataSpec?.uri?.toString()
+            if (httpCause != null) {
+                Log.e(TAG, "Player error: ${error.errorCodeName} HTTP ${httpCause.responseCode} url=$failingUrl")
+            } else {
+                Log.e(TAG, "Player error: ${error.errorCodeName}", error)
+            }
+
             persistPlaybackProgress(force = true)
             stopStreamReporting()
             updatePlaybackWakeState(false)
             seekResyncPending = false
-
-            // Amazon's CDN returns HTTP 400 for H265 segment URLs on some titles.
-            // The UHD manifest's H264 tracks only reach 720p — must re-fetch using the HD
-            // quality preset (H264-only manifest) to get 1080p H264. detectTerritory() is
-            // cached so the only overhead is one GetPlaybackResources round-trip.
-            if (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS &&
-                currentQuality.codecOverride.contains("H265") &&
-                !h265FallbackAttempted) {
-                h265FallbackAttempted = true
-                val lastPos = player?.currentPosition ?: 0L
-                Log.w(TAG, "H265 CDN returned 400 — re-fetching H264 manifest, resume at ${lastPos}ms")
-                Toast.makeText(
-                    this@PlayerActivity,
-                    "H265 not available for this title — switching to H264",
-                    Toast.LENGTH_SHORT
-                ).show()
-                if (lastPos > 10_000) h265FallbackPositionMs = lastPos
-                player?.release()
-                player = null
-                streamReportingStarted = false
-                watchSessionId = UUID.randomUUID().toString()
-                loadAndPlay(currentAsin, currentMaterialType, PlaybackQuality.HD)
-                return
-            }
 
             showError("Playback error: ${error.errorCodeName}\n${error.message}")
         }
