@@ -114,6 +114,6 @@ jobs:
         with:
           name: Release ${{ steps.version.outputs.version }}
           files: app/build/outputs/apk/release/FireOS-AVOD-*.apk
-          generate_release_notes: true
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
