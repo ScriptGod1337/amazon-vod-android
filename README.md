@@ -77,6 +77,7 @@ Selecting any movie or series opens a full detail screen before playback:
 
 ### Playback
 
+- **Long-form content stall fixed** — Amazon's MPD declares a fixed segment duration that drifts up to 41 seconds from actual durations over a 2-hour movie; `MpdTimingCorrector` rewrites the manifest at load time to use `SegmentBase+indexRange` so ExoPlayer reads accurate per-segment timing from the sidx box instead of the inaccurate fixed duration
 - **Widevine L1** hardware-secure playback (DASH / MPD); automatic L3/SD fallback on emulators
 - **Audio & subtitle track selection** — labels from Amazon's API metadata; Audio Description tagging; family grouping (main / AD / Dialogue Boost); channel layout suffix (`2.0`, `5.1`, `7.1`); MENU key or pause shows controls; overlay follows Media3 controller visibility with no flicker
 - **Video format label** in overlay — active codec, resolution, and HDR status (e.g. `720p · H265 · SDR`, `4K · H265 · HDR10`), updated live as ABR ramps up
@@ -195,6 +196,12 @@ system service via a hidden MediaSession proxy on Fire OS. Not implemented.
 ## Roadmap
 
 See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history and upcoming work.
+
+### Backlog
+
+| Item | Notes |
+|------|-------|
+| Remove `StallRecoveryVideoRenderer.kt` | File is unwired and marked `TODO: remove`; MPD correction is the primary stall fix; safe to delete once Fire TV regression testing is complete |
 
 **Recently completed:**
 - **Phase 34** — Playback completion auto-advance: episodes auto-play the next episode on
