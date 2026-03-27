@@ -695,10 +695,8 @@ class PlayerActivity : AppCompatActivity() {
     private fun updatePlaybackStatus() {
         val materialLabel = if (currentMaterialType == "Trailer") "Trailer" else "Playback"
         val qualityLabel = when (currentQuality) {
-            PlaybackQuality.SD_AVC  -> "SD AVC preset"
             PlaybackQuality.UHD_HDR -> "4K HDR preset"
             PlaybackQuality.HD_H265 -> "HD H265 preset"
-            PlaybackQuality.HD_AVC  -> "HD AVC preset"
             PlaybackQuality.HD      -> "HD H264 preset"
             PlaybackQuality.SD      -> "SD (Widevine L3)"
             else                    -> "HD H264 preset"

@@ -4,6 +4,19 @@ All notable changes to ScriptGod's FireOS AmazonVOD are documented here.
 
 ## [Unreleased]
 
+### Fixed (Phase 35 — MPD segment timing stall)
+- **Permanent stall at ~56 min on long-form content resolved** — root cause was a 41-second cumulative drift between the MPD's fixed `SegmentList duration` and the actual per-segment durations in the content files; ExoPlayer fetched the wrong segment and the renderer dropped all frames as stale
+- `MpdTimingCorrector` converts `SegmentList` (inaccurate fixed duration) to `SegmentBase+indexRange` so ExoPlayer reads the sidx box for accurate per-segment timing; verified against sidx byte ranges for all 2087 segments
+- MPD correction applied in-memory via a custom `DataSource` interceptor; original CDN URI kept as the `MediaItem` so `BaseURL` resolution works correctly; falls back to original MPD on any error
+- Stall watchdog bug fixes: `playWhenReady` used instead of `isPlaying` (false during buffering), watchdog no longer restarted on every `BUFFERING↔READY` oscillation, position counter no longer reset on every buffering transition
+- Root cause analysis documented in `dev/analysis/mpd-timing-stall-fix.md`
+
+### Changed (Phase 35)
+- DRM license protocol rewritten to match `playback.py` — `widevine2Challenge` form-encoded POST body, `widevine2License.license` response key; `buildLicenseUrl()` rebuilt as full `GetPlaybackResources` endpoint with correct param set
+- `StallRecoveryVideoRenderer` (custom `MediaCodecVideoRenderer` subclass) unwired — caused a pause regression; MPD correction is the primary fix; position-level stall watchdog kept as safety net
+- Network logging extended: MPD, video/audio `.mp4` segment, and license requests logged with full URL via `NetworkLogInterceptor`; `onMediaRequestObserved` callback available for segment tracking
+- `forceAVC` flag and `SD_AVC` / `HD_AVC` quality presets removed — flag was never sent in the API request
+
 ## [2026.03.03.1] - 2026-03-03
 
 ### Added (Phase 34 — Playback Completion Auto-advance)

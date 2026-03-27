@@ -8,8 +8,7 @@ package com.scriptgod.fireos.avod.model
 data class PlaybackQuality(
     val videoQuality: String,  // "SD", "HD", or "UHD"
     val codecOverride: String, // "H264" or "H264,H265"
-    val hdrOverride: String,    // "None" or "Hdr10,DolbyVision"
-    val forceAVC: Boolean = false
+    val hdrOverride: String    // "None" or "Hdr10,DolbyVision"
 ) {
     companion object {
         /**
@@ -22,12 +21,8 @@ data class PlaybackQuality(
          * back to "SD" automatically. Not exposed as a user-selectable option.
          */
         val SD      = PlaybackQuality("SD",  "H264",      "None")
-        /** 480p H264 SDR with explicit AVC forcing for lower-rung ladder testing. */
-        val SD_AVC  = PlaybackQuality("SD",  "H264",      "None", true)
         /** 720p H264 SDR — safe default, works on all devices and displays */
         val HD      = PlaybackQuality("HD",  "H264",      "None")
-        /** 720p H264 SDR with explicit AVC forcing in the playback request. */
-        val HD_AVC  = PlaybackQuality("HD",  "H264",      "None", true)
         /**
          * 720p H265 SDR — same resolution as HD H264 but H265 codec where available,
          * giving better compression (lower bandwidth for similar quality).
@@ -41,16 +36,12 @@ data class PlaybackQuality(
         const val PREF_KEY = "video_quality"
 
         fun fromPrefValue(value: String?) = when (value) {
-            "SD_AVC" -> SD_AVC
-            "HD_AVC" -> HD_AVC
             "HD_H265" -> HD_H265
             "UHD_HDR" -> UHD_HDR
             else       -> HD
         }
 
         fun toPrefValue(q: PlaybackQuality) = when (q) {
-            SD_AVC  -> "SD_AVC"
-            HD_AVC  -> "HD_AVC"
             HD_H265 -> "HD_H265"
             UHD_HDR -> "UHD_HDR"
             else    -> "HD"

@@ -397,7 +397,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:baselineAligned="false"
-                        android:layout_marginBottom="10dp">
+                        android:layout_marginBottom="14dp">
 
                         <androidx.appcompat.widget.AppCompatButton
                             android:id="@+id/btn_quality_hd"
@@ -415,30 +415,6 @@
                             android:textSize="@dimen/action_text_size"
                             android:stateListAnimator="@null"
                             android:nextFocusUp="@id/btn_about_back" />
-
-                        <androidx.appcompat.widget.AppCompatButton
-                            android:id="@+id/btn_quality_hd_avc"
-                            android:layout_width="0dp"
-                            android:layout_height="56dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/settings_quality_option_background"
-                            android:minWidth="0dp"
-                            android:paddingStart="18dp"
-                            android:paddingEnd="18dp"
-                            android:text="HD AVC"
-                            android:textAllCaps="false"
-                            android:textColor="@color/settings_quality_option_text"
-                            android:textSize="@dimen/action_text_size"
-                            android:stateListAnimator="@null"
-                            android:nextFocusUp="@id/btn_about_back" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:baselineAligned="false"
-                        android:layout_marginBottom="14dp">
 
                         <androidx.appcompat.widget.AppCompatButton
                             android:id="@+id/btn_quality_hd_h265"
@@ -472,36 +448,6 @@
                             android:textSize="@dimen/action_text_size"
                             android:stateListAnimator="@null"
                             android:nextFocusUp="@id/btn_about_back" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:baselineAligned="false"
-                        android:layout_marginBottom="14dp">
-
-                        <androidx.appcompat.widget.AppCompatButton
-                            android:id="@+id/btn_quality_sd_avc"
-                            android:layout_width="0dp"
-                            android:layout_height="56dp"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="10dp"
-                            android:background="@drawable/settings_quality_option_background"
-                            android:minWidth="0dp"
-                            android:paddingStart="18dp"
-                            android:paddingEnd="18dp"
-                            android:text="SD AVC"
-                            android:textAllCaps="false"
-                            android:textColor="@color/settings_quality_option_text"
-                            android:textSize="@dimen/action_text_size"
-                            android:stateListAnimator="@null"
-                            android:nextFocusUp="@id/btn_about_back" />
-
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:layout_weight="1" />
                     </LinearLayout>
 
                     <TextView

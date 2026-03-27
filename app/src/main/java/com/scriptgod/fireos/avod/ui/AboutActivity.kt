@@ -103,9 +103,7 @@ class AboutActivity : AppCompatActivity() {
             else -> "No"
         }
         val prefs = getSharedPreferences("settings", MODE_PRIVATE)
-        val btnSdAvc  = findViewById<Button>(R.id.btn_quality_sd_avc)
         val btnHd     = findViewById<Button>(R.id.btn_quality_hd)
-        val btnHdAvc  = findViewById<Button>(R.id.btn_quality_hd_avc)
         val btnHdH265 = findViewById<Button>(R.id.btn_quality_hd_h265)
         val btnUhd    = findViewById<Button>(R.id.btn_quality_uhd)
         val tvNote    = findViewById<TextView>(R.id.tv_quality_note)
@@ -133,15 +131,13 @@ class AboutActivity : AppCompatActivity() {
             !supportsH265 ->
                 "This device is limited to the HD H264 profile. H265 and 4K / HDR playback are unavailable."
             !supportsDisplayHdr ->
-                "H265 can be used for HD playback. HD AVC forces the AVC path for testing. 4K / HDR stays locked until the display reports HDR support."
+                "H265 can be used for HD playback. 4K / HDR stays locked until the display reports HDR support."
             else ->
-                "All playback tiers are available on this device. HD AVC forces the AVC path for testing. Changes take effect on the next playback session."
+                "All playback tiers are available on this device. Changes take effect on the next playback session."
         }
 
         fun updateButtons(selected: PlaybackQuality) {
-            btnSdAvc.isSelected = selected == PlaybackQuality.SD_AVC
             btnHd.isSelected = selected == PlaybackQuality.HD
-            btnHdAvc.isSelected = selected == PlaybackQuality.HD_AVC
             btnHdH265.isSelected = selected == PlaybackQuality.HD_H265
             btnUhd.isSelected = selected == PlaybackQuality.UHD_HDR
         }
@@ -156,9 +152,7 @@ class AboutActivity : AppCompatActivity() {
             Toast.makeText(this, "Quality set to ${btnLabel(q)} — takes effect on next playback", Toast.LENGTH_SHORT).show()
         }
 
-        btnSdAvc.setOnClickListener  { save(PlaybackQuality.SD_AVC) }
         btnHd.setOnClickListener     { save(PlaybackQuality.HD) }
-        btnHdAvc.setOnClickListener  { save(PlaybackQuality.HD_AVC) }
         btnHdH265.setOnClickListener { save(PlaybackQuality.HD_H265) }
         btnUhd.setOnClickListener    { save(PlaybackQuality.UHD_HDR) }
 
@@ -224,8 +218,6 @@ class AboutActivity : AppCompatActivity() {
     }
 
     private fun btnLabel(q: PlaybackQuality) = when (q) {
-        PlaybackQuality.SD_AVC  -> "SD AVC"
-        PlaybackQuality.HD_AVC  -> "HD AVC"
         PlaybackQuality.HD_H265 -> "H265"
         PlaybackQuality.UHD_HDR -> "4K / DV HDR"
         else                    -> "HD H264"

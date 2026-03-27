@@ -1,5 +1,26 @@
 # Project Progress
 
+## Phase 13: IN PROGRESS — Playback stall isolation
+- Added `HD AVC` and `SD AVC` presets plus explicit `forceAVC=true` request hints to test the AVC path without HEVC or Dolby passthrough noise
+- Added tighter request logging in `AmazonAuthService.kt` and `PlayerActivity.kt`:
+  - logs every observed `.mp4` media request
+  - splits the last observed segment into `lastVideoSegment` and `lastAudioSegment`
+  - includes both fields in `Playback info:` and `STALL_DETECTED` snapshots
+- Reproduced the stall across multiple configurations:
+  - German dub + passthrough off
+  - original audio + passthrough on/off
+  - HD AVC
+  - SD AVC
+- Key finding: the stall remains pinned to the same content time region around `3401130ms` even when audio configuration and quality tier change
+- Key segment pair observed at the stall:
+  - `video_12.mp4` / `audio_250.mp4` on higher AVC tiers
+  - `video_9.mp4` / `audio_250.mp4` on SD AVC
+- Audio passthrough, EAC3 vs AAC, and the lower video ladder are not the root cause by themselves
+- Remaining comparison point: Amazon’s app likely differs in its playback restart / failover behavior and possibly in its stream/session path, even though it can play through the same title
+- Next step: compare our restart path against Amazon’s `RENDERER_DECODER_STALLED` / `PLAYER_CORRUPT_FRAGMENT` handling rather than adding more generic skip logic
+- Next step: compare our `GetPlaybackResources` request shape against Amazon’s PRS V2 / `PlaybackUrlsInformation` path to verify whether we are still missing session context
+- Next step: if the stall remains pinned to the same segment pair, add a real `PLAYER_CORRUPT_FRAGMENT`-style recovery branch instead of extending the current seek watchdog
+
 ## Phase 1: COMPLETE
 - Analyzed all Kodi plugin source files in `/home/vscode/kodi-plugin/plugin.video.amazon-test/resources/lib/`
 - Mapped all API endpoints: token refresh, GetPlaybackResources (manifest + license), catalog browsing (Android API), watchlist, search, stream reporting
