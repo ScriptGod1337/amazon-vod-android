@@ -197,11 +197,6 @@ system service via a hidden MediaSession proxy on Fire OS. Not implemented.
 
 See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history and upcoming work.
 
-### Backlog
-
-| Item | Notes |
-|------|-------|
-| Remove `StallRecoveryVideoRenderer.kt` | File is unwired and marked `TODO: remove`; MPD correction is the primary stall fix; safe to delete once Fire TV regression testing is complete |
 
 **Recently completed:**
 - **Phase 34** — Playback completion auto-advance: episodes auto-play the next episode on
