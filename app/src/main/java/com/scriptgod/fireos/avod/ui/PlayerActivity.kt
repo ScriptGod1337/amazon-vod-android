@@ -617,6 +617,8 @@ class PlayerActivity : AppCompatActivity() {
 
         player = ExoPlayer.Builder(this, renderersFactory)
             .setTrackSelector(selector)
+            .setSeekBackIncrementMs(10_000)
+            .setSeekForwardIncrementMs(10_000)
             .build()
             .also { exoPlayer ->
                 playerView.player = exoPlayer
