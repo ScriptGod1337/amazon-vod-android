@@ -24,7 +24,9 @@ import androidx.media3.common.Format
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
+import android.os.Looper
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import com.scriptgod.fireos.avod.player.MpdTimingCorrector
 import androidx.media3.exoplayer.audio.AudioCapabilities
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
@@ -36,6 +38,10 @@ import androidx.media3.exoplayer.drm.DrmSessionManagerProvider
 import androidx.media3.exoplayer.drm.FrameworkMediaDrm
 import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.source.SingleSampleMediaSource
+import androidx.media3.exoplayer.analytics.AnalyticsListener
+import androidx.media3.exoplayer.source.LoadEventInfo
+import androidx.media3.exoplayer.source.MediaLoadData
+import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
 import com.scriptgod.fireos.avod.R
@@ -99,6 +105,9 @@ class PlayerActivity : AppCompatActivity() {
     private var controllerView: View? = null
 
     private var player: ExoPlayer? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
+    /** Corrected MPD XML to serve in place of the original manifest URL. */
+    private var correctedMpdContent: String? = null
     private var currentMediaSource: androidx.media3.exoplayer.source.MediaSource? = null
     private var trackSelector: DefaultTrackSelector? = null
     private lateinit var authService: AmazonAuthService
@@ -410,6 +419,17 @@ class PlayerActivity : AppCompatActivity() {
             availableAudioTracks = (info.audioTracks + detailAudioTracks)
                 .distinctBy { "${it.displayName}|${it.languageCode}|${it.type}|${it.index}" }
             logAvailableAudioTracks("Merged audio metadata", availableAudioTracks)
+            // Correct MPD timing: Amazon's SegmentList uses fixed duration that drifts ~41s
+            // over 2h. Replace with SegmentBase+sidx for accurate segment timing.
+            correctedMpdContent = withContext(Dispatchers.IO) {
+                try {
+                    val authClient = authService.buildAuthenticatedClient()
+                    MpdTimingCorrector.correctMpd(info.manifestUrl, authClient)
+                } catch (e: Exception) {
+                    Log.e(TAG, "MPD correction failed, will use original: ${e.message}")
+                    null
+                }
+            }
             currentPlaybackInfo = info
             if (info.bifUrl.isNotEmpty()) loadBifIndex(info.bifUrl)
             setupPlayer(info)
@@ -435,6 +455,7 @@ class PlayerActivity : AppCompatActivity() {
     ) {
         if (isDestroyed || isFinishing) return
         player?.removeListener(playerListener)
+        player?.removeAnalyticsListener(analyticsListener)
         player?.release()
         player = null
         Log.i(
@@ -474,7 +495,10 @@ class PlayerActivity : AppCompatActivity() {
         // Force OMX.dolby.eac3.decoder (non-secure) for EAC3 so the hardware decodes to PCM
         // rather than passing raw EAC3 to the Dolby HAL passthrough pipeline.
         val renderersFactory = object : DefaultRenderersFactory(this) {
-            init { setExtensionRendererMode(EXTENSION_RENDERER_MODE_OFF) }
+            init {
+                setExtensionRendererMode(EXTENSION_RENDERER_MODE_OFF)
+                setEnableDecoderFallback(true)
+            }
             override fun buildAudioSink(
                 context: Context,
                 enableFloatOutput: Boolean,
@@ -487,9 +511,58 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
-        val dataSourceFactory = androidx.media3.datasource.okhttp.OkHttpDataSource.Factory(
+        val httpDataSourceFactory = androidx.media3.datasource.okhttp.OkHttpDataSource.Factory(
             authService.buildAuthenticatedClient()
         )
+
+        // If we have a corrected MPD, wrap the data source to serve it instead of
+        // fetching the original manifest URL. This keeps the manifest URI as the real
+        // CDN URL so BaseURL resolution works, while serving corrected content.
+        val correctedMpd = correctedMpdContent
+        val dataSourceFactory = if (correctedMpd != null) {
+            val manifestUri = android.net.Uri.parse(info.manifestUrl)
+            val correctedBytes = correctedMpd.toByteArray()
+            androidx.media3.datasource.DataSource.Factory {
+                object : androidx.media3.datasource.DataSource {
+                    private var httpSource: androidx.media3.datasource.DataSource? = null
+                    private var byteStream: java.io.ByteArrayInputStream? = null
+                    private var isManifest = false
+
+                    override fun open(dataSpec: androidx.media3.datasource.DataSpec): Long {
+                        // Intercept the manifest URL and serve corrected content
+                        if (dataSpec.uri.path == manifestUri.path) {
+                            isManifest = true
+                            byteStream = java.io.ByteArrayInputStream(correctedBytes)
+                            return correctedBytes.size.toLong()
+                        }
+                        isManifest = false
+                        httpSource = httpDataSourceFactory.createDataSource()
+                        return httpSource!!.open(dataSpec)
+                    }
+
+                    override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+                        if (isManifest) {
+                            return byteStream?.read(buffer, offset, length) ?: -1
+                        }
+                        return httpSource?.read(buffer, offset, length) ?: -1
+                    }
+
+                    override fun addTransferListener(listener: androidx.media3.datasource.TransferListener) {}
+                    override fun getUri(): android.net.Uri? = if (isManifest) manifestUri else httpSource?.uri
+                    override fun close() {
+                        byteStream?.close()
+                        byteStream = null
+                        httpSource?.close()
+                        httpSource = null
+                    }
+
+                    override fun getResponseHeaders(): Map<String, List<String>> =
+                        httpSource?.responseHeaders ?: emptyMap()
+                }
+            }
+        } else {
+            httpDataSourceFactory
+        }
 
         val mediaItem = MediaItem.Builder()
             .setUri(info.manifestUrl)
@@ -549,6 +622,7 @@ class PlayerActivity : AppCompatActivity() {
                 playerView.player = exoPlayer
                 exoPlayer.setMediaSource(mediaSource)
                 exoPlayer.addListener(playerListener)
+                exoPlayer.addAnalyticsListener(analyticsListener)
                 exoPlayer.prepare()
                 if (resumeMs > 10_000) {
                     exoPlayer.seekTo(resumeMs)
@@ -632,6 +706,48 @@ class PlayerActivity : AppCompatActivity() {
         tvPlaybackStatus.text = "$materialLabel  ·  $qualityLabel"
     }
 
+    private val analyticsListener = object : AnalyticsListener {
+        override fun onVideoDecoderInitialized(
+            eventTime: AnalyticsListener.EventTime,
+            decoderName: String,
+            initializedTimestampMs: Long,
+            initializationDurationMs: Long
+        ) {
+            Log.w(TAG, "CODEC_INIT pos=${eventTime.currentPlaybackPositionMs}ms decoder=$decoderName initMs=$initializationDurationMs")
+        }
+
+        override fun onVideoInputFormatChanged(
+            eventTime: AnalyticsListener.EventTime,
+            format: Format,
+            decoderReuseEvaluation: DecoderReuseEvaluation?
+        ) {
+            Log.w(TAG, "VIDEO_FMT pos=${eventTime.currentPlaybackPositionMs}ms " +
+                "${format.width}x${format.height} bitrate=${format.bitrate} " +
+                "codecs=${format.codecs} reuse=${decoderReuseEvaluation?.result}")
+        }
+
+        override fun onDroppedVideoFrames(
+            eventTime: AnalyticsListener.EventTime,
+            droppedFrames: Int,
+            elapsedMs: Long
+        ) {
+            Log.w(TAG, "DROPPED pos=${eventTime.currentPlaybackPositionMs}ms count=$droppedFrames elapsed=${elapsedMs}ms")
+        }
+
+        override fun onLoadCompleted(
+            eventTime: AnalyticsListener.EventTime,
+            loadEventInfo: LoadEventInfo,
+            mediaLoadData: MediaLoadData
+        ) {
+            val pos = eventTime.currentPlaybackPositionMs
+            if (pos in 3_350_000..3_460_000) {
+                Log.w(TAG, "LOAD pos=${pos}ms type=${mediaLoadData.dataType} " +
+                    "seg=${mediaLoadData.mediaStartTimeMs}-${mediaLoadData.mediaEndTimeMs}ms " +
+                    "url=${loadEventInfo.uri}")
+            }
+        }
+    }
+
     private val playerListener = object : Player.Listener {
         override fun onPlaybackStateChanged(state: Int) {
             Log.w(
@@ -679,7 +795,11 @@ class PlayerActivity : AppCompatActivity() {
                     "audio=${selectedAudioTrackSummary()}"
             )
             updatePlaybackWakeState(isPlaying || seekResyncPending)
-            if (isPlaying) startStallWatchdog() else stopStallWatchdog()
+            // Start watchdog when playing; stop only on intentional pause (playWhenReady=false).
+            // Do NOT stop on isPlaying=false alone — that fires on every BUFFERING state change,
+            // which would cancel the watchdog coroutine before its delay(2000) ever completes.
+            if (isPlaying) startStallWatchdog()
+            else if (player?.playWhenReady == false) stopStallWatchdog()
             if (!streamReportingStarted) return
             if (isPlaying) {
                 startHeartbeat()
@@ -825,34 +945,41 @@ class PlayerActivity : AppCompatActivity() {
      * (not a forward seek). Retry limit = 3, matching Amazon's PlaybackRestartType config.
      */
     private fun startStallWatchdog() {
-        stallWatchdogJob?.cancel()
+        if (stallWatchdogJob?.isActive == true) return  // already running; don't restart and reset delay
         stallWatchdogJob = scope.launch {
             var lastPos = -1L
             var frozenSince = 0
             while (true) {
                 delay(2_000)
                 val p = player ?: break
-                if (!p.isPlaying) { frozenSince = 0; lastPos = -1L; continue }
+                // Use playWhenReady, not isPlaying: during BUFFERING↔READY oscillation
+                // isPlaying is false and would reset frozenSince every tick, preventing detection.
+                // playWhenReady stays true whenever the user intends playback to run.
+                if (!p.playWhenReady) { frozenSince = 0; lastPos = -1L; continue }
                 val pos = p.currentPosition
                 val buffered = p.totalBufferedDuration
                 if (pos == lastPos && buffered > 30_000) {
                     frozenSince++
-                    if (frozenSince >= 3) { // 6 seconds frozen
+                    if (frozenSince >= 2) { // 4 seconds frozen
                         logPlaybackSnapshot(
                             "RENDERER_DECODER_STALLED",
                             "frozenSince=${frozenSince * 2}s stallRestartCount=$stallRestartCount " +
                                 "lastVideoSegment=$lastVideoSegmentUrl lastAudioSegment=$lastAudioSegmentUrl"
                         )
                         stallRestartCount++
-                        if (stallRestartCount > 3) {
+                        if (stallRestartCount > 20) {
                             Log.e(TAG, "RENDERER_DECODER_STALLED: exceeded retry limit, giving up")
                             showError("Playback stalled and could not be recovered automatically.")
                             break
                         }
-                        Log.w(TAG, "RENDERER_DECODER_STALLED: pos=${pos}ms buffered=${buffered}ms — restarting player (attempt $stallRestartCount/3)")
-                        Toast.makeText(this@PlayerActivity, "Recovering from decoder stall\u2026", Toast.LENGTH_SHORT).show()
-                        restartPlayerAtPosition(pos, "RENDERER_DECODER_STALLED")
-                        break // loop exits; new watchdog starts when isPlaying fires again
+                        val skipTo = pos + 10_000L
+                        Log.w(TAG, "RENDERER_DECODER_STALLED: pos=${pos}ms buffered=${buffered}ms — seeking to ${skipTo}ms (attempt $stallRestartCount/20)")
+                        withContext(Dispatchers.Main) {
+                            p.seekTo(skipTo)
+                        }
+                        frozenSince = 0
+                        lastPos = -1L
+                        // continue loop — if still stuck after seek, will detect again
                     }
                 } else {
                     frozenSince = 0
@@ -883,6 +1010,7 @@ class PlayerActivity : AppCompatActivity() {
         stopStallWatchdog()
         stopStreamReporting()
         player?.removeListener(playerListener)
+        player?.removeAnalyticsListener(analyticsListener)
         player?.release()
         player = null
         streamReportingStarted = false

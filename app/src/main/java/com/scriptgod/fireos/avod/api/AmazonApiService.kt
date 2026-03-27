@@ -972,7 +972,6 @@ class AmazonApiService(private val authService: AmazonAuthService) {
             append("&deviceVideoCodecOverride=").append(quality.codecOverride)
             append("&deviceHdrFormatsOverride=").append(quality.hdrOverride)
             append("&deviceVideoQualityOverride=").append(quality.videoQuality)
-            append("&forceAVC=").append(quality.forceAVC)
             // Session context — mirrors Amazon's userWatchSessionId field
             if (!watchSessionId.isNullOrEmpty()) {
                 append("&userWatchSessionId=").append(watchSessionId)
@@ -1005,7 +1004,7 @@ class AmazonApiService(private val authService: AmazonAuthService) {
             throw RuntimeException("Could not extract manifest URL from response")
         }
 
-        val licenseUrl = buildLicenseUrl(asin)
+        val licenseUrl = buildLicenseUrl(asin, did, quality, videoMaterialType, watchSessionId)
         val subtitles = extractSubtitleTracks(body)
         val audioTracks = extractAudioTracks(body)
         if (audioTracks.isNotEmpty()) {
@@ -1155,14 +1154,39 @@ class AmazonApiService(private val authService: AmazonAuthService) {
     }
 
     /**
-     * Builds the Widevine license server URL.
-     *
-     * Uses Amazon's native DRM endpoint — matches GetWidevineLicensePlayerRequest.buildRequest().
-     * Only URL param is titleId; all other parameters go in the JSON POST body built by
-     * AmazonLicenseService (licenseChallenge, deviceCapabilityFamily, capabilityDiscriminators).
+     * Builds the Widevine license server URL (api-map.md, playback.py:452-467).
      */
-    fun buildLicenseUrl(asin: String): String {
-        return "$atvUrl/playback/drm-vod/GetWidevineLicense?titleId=$asin"
+    fun buildLicenseUrl(
+        asin: String,
+        deviceId: String,
+        quality: PlaybackQuality = PlaybackQuality.HD,
+        videoMaterialType: String = "Feature",
+        watchSessionId: String? = null
+    ): String {
+        return "$atvUrl/cdp/catalog/GetPlaybackResources" +
+               "?asin=$asin" +
+               "&deviceTypeID=${AmazonAuthService.DEVICE_TYPE_ID}" +
+               "&firmware=1" +
+               "&deviceID=$deviceId" +
+               "&marketplaceID=$marketplaceId" +
+               "&format=json" +
+               "&version=2" +
+               "&gascEnabled=true" +
+               "&resourceUsage=ImmediateConsumption" +
+               "&consumptionType=Streaming" +
+               "&deviceDrmOverride=CENC" +
+               "&deviceStreamingTechnologyOverride=DASH" +
+               "&deviceProtocolOverride=Https" +
+               "&deviceBitrateAdaptationsOverride=CVBR%2CCBR" +
+               "&audioTrackId=all" +
+               "&languageFeature=MLFv2" +
+               "&videoMaterialType=$videoMaterialType" +
+               "&desiredResources=Widevine2License" +
+               "&supportedDRMKeyScheme=DUAL_KEY" +
+               "&deviceVideoCodecOverride=${quality.codecOverride}" +
+               "&deviceHdrFormatsOverride=${quality.hdrOverride}" +
+               "&deviceVideoQualityOverride=${quality.videoQuality}" +
+               (if (!watchSessionId.isNullOrEmpty()) "&userWatchSessionId=$watchSessionId" else "")
     }
 
     // --- Watchlist management (api-map.md, android_api.py:348-360) ---

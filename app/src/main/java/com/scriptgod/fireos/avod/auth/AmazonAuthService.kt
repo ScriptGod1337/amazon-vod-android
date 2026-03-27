@@ -36,6 +36,7 @@ class AmazonAuthService(private val tokenFile: File) {
     private val gson = Gson()
     @Volatile private var tokenData: TokenData = loadToken()
     @Volatile private var siDomain: String = "amazon.com"
+    @Volatile var onMediaRequestObserved: ((String) -> Unit)? = null
 
     fun setSiDomain(domain: String) { siDomain = domain }
 
@@ -157,14 +158,28 @@ class AmazonAuthService(private val tokenFile: File) {
     inner class NetworkLogInterceptor : Interceptor {
         override fun intercept(chain: Interceptor.Chain): Response {
             val request = chain.request()
+            val path = request.url.encodedPath.lowercase()
+            val shouldLog = path.endsWith(".mpd") || path.endsWith(".mp4") || path.contains("license")
+            if (shouldLog) {
+                Log.i(TAG, "HTTP ${request.method} ${request.url}")
+                if (path.endsWith(".mp4")) {
+                    val segmentKind = when {
+                        path.contains("_video_") -> "video"
+                        path.contains("_audio_") -> "audio"
+                        else -> "segment"
+                    }
+                    Log.i(TAG, "Media $segmentKind segment observed: ${request.url}")
+                    onMediaRequestObserved?.invoke(request.url.toString())
+                }
+            }
             return try {
                 val response = chain.proceed(request)
                 if (!response.isSuccessful) {
-                    Log.e(TAG, "HTTP ${response.code} ${request.method} ${request.url.encodedPath}")
+                    Log.e(TAG, "HTTP ${response.code} ${request.method} ${request.url}")
                 }
                 response
             } catch (e: Exception) {
-                Log.e(TAG, "Network error: ${e.message} for ${request.url.encodedPath}")
+                Log.e(TAG, "Network error: ${e.message} for ${request.url}")
                 throw e
             }
         }
