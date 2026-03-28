@@ -5,7 +5,7 @@ Reads AMAZON_EMAIL from .env, prompts for password interactively via getpass.
 Password is never written to disk or passed to any agent.
 Saves token to .device-token (chmod 600).
 """
-import os, json, time, sys, getpass, requests, mechanicalsoup
+import os, json, time, sys, getpass, requests, mechanicalsoup, traceback
 from uuid import uuid4
 from hashlib import sha256
 from base64 import urlsafe_b64encode, b64encode, b16encode
@@ -59,44 +59,53 @@ def register(email, password, domain='amazon.com'):
     br.session.headers.update(HEADERS)
     br.session.cookies.update({'frc': frc, 'map-md': b64encode(json.dumps(map_md).encode()).decode(), 'sid': ''})
 
-    br.open(f'https://www.{domain}')
-    try:
-        br.follow_link(attrs={'class': 'nav-show-sign-in'})
-    except mechanicalsoup.LinkNotFoundError:
-        pass
-
-    up    = urlparse(br.get_url())
-    query = {k: v[0] for k, v in parse_qs(up.query).items()}
-    up_rt = urlparse(query.get('openid.return_to', ''))._replace(netloc=up.netloc, path='/ap/maplanding', query='')
-    query['openid.assoc_handle'] = 'amzn_piv_android_v2_us'
-    query['openid.return_to']    = up_rt.geturl()
-    query.update({
-        'openid.oa2.response_type':      'code',
+    query = {
+        'openid.assoc_handle':             'amzn_piv_android_v2_us',
+        'openid.return_to':                f'https://www.{domain}/ap/maplanding',
+        'openid.oa2.response_type':        'code',
         'openid.oa2.code_challenge_method': 'S256',
-        'openid.oa2.code_challenge':     challenge.decode(),
-        'pageId':                         'amzn_dv_ios_blue',
-        'openid.ns.oa2':                  'http://www.amazon.com/ap/ext/oauth/2',
-        'openid.oa2.client_id':          f'device:{clientid}',
-        'openid.ns.pape':                 'http://specs.openid.net/extensions/pape/1.0',
-        'openid.oa2.scope':               'device_auth_access',
-        'openid.mode':                    'checkid_setup',
-        'openid.identity':                'http://specs.openid.net/auth/2.0/identifier_select',
-        'openid.ns':                      'http://specs.openid.net/auth/2.0',
-        'accountStatusPolicy':            'P1',
-        'openid.claimed_id':              'http://specs.openid.net/auth/2.0/identifier_select',
-        'language':                       'en_US',
-        'disableLoginPrepopulate':        0,
-        'openid.pape.max_auth_age':       0,
-    })
+        'openid.oa2.code_challenge':       challenge.decode(),
+        'pageId':                          'amzn_dv_ios_blue',
+        'openid.ns.oa2':                   'http://www.amazon.com/ap/ext/oauth/2',
+        'openid.oa2.client_id':            f'device:{clientid}',
+        'openid.ns.pape':                  'http://specs.openid.net/extensions/pape/1.0',
+        'openid.oa2.scope':                'device_auth_access',
+        'openid.mode':                     'checkid_setup',
+        'openid.identity':                 'http://specs.openid.net/auth/2.0/identifier_select',
+        'openid.ns':                       'http://specs.openid.net/auth/2.0',
+        'accountStatusPolicy':             'P1',
+        'openid.claimed_id':               'http://specs.openid.net/auth/2.0/identifier_select',
+        'language':                        'en_US',
+        'disableLoginPrepopulate':         0,
+        'openid.pape.max_auth_age':        0,
+    }
     br.session.headers.update({
         'upgrade-insecure-requests': '1',
-        'accept':         'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'accept-language': 'en-US,en;q=0.9',
-        'host':           up.netloc,
+        'host':            f'www.{domain}',
     })
-    br.open(urlparse(br.get_url())._replace(query=urlencode(query)).geturl())
 
-    br.select_form('form[name="signIn"]')
+    signin_url = f'https://www.{domain}/ap/signin?{urlencode(query)}'
+    print(f'[1/6] Opening PKCE signin page directly...')
+    br.open(signin_url)
+    print(f'      URL: {br.get_url()[:80]}')
+
+    # Dump available forms for diagnostics
+    page_forms = br.get_current_page().find_all('form')
+    print(f'      Forms on page: {[f.get("name") or f.get("id") or "?" for f in page_forms]}')
+
+    print('[2/6] Submitting email/password...')
+    try:
+        br.select_form('form[name="signIn"]')
+    except Exception as e:
+        page = str(br.get_current_page())
+        # Check for error messages in the page
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(page, 'html.parser')
+        alert = soup.find(id='auth-error-message-id') or soup.find(class_='a-alert-content')
+        hint = alert.get_text(strip=True) if alert else '(no error message found in page)'
+        raise RuntimeError(f'Could not find signIn form.\nPage hint: {hint}\nURL: {br.get_url()}') from e
     br['email']    = email
     br['password'] = password
     password = None  # clear immediately
@@ -104,9 +113,21 @@ def register(email, password, domain='amazon.com'):
 
     url      = br.get_url()
     response = str(br.get_current_page())
+    print(f'      Post-login URL: {url[:80]}')
+
+    # Check for wrong password / captcha before MFA loop
+    if 'auth-error-message' in response or 'ap_error' in response:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(response, 'html.parser')
+        alert = soup.find(id='auth-error-message-id') or soup.find(class_='a-alert-content')
+        hint = alert.get_text(strip=True) if alert else 'unknown login error'
+        raise RuntimeError(f'Login rejected by Amazon: {hint}')
 
     # Handle OTP / MFA
+    mfa_round = 0
     while any(k in response for k in ['auth-mfa-form', 'verifyOtp', 'fwcim-form']):
+        mfa_round += 1
+        print(f'[3/6] MFA challenge #{mfa_round} detected.')
         otp = input('MFA / OTP code: ').strip()
         try:
             br.select_form('form[id="auth-mfa-form"]')
@@ -116,10 +137,21 @@ def register(email, password, domain='amazon.com'):
         br.submit_selected()
         url      = br.get_url()
         response = str(br.get_current_page())
+        print(f'      Post-MFA URL: {url[:80]}')
 
     if 'openid.oa2.authorization_code' not in url:
-        raise RuntimeError(f'Login failed — unexpected page after submit.\nURL: {url}')
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(response, 'html.parser')
+        title = soup.find('title')
+        alert = soup.find(id='auth-error-message-id') or soup.find(class_='a-alert-content')
+        hint  = (alert.get_text(strip=True) if alert else '') or (title.get_text(strip=True) if title else '(no title)')
+        raise RuntimeError(
+            f'Login failed — no authorization_code in redirect.\n'
+            f'Page title/error: {hint}\n'
+            f'URL: {url}'
+        )
 
+    print('[4/6] Got authorization code, registering device...')
     auth_code = parse_qs(urlparse(url).query)['openid.oa2.authorization_code'][0]
     payload   = {
         'auth_data': {
@@ -140,11 +172,16 @@ def register(email, password, domain='amazon.com'):
                    'Content-Type':                'application/json'}
     resp = requests.post(f'https://api.{domain}/auth/register',
                          headers=reg_headers, data=json.dumps(payload))
-    resp.raise_for_status()
+    print(f'[5/6] Register HTTP {resp.status_code}')
+    if not resp.ok:
+        raise RuntimeError(f'Registration request failed: HTTP {resp.status_code}\n{resp.text[:500]}')
     data = resp.json()
     if 'error' in data.get('response', {}):
         raise RuntimeError(data['response']['error']['message'])
+    if 'success' not in data.get('response', {}):
+        raise RuntimeError(f'Unexpected registration response structure:\n{json.dumps(data, indent=2)[:500]}')
 
+    print('[6/6] Extracting bearer tokens...')
     bearer = data['response']['success']['tokens']['bearer']
     return {
         'access_token':  bearer['access_token'],
@@ -176,6 +213,7 @@ if __name__ == '__main__':
     except Exception as e:
         password = None
         print(f'ERROR: {e}')
+        traceback.print_exc()
         sys.exit(1)
 
     with open(TOKEN_PATH, 'w') as f:
