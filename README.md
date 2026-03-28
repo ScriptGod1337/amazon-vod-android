@@ -124,7 +124,11 @@ com.scriptgod.fireos.avod
  |   +-- ContentItem.kt            Content data model (asin, title, imageUrl, contentType, watchProgressMs, ...)
  |   +-- ContentRail.kt            Named row of ContentItems (headerText, items, collectionId)
  |   +-- DetailInfo.kt             Detail page data model (synopsis, heroImageUrl, imdbRating, genres, ...)
+ |   +-- PlaybackQuality.kt        Quality enum (SD / HD / UHD_HDR); maps to track selector constraints
  |   +-- TokenData.kt              Token JSON model (access_token, refresh_token, device_id, expires_at)
+ +-- player/
+ |   +-- MpdTimingCorrector.kt     Rewrites DASH MPD at load time: replaces inaccurate fixed duration with
+ |                                 SegmentBase+indexRange so ExoPlayer reads per-segment timing from sidx box
  +-- ui/
      +-- LoginActivity.kt          Amazon login: email/password + MFA, PKCE OAuth, device registration
      +-- MainActivity.kt           Home screen: rails or grid, search, nav, filters, pagination
@@ -199,6 +203,9 @@ See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history
 
 
 **Recently completed:**
+- **Phase 35** — Cleanup: removed `forceAVC`/`SD_AVC`/`HD_AVC` quality options (never wired
+  in API requests); removed `StallRecoveryVideoRenderer` wiring from ExoPlayer (MPD correction
+  is the primary stall fix); seek forward/back both set to 10 s; updated launcher icon
 - **Phase 34** — Playback completion auto-advance: episodes auto-play the next episode on
   `STATE_ENDED`; movies/trailers close the player; finished items drop from the CW row
   immediately; season ASIN propagated through all launch paths (Browse, Detail, Home CW);
@@ -217,6 +224,7 @@ See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history
   amber progress bars + remaining-time subtitles; bypasses source/type filters
 
 **Next up:**
+- Remove `StallRecoveryVideoRenderer.kt` once confirmed fully superseded by MPD correction
 - Deeper cross-device progress conflict resolution if Amazon exposes a trustworthy backend
   progress timestamp in a future API path
 - Per-series watch history / episode-level progress tracking improvements
