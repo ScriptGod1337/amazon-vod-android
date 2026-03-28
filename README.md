@@ -237,11 +237,35 @@ See [dev/progress.md](dev/progress.md) for the full phase-by-phase build history
 
 ## Build
 
+### Prerequisites
+
+- **JDK 17** (e.g. `sudo apt install openjdk-17-jdk` or use [Temurin](https://adoptium.net))
+- **Android SDK** with API 34 + build-tools 34.0.0
+  ```bash
+  # Point to your SDK in local.properties (not committed):
+  echo "sdk.dir=/opt/android-sdk" > local.properties
+  ```
+- `gradlew` is already included — no separate Gradle installation needed
+
+### Debug build
+
+```bash
+./gradlew assembleDebug
+```
+
+Output: `app/build/outputs/apk/debug/app-debug.apk`
+
+### Release build
+
 ```bash
 ./gradlew assembleRelease
 ```
 
 Output: `app/build/outputs/apk/release/app-release.apk`
+
+> Signing requires `release.keystore` at the repo root and the four env vars
+> `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`
+> (set automatically by CI; for local builds export them manually or the APK will be unsigned).
 
 ### Versioned build (CI style)
 
