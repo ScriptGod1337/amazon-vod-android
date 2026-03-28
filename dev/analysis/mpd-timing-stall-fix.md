@@ -108,7 +108,7 @@ pass through to the normal HTTP data source. Falls back to the original MPD on a
 
 ### Assumptions
 
-- sidx box exists immediately after the init segment (verified for this title)
+- sidx box exists immediately after the init segment (confirmed across multiple titles)
 - sidx byte ranges match SegmentURL mediaRange values (verified for first 5 segments)
 - All representations share the same sidx size (same segment count = same box size)
 - Code falls back gracefully if any assumption fails (no sidx found, parse error, etc.)
@@ -145,5 +145,5 @@ were fixed (all caused by BUFFERING/READY oscillation resetting detection state)
 | Pause/resume works with correction active | **Pass** (after fixing renderer firing while paused) |
 | Watchdog fires on stall without MPD fix | Pass |
 | StallRecoveryVideoRenderer fires on stall | Pass |
-| Regression: other titles still play normally | Not yet tested |
-| Fire TV device testing | Not yet tested (ADB auth pending) |
+| Regression: other titles still play normally | **Pass** — confirmed on multiple titles (2026-03-28) |
+| Fire TV device testing | **Pass** — confirmed on physical Fire TV Stick 4K (2026-03-28) |
