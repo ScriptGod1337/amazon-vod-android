@@ -123,6 +123,7 @@ class PlayerActivity : AppCompatActivity() {
     private var currentSeasonAsin: String = ""
     private var currentMaterialType: String = "Feature"
     private var currentQuality: PlaybackQuality = PlaybackQuality.HD
+    private var currentAudioBitrateKbps: Int = 0
     private var watchSessionId: String = UUID.randomUUID().toString()
     private var pesSessionToken: String = ""
     private var heartbeatIntervalMs: Long = 60_000
@@ -405,6 +406,7 @@ class PlayerActivity : AppCompatActivity() {
         playerView.useController = true
         stallRestartCount = 0
         audioRestartDone = false
+        currentAudioBitrateKbps = 0
 
         val quality = resolveQuality()
         currentMaterialType = materialType
@@ -694,7 +696,8 @@ class PlayerActivity : AppCompatActivity() {
             codecs.startsWith("hvc1.2") || codecs.startsWith("hev1.2") -> "HDR10"
             else -> ""
         }
-        val label = listOf(res, codec, hdr).filter { it.isNotEmpty() }.joinToString(" · ")
+        val audio = if (currentAudioBitrateKbps > 0) "${currentAudioBitrateKbps}k" else ""
+        val label = listOf(res, codec, hdr, audio).filter { it.isNotEmpty() }.joinToString(" · ")
         tvVideoFormat.text = label
         tvVideoFormat.visibility = if (label.isBlank()) View.GONE else View.VISIBLE
     }
@@ -729,6 +732,15 @@ class PlayerActivity : AppCompatActivity() {
             Log.w(TAG, "VIDEO_FMT pos=${eventTime.currentPlaybackPositionMs}ms " +
                 "${format.width}x${format.height} bitrate=${format.bitrate} " +
                 "codecs=${format.codecs} reuse=${decoderReuseEvaluation?.result}")
+        }
+
+        override fun onAudioInputFormatChanged(
+            eventTime: AnalyticsListener.EventTime,
+            format: Format,
+            decoderReuseEvaluation: DecoderReuseEvaluation?
+        ) {
+            currentAudioBitrateKbps = if (format.bitrate > 0) format.bitrate / 1000 else 0
+            updateVideoFormatLabel()
         }
 
         override fun onDroppedVideoFrames(
