@@ -19,6 +19,7 @@ import androidx.media3.ui.PlayerView
 import com.scriptgod.fireos.avod.R
 import com.scriptgod.fireos.avod.api.AmazonApiService
 import com.scriptgod.fireos.avod.auth.AmazonAuthService
+import com.scriptgod.fireos.avod.auth.TokenStore
 import com.scriptgod.fireos.avod.data.ProgressRepository
 import com.scriptgod.fireos.avod.model.PlaybackQuality
 import com.scriptgod.fireos.avod.player.BifThumbnailProvider
@@ -113,7 +114,7 @@ class PlayerActivity : AppCompatActivity() {
         val asin = intent.getStringExtra(EXTRA_ASIN)
             ?: run { showError("No ASIN provided"); return }
 
-        val tokenFile = LoginActivity.findTokenFile(this)
+        val tokenFile = TokenStore.findTokenFile(this)
             ?: run { finish(); return }
         val authService = AmazonAuthService(tokenFile)
         val apiService  = AmazonApiService(authService)
