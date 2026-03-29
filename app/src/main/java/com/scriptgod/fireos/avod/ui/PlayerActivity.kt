@@ -131,6 +131,7 @@ class PlayerActivity : AppCompatActivity() {
     private var normalizedInitialAudioSelection: Boolean = false
     private var availableAudioTracks: List<AudioTrack> = emptyList()
     private var lastLoggedAudioTrackSignature: String = ""
+    private var lastLoggedAudioResolutionSignature: String = ""
     private var lastResumeSaveElapsedMs: Long = 0L
     private var seekResyncPending: Boolean = false
     private var currentPlaybackInfo: PlaybackInfo? = null
@@ -185,6 +186,7 @@ class PlayerActivity : AppCompatActivity() {
         val groupIndex: Int,
         val trackIndex: Int,
         val label: String,
+        val familyKind: String,
         val isSelected: Boolean,
         val isAudioDescription: Boolean,
         val bitrate: Int
@@ -668,12 +670,12 @@ class PlayerActivity : AppCompatActivity() {
      */
     private fun updateVideoFormatLabel() {
         val fmt = player?.videoFormat ?: run { tvVideoFormat.text = ""; return }
-        val res = when {
-            fmt.height >= 2160 -> "4K"
-            fmt.height >= 1080 -> "1080p"
-            fmt.height >= 720  -> "720p"
-            fmt.height > 0     -> "${fmt.height}p"
-            else               -> ""
+        val res = when (fmt.height) {
+            in 2160..Int.MAX_VALUE -> "4K"
+            1080                   -> "1080p"
+            720                    -> "720p"
+            0                      -> ""
+            else                   -> "${fmt.height}p"
         }
         val codec = when {
             fmt.sampleMimeType?.contains("hevc", ignoreCase = true) == true -> "H265"
@@ -690,7 +692,7 @@ class PlayerActivity : AppCompatActivity() {
             fmt.colorInfo?.colorTransfer == C.COLOR_TRANSFER_HLG    -> "HLG"
             codecs.startsWith("dvhe") || codecs.startsWith("dvav")  -> "DV"
             codecs.startsWith("hvc1.2") || codecs.startsWith("hev1.2") -> "HDR10"
-            else -> "SDR"
+            else -> ""
         }
         val label = listOf(res, codec, hdr).filter { it.isNotEmpty() }.joinToString(" · ")
         tvVideoFormat.text = label
@@ -848,6 +850,7 @@ class PlayerActivity : AppCompatActivity() {
             normalizeInitialAudioSelection(tracks)
             updateTrackButtonLabels(tracks)
             Log.i(TAG, "Selected audio after tracksChanged: ${selectedAudioTrackSummary(tracks)}")
+            logAndForceVideoTracks(tracks)
             updateVideoFormatLabel()
             // Re-hide native track buttons (they re-show on track change)
             playerView.post {
@@ -1275,15 +1278,24 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun selectedAudioTrackSummary(tracks: Tracks? = player?.currentTracks): String {
-        val audioGroups = tracks?.groups?.filter { it.type == C.TRACK_TYPE_AUDIO }.orEmpty()
-        for (group in audioGroups) {
-            for (trackIndex in 0 until group.length) {
-                if (group.isTrackSelected(trackIndex)) {
-                    return formatSummary(group.getTrackFormat(trackIndex))
-                }
+        val currentTracks = tracks ?: return "none"
+        val selectedOption = buildTrackOptions(C.TRACK_TYPE_AUDIO, currentTracks).firstOrNull { it.isSelected }
+        if (selectedOption == null) return "none"
+
+        val selectedFormat = currentTracks.groups
+            .filter { it.type == C.TRACK_TYPE_AUDIO }
+            .firstOrNull { group -> (0 until group.length).any { group.isTrackSelected(it) } }
+            ?.let { group ->
+                (0 until group.length)
+                    .firstOrNull { group.isTrackSelected(it) }
+                    ?.let { group.getTrackFormat(it) }
             }
+
+        return buildString {
+            append("menu=${selectedOption.label}")
+            append(" ")
+            append(formatSummary(selectedFormat))
         }
-        return "none"
     }
 
     private fun logPlaybackSnapshot(reason: String, extra: String = "") {
@@ -1316,19 +1328,42 @@ class PlayerActivity : AppCompatActivity() {
                     resolveAudioMetadataName(format, isAudioDescriptionTrack(format))
                 } else null
                 val isAd = trackType == C.TRACK_TYPE_AUDIO && isAudioDescriptionTrack(format, metadataName)
-                if (trackType == C.TRACK_TYPE_AUDIO && isDialogueBoostLabel(metadataName ?: format.label.orEmpty())) {
-                    continue
+                if (trackType == C.TRACK_TYPE_AUDIO) {
+                    val normalizedLanguage = normalizeAudioGroupLanguage(format.language)
+                    val rawLabel = format.label?.trim().orEmpty()
+                    val metadata = metadataName?.let { AudioTrack(displayName = it) }
+                    val familyKind = resolveAudioFamilyKind(format, metadata, rawLabel)
+                    val label = resolveAudioMenuLabel(
+                        normalizedLanguage = normalizedLanguage,
+                        metadata = metadata,
+                        rawLabel = rawLabel,
+                        fallbackLanguage = normalizedLanguage,
+                        channelCount = format.channelCount,
+                        familyKind = familyKind
+                    )
+                    options += TrackOption(
+                        group = group,
+                        groupIndex = groupIndex,
+                        trackIndex = trackIndex,
+                        label = label,
+                        familyKind = familyKind,
+                        isSelected = group.isTrackSelected(trackIndex),
+                        isAudioDescription = isAd,
+                        bitrate = format.bitrate
+                    )
+                } else {
+                    val label = buildTrackLabel(trackType, format, isAd, metadataName)
+                    options += TrackOption(
+                        group = group,
+                        groupIndex = groupIndex,
+                        trackIndex = trackIndex,
+                        label = label,
+                        familyKind = "text",
+                        isSelected = group.isTrackSelected(trackIndex),
+                        isAudioDescription = isAd,
+                        bitrate = format.bitrate
+                    )
                 }
-                val label = buildTrackLabel(trackType, format, isAd, metadataName)
-                options += TrackOption(
-                    group = group,
-                    groupIndex = groupIndex,
-                    trackIndex = trackIndex,
-                    label = label,
-                    isSelected = group.isTrackSelected(trackIndex),
-                    isAudioDescription = isAd,
-                    bitrate = format.bitrate
-                )
             }
         }
 
@@ -1356,92 +1391,92 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun buildAudioTrackOptions(tracks: Tracks): List<TrackOption> {
         val groups = tracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }
-        val liveCandidates = mutableListOf<AudioLiveCandidate>()
+        val resolved = mutableListOf<TrackOption>()
+        val resolutionEntries = mutableListOf<String>()
+        val languageVariantCounts = mutableMapOf<String, Int>()
         groups.forEachIndexed { groupIndex, group ->
             for (trackIndex in 0 until group.length) {
                 if (!group.isTrackSupported(trackIndex)) continue
                 val format = group.getTrackFormat(trackIndex)
-                val rawLabel = format.label?.trim().orEmpty()
                 val normalizedLanguage = normalizeAudioGroupLanguage(format.language)
-                val option = TrackOption(
+                val rawLabel = format.label?.trim().orEmpty()
+                val variantKey = "$normalizedLanguage|${format.channelCount}"
+                val variantOrdinal = languageVariantCounts[variantKey] ?: 0
+                languageVariantCounts[variantKey] = variantOrdinal + 1
+                val metadata = resolveAudioOptionMetadata(
+                    normalizedLanguage = normalizedLanguage,
+                    rawLabel = rawLabel,
+                    trackIndex = trackIndex,
+                    variantOrdinal = variantOrdinal
+                )
+                val isAd = isAudioDescriptionTrack(format, metadata?.displayName)
+                val familyKind = when {
+                    isAd -> "ad"
+                    else -> resolveAudioFamilyKind(format, metadata, rawLabel)
+                }
+                val label = resolveAudioMenuLabel(
+                    normalizedLanguage = normalizedLanguage,
+                    metadata = metadata,
+                    rawLabel = rawLabel,
+                    fallbackLanguage = normalizedLanguage,
+                    channelCount = format.channelCount,
+                    familyKind = familyKind
+                )
+                resolved += TrackOption(
                     group = group,
                     groupIndex = groupIndex,
                     trackIndex = trackIndex,
-                    label = rawLabel,
+                    label = label,
+                    familyKind = familyKind,
                     isSelected = group.isTrackSelected(trackIndex),
-                    isAudioDescription = false,
+                    isAudioDescription = isAd,
                     bitrate = format.bitrate
                 )
-                liveCandidates += AudioLiveCandidate(
-                    option = option,
-                    normalizedLanguage = normalizedLanguage,
-                    rawLabel = rawLabel,
-                    channelCount = format.channelCount
-                )
+                resolutionEntries += "group=$groupIndex track=$trackIndex raw=${rawLabel.ifBlank { "-" }} lang=${format.language.orEmpty()} role=${format.roleFlags} channels=${format.channelCount} metadata=${metadata?.displayName ?: "-"} type=${metadata?.type ?: "-"} index=${metadata?.index ?: "-"} family=$familyKind label=$label selected=${group.isTrackSelected(trackIndex)}"
             }
         }
 
-        val resolvedOptions = resolveAudioMenuOptions(liveCandidates)
-            .map { it.option }
+        val resolutionSignature = resolutionEntries.joinToString(" || ")
+        if (resolutionSignature != lastLoggedAudioResolutionSignature) {
+            lastLoggedAudioResolutionSignature = resolutionSignature
+            Log.i(TAG, "Audio track resolution: ${resolutionEntries.joinToString(" | ")}")
+        }
+
+        val bestByLabel = linkedMapOf<String, TrackOption>()
+        for (option in resolved) {
+            val key = option.label
+                .replace("\\s+".toRegex(), " ")
+                .trim()
+                .lowercase()
+            val existing = bestByLabel[key]
+            val better = existing == null ||
+                (option.isSelected && !existing.isSelected) ||
+                (!existing.isSelected && option.bitrate > existing.bitrate)
+            if (better) {
+                bestByLabel[key] = option
+            }
+        }
+
+        val sorted = bestByLabel.values.sortedWith(
+            compareBy<TrackOption> { if (it.isAudioDescription) 1 else 0 }
+                .thenBy { it.label.lowercase() }
+                .thenBy { it.groupIndex }
+                .thenBy { it.trackIndex }
+        )
+
         Log.i(TAG, "Audio menu options: ${
-            resolvedOptions.joinToString(" | ") {
+            sorted.joinToString(" | ") {
                 "label=${it.label}, selected=${it.isSelected}, group=${it.groupIndex}, track=${it.trackIndex}"
             }
         }")
-        return resolvedOptions
-    }
-
-    private fun resolveAudioMenuOptions(liveCandidates: List<AudioLiveCandidate>): List<AudioResolvedOption> {
-        val byLanguage = liveCandidates.groupBy { it.normalizedLanguage }
-        val resolved = mutableListOf<AudioResolvedOption>()
-
-        byLanguage.forEach { (normalizedLanguage, candidates) ->
-            val bestGroups = candidates
-                .groupBy { it.option.groupIndex }
-                .values
-                .map { groupCandidates ->
-                    groupCandidates.maxWithOrNull(
-                        compareBy<AudioLiveCandidate> { if (it.option.isSelected) 1 else 0 }
-                            .thenBy { it.option.bitrate }
-                    )!!
-                }
-                .sortedBy { it.option.groupIndex }
-            val bestByFamily = linkedMapOf<String, AudioResolvedOption>()
-            bestGroups.forEach { candidate ->
-                val metadata = resolveAudioOptionMetadata(
-                    normalizedLanguage = normalizedLanguage,
-                    rawLabel = candidate.rawLabel,
-                    trackIndex = candidate.option.trackIndex
-                )
-                val familyKind = audioFamilyKind(metadata, candidate.rawLabel)
-                val option = candidate.option.copy(
-                    label = resolveAudioMenuLabel(
-                        normalizedLanguage = normalizedLanguage,
-                        metadata = metadata,
-                        rawLabel = candidate.rawLabel,
-                        fallbackLanguage = normalizedLanguage
-                    ),
-                    isAudioDescription = familyKind == "ad"
-                )
-                val familyKey = "$normalizedLanguage|$familyKind"
-                val existing = bestByFamily[familyKey]
-                val better = existing == null ||
-                    (option.isSelected && !existing.option.isSelected) ||
-                    (!existing.option.isSelected && option.bitrate > existing.option.bitrate)
-                if (better) {
-                    bestByFamily[familyKey] = AudioResolvedOption(option, familyKey)
-                }
-            }
-            resolved += bestByFamily.values
-        }
-
-        return resolved
+        return sorted
     }
 
     private fun resolveAudioOptionMetadata(
         normalizedLanguage: String,
         rawLabel: String,
-        trackIndex: Int
+        trackIndex: Int,
+        variantOrdinal: Int
     ): AudioTrack? {
         if (availableAudioTracks.isEmpty()) return null
 
@@ -1455,10 +1490,23 @@ class PlayerActivity : AppCompatActivity() {
         }
         if (languageMatches.isEmpty()) return null
 
-        val familyKind = audioFamilyKind(null, rawLabel)
-        val typedMatches = languageMatches.filter { audioFamilyKind(it, it.displayName) == familyKind }
+        val requestedFamily = audioFamilyKind(null, rawLabel)
+        val typedMatches = if (requestedFamily == "main") {
+            languageMatches
+        } else {
+            languageMatches.filter { audioFamilyKind(it, it.displayName) == requestedFamily }
+        }
         val candidates = typedMatches.ifEmpty { languageMatches }
-        return candidates.firstOrNull { it.index == trackIndex.toString() }
+
+        val orderedByFamily = candidates
+            .sortedWith(
+                compareBy<AudioTrack> { audioFamilyRank(audioFamilyKind(it, it.displayName)) }
+                    .thenBy { it.displayName.length }
+            )
+            .distinctBy { audioFamilyKind(it, it.displayName) }
+
+        return orderedByFamily.getOrNull(variantOrdinal)
+            ?: orderedByFamily.firstOrNull()
             ?: candidates.minWithOrNull(compareBy<AudioTrack> { it.displayName.length })
     }
 
@@ -1513,13 +1561,14 @@ class PlayerActivity : AppCompatActivity() {
         normalizedLanguage: String,
         metadata: AudioTrack?,
         rawLabel: String,
-        fallbackLanguage: String
+        fallbackLanguage: String,
+        channelCount: Int,
+        familyKind: String
     ): String {
         val baseLanguage = displayLanguage(fallbackLanguage.ifBlank { normalizedLanguage })
-        val familyKind = audioFamilyKind(metadata, rawLabel)
         val metadataLabel = metadata?.displayName?.replace("\\s+".toRegex(), " ")?.trim().orEmpty()
         val liveLabel = rawLabel.replace("\\s+".toRegex(), " ").trim()
-        return when (familyKind) {
+        val resolved = when (familyKind) {
             "main" -> {
                 when {
                     CHANNEL_SUFFIX_REGEX.containsMatchIn(liveLabel) -> liveLabel
@@ -1528,11 +1577,33 @@ class PlayerActivity : AppCompatActivity() {
                     else -> baseLanguage
                 }
             }
-            "ad" -> when {
-                metadataLabel.isNotBlank() -> metadataLabel
-                liveLabel.contains("audio description", ignoreCase = true) -> liveLabel
-                liveLabel.contains("[AD]", ignoreCase = true) -> liveLabel
-                else -> "$baseLanguage [Audio Description]"
+            "ad" -> {
+                val base = when {
+                    metadataLabel.isNotBlank() -> metadataLabel
+                    liveLabel.contains("audio description", ignoreCase = true) -> liveLabel
+                    liveLabel.contains("[AD]", ignoreCase = true) -> liveLabel
+                    else -> baseLanguage
+                }
+                if (base.contains("audio description", ignoreCase = true) || base.contains("[AD]", ignoreCase = true)) {
+                    base
+                } else {
+                    "$base [Audio Description]"
+                }
+            }
+            "boost-high" -> when {
+                metadataLabel.isNotBlank() -> "$metadataLabel [Dialogue Boost: High]"
+                liveLabel.isNotBlank() -> "$liveLabel [Dialogue Boost: High]"
+                else -> "$baseLanguage [Dialogue Boost: High]"
+            }
+            "boost-medium" -> when {
+                metadataLabel.isNotBlank() -> "$metadataLabel [Dialogue Boost: Medium]"
+                liveLabel.isNotBlank() -> "$liveLabel [Dialogue Boost: Medium]"
+                else -> "$baseLanguage [Dialogue Boost: Medium]"
+            }
+            "boost" -> when {
+                metadataLabel.isNotBlank() -> "$metadataLabel [Dialogue Boost]"
+                liveLabel.isNotBlank() -> "$liveLabel [Dialogue Boost]"
+                else -> "$baseLanguage [Dialogue Boost]"
             }
             else -> when {
                 metadataLabel.isNotBlank() -> metadataLabel
@@ -1540,6 +1611,7 @@ class PlayerActivity : AppCompatActivity() {
                 else -> baseLanguage
             }
         }
+        return appendChannelLayout(resolved, channelCount)
     }
 
     private fun buildTrackLabel(trackType: Int, format: Format, isAudioDescription: Boolean, metadataName: String? = null): String {
@@ -1616,6 +1688,30 @@ class PlayerActivity : AppCompatActivity() {
         return null
     }
 
+    private fun resolveAudioFamilyKind(
+        format: Format,
+        metadata: AudioTrack?,
+        rawLabel: String
+    ): String {
+        val metadataType = metadata?.type.orEmpty()
+        val source = listOf(
+            metadata?.displayName.orEmpty(),
+            metadataType,
+            rawLabel,
+            format.label.orEmpty()
+        ).joinToString(" ").lowercase()
+        return when {
+            isAudioDescriptionTrack(format, metadata?.displayName) ||
+                metadataType.equals("descriptive", ignoreCase = true) ||
+                source.contains("audio description") ||
+                source.contains("[ad]") -> "ad"
+            source.contains("dialogue boost: high") -> "boost-high"
+            source.contains("dialogue boost: medium") -> "boost-medium"
+            source.contains("dialogue boost") -> "boost"
+            else -> "main"
+        }
+    }
+
     private fun normalizeLanguageCode(languageCode: String?): String {
         if (languageCode.isNullOrBlank()) return ""
         return languageCode.replace('_', '-').lowercase()
@@ -1676,6 +1772,22 @@ class PlayerActivity : AppCompatActivity() {
         Log.i(TAG, "$prefix: $summary")
     }
 
+    /** Logs all video representations (codec + resolution + bitrate) for diagnosis. */
+    private fun logAndForceVideoTracks(tracks: Tracks) {
+        tracks.groups.filter { it.type == C.TRACK_TYPE_VIDEO }.forEachIndexed { gi, group ->
+            val info = (0 until group.length).joinToString(" | ") { i ->
+                val fmt = group.getTrackFormat(i)
+                val codec = when {
+                    fmt.sampleMimeType?.contains("hevc", true) == true -> "H265"
+                    fmt.sampleMimeType?.contains("avc",  true) == true -> "H264"
+                    else -> fmt.sampleMimeType ?: "?"
+                }
+                "${fmt.height}p $codec ${fmt.bitrate / 1000}kbps sel=${group.isTrackSelected(i)}"
+            }
+            Log.w(TAG, "Video tracks group[$gi]: $info")
+        }
+    }
+
     private fun logCurrentAudioTracks(tracks: Tracks) {
         val audioGroups = tracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }
         if (audioGroups.isEmpty()) return
@@ -1695,11 +1807,14 @@ class PlayerActivity : AppCompatActivity() {
     private fun audioMenuKey(label: String, isAudioDescription: Boolean): String {
         val normalized = label
             .replace("[Audio Description]", "", ignoreCase = true)
+            .replace("[Dialogue Boost: High]", "", ignoreCase = true)
+            .replace("[Dialogue Boost: Medium]", "", ignoreCase = true)
+            .replace("[Dialogue Boost]", "", ignoreCase = true)
             .replace("[AD]", "", ignoreCase = true)
             .replace(CHANNEL_SUFFIX_REGEX, "")
             .trim()
             .lowercase()
-        return if (isAudioDescription) "$normalized|ad" else "$normalized|main"
+        return "$normalized|${if (isAudioDescription) "ad" else "main"}"
     }
 
     private fun isAudioDescriptionTrack(format: Format, metadataName: String? = null): Boolean {
@@ -1719,19 +1834,6 @@ class PlayerActivity : AppCompatActivity() {
         if (normalizedInitialAudioSelection) return
         val audioOptions = buildTrackOptions(C.TRACK_TYPE_AUDIO, tracks)
         if (audioOptions.isEmpty()) {
-            return
-        }
-
-        val selected = audioOptions.firstOrNull { it.isSelected }
-        val preferred = audioOptions.firstOrNull { !it.isAudioDescription }
-
-        if (selected != null && selected.isAudioDescription && preferred != null) {
-            val builder = player?.trackSelectionParameters?.buildUpon() ?: return
-            builder.setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
-            builder.setOverrideForType(
-                TrackSelectionOverride(preferred.group.mediaTrackGroup, listOf(preferred.trackIndex))
-            )
-            player?.trackSelectionParameters = builder.build()
             return
         }
         normalizedInitialAudioSelection = true
@@ -1777,7 +1879,7 @@ class PlayerActivity : AppCompatActivity() {
         options.forEach { option ->
             labels.add(option.label)
             trackIndices.add(Pair(option.groupIndex, option.trackIndex))
-            if (option.isSelected) selectedIndex = labels.size - 1
+            if (option.isSelected && selectedIndex == -1) selectedIndex = labels.size - 1
         }
 
         currentTrackDialog?.dismiss()
