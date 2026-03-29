@@ -71,4 +71,12 @@ object VideoFormatLabeler {
         val lang = format.language ?: "und"
         return "label=$label lang=$lang mime=$mime codecs=$codecs channels=${format.channelCount} bitrate=${format.bitrate}"
     }
+
+    fun friendlyError(message: String): String = when {
+        message.contains("DRM_LICENSE_ACQUISITION_FAILED") ->
+            "The current stream could not retrieve a playback license. Go back and try another title or retry later."
+        message.contains("No widevine2License.license field") ->
+            "The service returned an incomplete license response for this title."
+        else -> message
+    }
 }

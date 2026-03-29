@@ -30,6 +30,8 @@ import com.scriptgod.fireos.avod.player.AudioTrackLabeler
 import com.scriptgod.fireos.avod.player.AudioTrackResolver
 import com.scriptgod.fireos.avod.player.BifThumbnailProvider
 import com.scriptgod.fireos.avod.player.MpdTimingCorrector
+import com.scriptgod.fireos.avod.player.DeviceCapabilities
+import com.scriptgod.fireos.avod.player.PlaybackLogger
 import com.scriptgod.fireos.avod.player.StallWatchdog
 import com.scriptgod.fireos.avod.player.StreamReporter
 import com.scriptgod.fireos.avod.player.VideoFormatLabeler
@@ -67,8 +69,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.media.MediaCodecList
-import android.media.MediaDrm
 import java.io.File
 import java.util.UUID
 
@@ -308,36 +308,6 @@ class PlayerActivity : AppCompatActivity() {
         loadAndPlay(asin, materialType)
     }
 
-    /**
-     * Queries the Widevine CDM for its security level.
-     *
-     * Returns "L1" on real hardware with a TEE (Fire TV, phones with Widevine provisioning).
-     * Returns "L3" on Android emulators and un-provisioned hardware (software-only CDM).
-     *
-     * Why this matters: Amazon's license server enforces
-     *   HD quality + L3 + no HDCP  →  license DENIED
-     *   SD quality + L3 + no HDCP  →  license GRANTED
-     * Querying before player creation lets resolveQuality() select the right tier up-front
-     * rather than hitting a license error mid-playback.
-     */
-    private fun widevineSecurityLevel(): String = try {
-        MediaDrm(WIDEVINE_UUID).use { it.getPropertyString("securityLevel") }
-    } catch (e: android.media.UnsupportedSchemeException) {
-        // Expected on devices with no Widevine CDM (rare) or certain emulator configurations.
-        Log.w(TAG, "Widevine DRM not supported on this device — assuming L3")
-        "L3"
-    } catch (e: Exception) {
-        // Unexpected failure — log at ERROR so it is visible in release logcat.
-        Log.e(TAG, "Unexpected MediaDrm error querying security level — safe-failing to L3: ${e.message}")
-        "L3"
-    }
-
-    /** Returns true if this device has any H265/HEVC video decoder. */
-    private fun deviceSupportsH265(): Boolean =
-        MediaCodecList(MediaCodecList.ALL_CODECS).codecInfos.any { info ->
-            !info.isEncoder && info.supportedTypes.any { it.equals("video/hevc", ignoreCase = true) }
-        }
-
     /** Returns true if the connected display reports HDR support via HDMI EDID. */
     @Suppress("DEPRECATION")
     private fun displaySupportsHdr(): Boolean {
@@ -354,7 +324,7 @@ class PlayerActivity : AppCompatActivity() {
         // L3 check runs before user preference: the license server rejects HD+L3 regardless
         // of what the user selected.  Mirror the official Amazon APK behaviour: detect the
         // CDM security level, fall back to SD when L1 is absent.
-        if (widevineSecurityLevel() != "L1") {
+        if (DeviceCapabilities.widevineSecurityLevel() != "L1") {
             Log.w(TAG, "Widevine L3 detected — forcing SD quality (HD requires L1 + HDCP)")
             val prefs = getSharedPreferences("settings", MODE_PRIVATE)
             if (!prefs.getBoolean(PREF_WIDEVINE_L3_WARNED, false)) {
@@ -372,7 +342,7 @@ class PlayerActivity : AppCompatActivity() {
             .getString(PlaybackQuality.PREF_KEY, null)
         val requested = PlaybackQuality.fromPrefValue(pref)
         if (requested == PlaybackQuality.UHD_HDR) {
-            if (!deviceSupportsH265()) {
+            if (!DeviceCapabilities.deviceSupportsH265()) {
                 Toast.makeText(this, "H265 not supported — using HD H264", Toast.LENGTH_LONG).show()
                 return PlaybackQuality.HD
             }
@@ -381,7 +351,7 @@ class PlayerActivity : AppCompatActivity() {
                 return PlaybackQuality.HD
             }
         }
-        if (requested == PlaybackQuality.HD_H265 && !deviceSupportsH265()) {
+        if (requested == PlaybackQuality.HD_H265 && !DeviceCapabilities.deviceSupportsH265()) {
             Toast.makeText(this, "H265 not supported — using HD H264", Toast.LENGTH_LONG).show()
             return PlaybackQuality.HD
         }
@@ -418,7 +388,7 @@ class PlayerActivity : AppCompatActivity() {
             val mergedAudioTracks = (info.audioTracks + detailAudioTracks)
                 .distinctBy { "${it.displayName}|${it.languageCode}|${it.type}|${it.index}" }
             audioTrackResolver.updateAvailableTracks(mergedAudioTracks)
-            logAvailableAudioTracks("Merged audio metadata", mergedAudioTracks)
+            PlaybackLogger.logAvailableAudioTracks(TAG, "Merged audio metadata", mergedAudioTracks)
             // Correct MPD timing: Amazon's SegmentList uses fixed duration that drifts ~41s
             // over 2h. Replace with SegmentBase+sidx for accurate segment timing.
             correctedMpdContent = withContext(Dispatchers.IO) {
@@ -826,11 +796,11 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         override fun onTracksChanged(tracks: Tracks) {
-            logCurrentAudioTracks(tracks)
+            audioTrackResolver.logCurrentAudioTracks(TAG, tracks)
             normalizeInitialAudioSelection(tracks)
             updateTrackButtonLabels(tracks)
             Log.i(TAG, "Selected audio after tracksChanged: ${selectedAudioTrackSummary(tracks)}")
-            logAndForceVideoTracks(tracks)
+            PlaybackLogger.logVideoTracks(TAG, tracks)
             updateVideoFormatLabel()
             // Re-hide native track buttons (they re-show on track change)
             playerView.post {
@@ -1119,45 +1089,6 @@ class PlayerActivity : AppCompatActivity() {
     private fun buildTrackOptions(trackType: Int, tracks: Tracks): List<AudioTrackResolver.TrackOption> =
         audioTrackResolver.buildTrackOptions(trackType, tracks)
 
-    private fun logAvailableAudioTracks(prefix: String, tracks: List<AudioTrack>) {
-        val summary = tracks.joinToString(" | ") {
-            "name=${it.displayName}, lang=${it.languageCode}, type=${it.type}, index=${it.index}"
-        }
-        Log.i(TAG, "$prefix: $summary")
-    }
-
-    /** Logs all video representations (codec + resolution + bitrate) for diagnosis. */
-    private fun logAndForceVideoTracks(tracks: Tracks) {
-        tracks.groups.filter { it.type == C.TRACK_TYPE_VIDEO }.forEachIndexed { gi, group ->
-            val info = (0 until group.length).joinToString(" | ") { i ->
-                val fmt = group.getTrackFormat(i)
-                val codec = when {
-                    fmt.sampleMimeType?.contains("hevc", true) == true -> "H265"
-                    fmt.sampleMimeType?.contains("avc",  true) == true -> "H264"
-                    else -> fmt.sampleMimeType ?: "?"
-                }
-                "${fmt.height}p $codec ${fmt.bitrate / 1000}kbps sel=${group.isTrackSelected(i)}"
-            }
-            Log.w(TAG, "Video tracks group[$gi]: $info")
-        }
-    }
-
-    private fun logCurrentAudioTracks(tracks: Tracks) {
-        val audioGroups = tracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }
-        if (audioGroups.isEmpty()) return
-        val entries = mutableListOf<String>()
-        audioGroups.forEachIndexed { groupIndex, group ->
-            for (trackIndex in 0 until group.length) {
-                val format = group.getTrackFormat(trackIndex)
-                entries += "group=$groupIndex track=$trackIndex label=${format.label.orEmpty()} lang=${format.language.orEmpty()} role=${format.roleFlags} channels=${format.channelCount} selected=${group.isTrackSelected(trackIndex)} supported=${group.isTrackSupported(trackIndex)} bitrate=${format.bitrate}"
-            }
-        }
-        val signature = entries.joinToString(" || ")
-        if (signature == audioTrackResolver.lastLoggedAudioTrackSignature) return
-        audioTrackResolver.lastLoggedAudioTrackSignature = signature
-        Log.w(TAG, "Live audio tracks: ${entries.joinToString(" | ")}")
-    }
-
     private fun normalizeInitialAudioSelection(tracks: Tracks) {
         if (normalizedInitialAudioSelection) return
         val audioOptions = buildTrackOptions(C.TRACK_TYPE_AUDIO, tracks)
@@ -1318,18 +1249,8 @@ class PlayerActivity : AppCompatActivity() {
         playerView.hideController()
         playerView.useController = false
         trackButtons.visibility = View.GONE
-        tvError.text = "Playback unavailable\n${friendlyError(message)}"
+        tvError.text = "Playback unavailable\n${VideoFormatLabeler.friendlyError(message)}"
         tvError.visibility = View.VISIBLE
-    }
-
-    private fun friendlyError(message: String): String {
-        return when {
-            message.contains("DRM_LICENSE_ACQUISITION_FAILED") ->
-                "The current stream could not retrieve a playback license. Go back and try another title or retry later."
-            message.contains("No widevine2License.license field") ->
-                "The service returned an incomplete license response for this title."
-            else -> message
-        }
     }
 
     override fun onPause() {

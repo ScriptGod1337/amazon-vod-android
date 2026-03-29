@@ -222,4 +222,21 @@ class AudioTrackResolver(private var availableAudioTracks: List<AudioTrack>) {
             ?: orderedByFamily.firstOrNull()
             ?: candidates.minWithOrNull(compareBy { it.displayName.length })
     }
+
+    /** Logs live ExoPlayer audio tracks when they change; deduplicates via [lastLoggedAudioTrackSignature]. */
+    fun logCurrentAudioTracks(tag: String, tracks: Tracks) {
+        val audioGroups = tracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }
+        if (audioGroups.isEmpty()) return
+        val entries = mutableListOf<String>()
+        audioGroups.forEachIndexed { groupIndex, group ->
+            for (trackIndex in 0 until group.length) {
+                val format = group.getTrackFormat(trackIndex)
+                entries += "group=$groupIndex track=$trackIndex label=${format.label.orEmpty()} lang=${format.language.orEmpty()} role=${format.roleFlags} channels=${format.channelCount} selected=${group.isTrackSelected(trackIndex)} supported=${group.isTrackSupported(trackIndex)} bitrate=${format.bitrate}"
+            }
+        }
+        val signature = entries.joinToString(" || ")
+        if (signature == lastLoggedAudioTrackSignature) return
+        lastLoggedAudioTrackSignature = signature
+        Log.w(tag, "Live audio tracks: ${entries.joinToString(" | ")}")
+    }
 }
