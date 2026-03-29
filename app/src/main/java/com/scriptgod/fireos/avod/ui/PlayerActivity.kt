@@ -26,6 +26,7 @@ import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import android.os.Looper
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import com.scriptgod.fireos.avod.player.AudioTrackLabeler
 import com.scriptgod.fireos.avod.player.AudioTrackResolver
 import com.scriptgod.fireos.avod.player.BifThumbnailProvider
 import com.scriptgod.fireos.avod.player.MpdTimingCorrector
@@ -577,7 +578,7 @@ class PlayerActivity : AppCompatActivity() {
             val subConfig = MediaItem.SubtitleConfiguration.Builder(android.net.Uri.parse(sub.url))
                 .setMimeType(MimeTypes.APPLICATION_TTML)
                 .setLanguage(sub.languageCode)
-                .setLabel(audioTrackResolver.buildSubtitleLabel(sub.languageCode, sub.type))
+                .setLabel(AudioTrackLabeler.buildSubtitleLabel(sub.languageCode, sub.type))
                 .setSelectionFlags(if (sub.type == "forced") C.SELECTION_FLAG_FORCED else 0)
                 .build()
             SingleSampleMediaSource.Factory(dataSourceFactory)
